@@ -1,0 +1,58 @@
+.registration-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.registration-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  width: 100%;
+  flex: 1;
+}
+
+.step-content {
+  animation: fadeUp 0.4s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Success */
+.success-card {
+  max-width: 480px;
+  margin: 4rem auto;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 4px 32px var(--shadow);
+}
+
+.success-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.success-card h2 {
+  font-size: 2.2rem;
+  color: var(--forest);
+  margin-bottom: 1rem;
+}
+
+.success-card p {
+  color: var(--text-mid);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.success-sub {
+  color: var(--text-light) !important;
+  font-size: 0.9rem !important;
+  margin-top: 1rem !important;
+}
