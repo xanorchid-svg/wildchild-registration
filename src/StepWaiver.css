@@ -1,0 +1,94 @@
+.waiver-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.waiver-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.waiver-section:last-child {
+  border-bottom: none;
+}
+
+.waiver-section h4 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  color: var(--forest);
+  margin-bottom: 0.75rem;
+}
+
+.waiver-section p {
+  font-size: 0.84rem;
+  color: var(--text-mid);
+  line-height: 1.65;
+  margin-bottom: 0.75rem;
+}
+
+.waiver-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.waiver-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--forest);
+  cursor: pointer;
+}
+
+.waiver-check span {
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.waiver-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.waiver-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.waiver-radio input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--forest);
+  cursor: pointer;
+}
+
+.waiver-radio span {
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  line-height: 1.4;
+}
+
+.waiver-sign {
+  background: rgba(45, 74, 45, 0.03);
+}
+
+.signature-input {
+  font-style: italic;
+  font-size: 1.1rem !important;
+}

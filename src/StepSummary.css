@@ -1,0 +1,92 @@
+.summary-block {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.summary-block-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  font-weight: 500;
+  padding: 0.7rem 1rem 0.5rem;
+  background: var(--cream);
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.summary-row:last-child {
+  border-bottom: none;
+}
+
+.summary-row span:first-child {
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+
+.summary-row span:last-child {
+  color: var(--text-dark);
+  text-align: right;
+}
+
+.check-yes {
+  color: var(--sage) !important;
+}
+
+.signature-preview {
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 1rem !important;
+}
+
+.weeks-summary {
+  font-size: 0.78rem !important;
+}
+
+/* Pricing block */
+.summary-pricing .summary-row span:last-child {
+  font-weight: 500;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--forest);
+  color: var(--cream);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.payment-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  background: rgba(122, 158, 126, 0.08);
+  border: 1px solid rgba(122, 158, 126, 0.2);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.payment-note p {
+  font-size: 0.82rem;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.btn-submit {
+  flex: 1;
+}
