@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
+import logo from "./assets/Logo.svg";
 
 const TEAL = "#3d7d8a";
 const TEAL_DARK = "#2c5f6a";
@@ -211,7 +212,7 @@ export default function WildChildRegistration() {
 
       {/* Header */}
       <div style={{ background:TEAL, padding:"18px 20px 14px", display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" }}>
-        <WildChildLogo height={70} />
+        <img src={logo} alt="Wild Child Nosara" style={{ height:"70px", objectFit:"contain" }} />
         <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.7)", textTransform:"uppercase", margin:0 }}>Enrollment Registration</p>
       </div>
 

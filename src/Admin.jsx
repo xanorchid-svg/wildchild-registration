@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
+import logo from "./assets/Logo.svg";
 
 const TEAL = "#3d7d8a";
 const TEAL_DARK = "#2c5f6a";
@@ -197,10 +198,13 @@ export default function Admin() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:TEAL, padding:"20px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.65)", textTransform:"uppercase", margin:"0 0 3px" }}>Wild Child Nosara</p>
-          <h1 style={{ fontSize:"22px", fontWeight:400, color:"#fff", margin:0 }}>Registrations</h1>
+      <div style={{ background:TEAL, padding:"16px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"48px", objectFit:"contain" }} />
+          <div>
+            <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.65)", textTransform:"uppercase", margin:"0 0 2px" }}>Admin</p>
+            <h1 style={{ fontSize:"20px", fontWeight:400, color:"#fff", margin:0 }}>Registrations</h1>
+          </div>
         </div>
         <a href="/" style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px" }}>← Registration Form</a>
       </div>
