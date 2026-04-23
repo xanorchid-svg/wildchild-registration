@@ -208,8 +208,8 @@ export default function WildChildRegistration() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:TEAL, padding:"18px 20px 14px", display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" }}>
-        <img src={logo} alt="Wild Child Nosara" style={{ height:"110px", objectFit:"contain" }} />
+      <div style={{ background:TEAL, padding:"28px 20px 20px", display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
+        <img src={logo} alt="Wild Child Nosara" style={{ height:"280px", objectFit:"contain", display:"block" }} />
         <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.7)", textTransform:"uppercase", margin:0 }}>Enrollment Registration</p>
       </div>
 
