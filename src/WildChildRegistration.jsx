@@ -219,9 +219,9 @@ export default function WildChildRegistration() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"160px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", display:"flex", alignItems:"center" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"260px", objectFit:"contain" }} />
+      <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"90px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%, -40%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }} />
         </div>
         <div style={{ width:"80px" }}/>
         <a href="/login" style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px" }}>

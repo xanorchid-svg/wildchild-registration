@@ -207,9 +207,9 @@ export default function Admin() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:OLIVE_DARK, height:"160px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"260px", objectFit:"contain" }} />
+      <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%, -40%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }} />
         </div>
         <div style={{ width:"80px" }}/>
         <div style={{ position:"relative", zIndex:1, display:"flex", gap:"10px", alignItems:"center" }}>
