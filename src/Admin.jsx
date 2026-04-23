@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
-import logo from "./assets/Logo.svg";
+import logo from "./assets/logo1.svg";
 
 const TEAL = "#3d7d8a";
 const TEAL_DARK = "#2c5f6a";

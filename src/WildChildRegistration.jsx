@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
-import logo from "./assets/Logo.svg";
+import logo from "./assets/logo1.svg";
 
 const TEAL = "#3d7d8a";
 const TEAL_DARK = "#2c5f6a";
@@ -141,13 +141,10 @@ export default function WildChildRegistration() {
     const wk = weekKey(getMonday(date));
     setSelectedDays(prev => {
       const n = new Set(prev);
-      const daysThisWeek = Array.from(n).filter(dk => weekKey(getMonday(new Date(dk))) === wk);
       if (n.has(key)) {
-        // allow deselect only if week would still have 3+ OR week drops to 0 (full removal)
-        const remaining = daysThisWeek.length - 1;
-        if (remaining > 0 && remaining < 3) return prev; // blocked: would leave 1 or 2
-        n.delete(key);
+        n.delete(key); // always allow deselect
       } else {
+        const daysThisWeek = Array.from(n).filter(dk => weekKey(getMonday(new Date(dk))) === wk);
         if (daysThisWeek.length >= 5) return prev; // max 5 per week
         n.add(key);
       }
@@ -212,7 +209,7 @@ export default function WildChildRegistration() {
 
       {/* Header */}
       <div style={{ background:TEAL, padding:"18px 20px 14px", display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" }}>
-        <img src={logo} alt="Wild Child Nosara" style={{ height:"70px", objectFit:"contain" }} />
+        <img src={logo} alt="Wild Child Nosara" style={{ height:"110px", objectFit:"contain" }} />
         <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.7)", textTransform:"uppercase", margin:0 }}>Enrollment Registration</p>
       </div>
 
@@ -323,7 +320,7 @@ export default function WildChildRegistration() {
               ))}
             </div>
 
-            {/* Week rows — each cell individually tappable, min 3 max 5 per week */}
+            {/* Week rows — each cell individually tappable, max 5 per week */}
             {weeks.map(monday=>{
               const wk = weekKey(monday);
               const daysThisWeek = Array.from(selectedDays).filter(dk => weekKey(getMonday(new Date(dk))) === wk);
@@ -339,9 +336,8 @@ export default function WildChildRegistration() {
                       const isSel = selectedDays.has(key);
                       const isPast = d < today;
                       const inMonth = d.getMonth()===calMonth;
-                      const wouldBlock = !isSel && isFull;
-                      const wouldInvalidate = isSel && count > 1 && (count - 1) < 3;
-                      const isBlocked = wouldBlock || wouldInvalidate;
+                      // only block adding when week is already full (5 days)
+                      const isBlocked = !isSel && isFull;
                       return (
                         <div key={offset} onClick={()=>!isPast&&!isBlocked&&toggleDay(d)}
                           style={{ textAlign:"center", padding:"8px 2px", borderRadius:"8px", transition:"all .15s",
@@ -362,7 +358,7 @@ export default function WildChildRegistration() {
                       <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"10px", color:"#fff",
                         background: !isValid ? "#e08c00" : isFull ? TEAL : GREEN }}>
                         {count}/5 days selected
-                        {!isValid ? " · need at least 3" : isFull ? " · full week ✓" : count === 4 ? " · 4-day week ✓" : " · 3-day week ✓"}
+                        {!isValid ? " · select at least 3" : isFull ? " · full week ✓" : count === 4 ? " · 4-day week ✓" : " · 3-day week ✓"}
                       </span>
                     </div>
                   )}
