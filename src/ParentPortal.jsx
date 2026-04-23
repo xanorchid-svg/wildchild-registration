@@ -196,13 +196,13 @@ export default function ParentPortal() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:OLIVE_DARK, height:"100px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
+      <div style={{ background:OLIVE_DARK, height:"160px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
         <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"130px", objectFit:"contain" }} />
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"260px", objectFit:"contain" }} />
         </div>
-        <div style={{ width:"60px" }}/>
+        <div style={{ width:"80px" }}/>
         <button onClick={signOut}
-          style={{ position:"relative", zIndex:1, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"7px 12px", color:"rgba(255,255,255,0.9)", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>
+          style={{ position:"relative", zIndex:1, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"rgba(255,255,255,0.9)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>
           Sign Out
         </button>
       </div>

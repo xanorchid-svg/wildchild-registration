@@ -207,19 +207,23 @@ export default function Admin() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:`linear-gradient(135deg, ${OLIVE_DARK} 0%, ${NAVY} 100%)`, padding:"16px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"48px", objectFit:"contain" }} />
-          <div>
-            <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.65)", textTransform:"uppercase", margin:"0 0 2px" }}>Admin</p>
-            <h1 style={{ fontSize:"20px", fontWeight:400, color:"#fff", margin:0 }}>Registrations</h1>
-          </div>
+      <div style={{ background:OLIVE_DARK, height:"160px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"260px", objectFit:"contain" }} />
         </div>
-        <a href="/" style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px", marginRight:"16px" }}>← Registration Form</a>
-        <button onClick={async () => { const { supabase } = await import('./supabase'); await supabase.auth.signOut(); window.location.href = '/login'; }}
-          style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", background:"none", border:"1px solid rgba(255,255,255,0.3)", borderRadius:"6px", padding:"6px 12px", cursor:"pointer", fontFamily:"Georgia,serif", letterSpacing:"0.5px" }}>
-          Sign out
-        </button>
+        <div style={{ width:"80px" }}/>
+        <div style={{ position:"relative", zIndex:1, display:"flex", gap:"10px", alignItems:"center" }}>
+          <a href="/" style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px" }}>← Enrollment</a>
+          <button onClick={async () => { const { supabase } = await import('./supabase'); await supabase.auth.signOut(); window.location.href = '/login'; }}
+            style={{ background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"rgba(255,255,255,0.9)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      {/* Admin label bar */}
+      <div style={{ background:NAVY, padding:"10px 20px" }}>
+        <p style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", margin:0 }}>Admin · Registrations</p>
       </div>
 
       <div style={{ maxWidth:"700px", margin:"0 auto", padding:"32px 16px 60px" }}>

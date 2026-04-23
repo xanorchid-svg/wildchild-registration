@@ -59,8 +59,8 @@ export default function AdminLogin() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", display:"flex", flexDirection:"column" }}>
 
       {/* Header */}
-      <div style={{ background:OLIVE_DARK, height:"100px", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", position:"relative" }}>
-        <img src={logo} alt="Wild Child Nosara" style={{ height:"130px", objectFit:"contain" }} />
+      <div style={{ background:OLIVE_DARK, height:"160px", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", position:"relative" }}>
+        <img src={logo} alt="Wild Child Nosara" style={{ height:"260px", objectFit:"contain" }} />
       </div>
 
       {/* Content */}

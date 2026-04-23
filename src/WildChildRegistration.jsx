@@ -219,13 +219,13 @@ export default function WildChildRegistration() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"100px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px" }}>
+      <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"160px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
         <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", display:"flex", alignItems:"center" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"130px", objectFit:"contain" }} />
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"260px", objectFit:"contain" }} />
         </div>
         <div style={{ width:"80px" }}/>
-        <a href="/login" style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", gap:"6px", textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"7px 12px" }}>
-          <span style={{ fontSize:"11px", letterSpacing:"1px", color:"rgba(255,255,255,0.9)", textTransform:"uppercase", whiteSpace:"nowrap", fontFamily:"Georgia,serif" }}>Sign In</span>
+        <a href="/login" style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px" }}>
+          <span style={{ fontSize:"12px", letterSpacing:"1px", color:"rgba(255,255,255,0.9)", textTransform:"uppercase", whiteSpace:"nowrap", fontFamily:"Georgia,serif" }}>Sign In</span>
         </a>
       </div>
 
@@ -233,7 +233,7 @@ export default function WildChildRegistration() {
       <div style={{ display:"flex", background:NAVY, overflowX:"auto" }}>
         {STEPS.map((s,i)=>(
           <div key={s} onClick={()=>i<step&&setStep(i)}
-            style={{ flex:1, padding:"9px 3px", textAlign:"center", fontSize:"11px", whiteSpace:"nowrap", minWidth:"60px",
+            style={{ flex:1, padding:"12px 3px", textAlign:"center", fontSize:"12px", whiteSpace:"nowrap", minWidth:"70px",
               color:i===step?"#fff":i<step?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.35)",
               borderBottom:i===step?`2px solid ${ORANGE}`:"2px solid transparent", cursor:i<step?"pointer":"default" }}>
             {i<step?"✓ ":""}{s}
