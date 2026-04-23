@@ -2,17 +2,28 @@ import { useState } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
-const TEAL = "#3d7d8a";
-const TEAL_DARK = "#2c5f6a";
-const TEAL_LIGHT = "#e8f4f6";
-const TEAL_MID = "#5a9aaa";
-const CREAM = "#f7f2e8";
-const CREAM_DARK = "#e8dfc8";
-const TEXT_DARK = "#1a2e32";
-const TEXT_MID = "#3d5a5f";
-const TEXT_LIGHT = "#6b8c91";
-const SAND = "#c8a96e";
-const GREEN = "#5a7a4a";
+// Brand colors — Wild Child Nosara
+const OLIVE       = "#6b7a3f";  // primary — olive green
+const OLIVE_DARK  = "#4d5a2c";  // darker olive
+const OLIVE_LIGHT = "#eef1e6";  // light olive tint
+const NAVY        = "#0f1f5c";  // navy accent
+const NAVY_MID    = "#2a3a7a";  // mid navy
+const SAGE        = "#8fa88a";  // sage green
+const ORANGE      = "#c4682a";  // burnt orange highlight
+const PINK        = "#d4867a";  // dusty pink highlight
+const CREAM       = "#f5f0e8";  // cream background
+const CREAM_DARK  = "#e0d8c8";  // cream border
+const TEXT_DARK   = "#1a1a2e";  // near-black text
+const TEXT_MID    = "#3d3d5c";  // mid text
+const TEXT_LIGHT  = "#7a7a9a";  // muted text
+
+// Keep aliases for compatibility
+const TEAL      = OLIVE;
+const TEAL_DARK = OLIVE_DARK;
+const TEAL_LIGHT = OLIVE_LIGHT;
+const TEAL_MID  = SAGE;
+const SAND      = ORANGE;
+const GREEN     = "#5a7a3a";
 
 // Pricing
 const PRICE_3 = 260;
@@ -83,8 +94,8 @@ function getWeeksForMonth(year, month) {
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const PROGRAMS = [
-  { id:"lwo", name:"Little Wild Ones", age:"Ages 1–4", schedule:"Mon–Fri · 9:00am–3:00pm", desc:"A gentle, nurturing program for our youngest explorers. Focuses on sensory play, nature connection, creative movement, storytelling, music, and social-emotional development. Through free play and soft structure, children build confidence, coordination, language, and a sense of belonging.", color:TEAL, emoji:"🌿" },
-  { id:"we",  name:"Wild Explorers",   age:"Ages 5–9", schedule:"Mon–Fri · 9:00am–3:00pm", desc:"A curiosity-led program blending outdoor learning, creative expression, mindfulness, movement, and academics. Hands-on learning across math, reading, writing, geography, and science while developing critical thinking, collaboration, and independence.", color:GREEN, emoji:"🦋" },
+  { id:"lwo", name:"Little Wild Ones", age:"Ages 1–4", schedule:"Mon–Fri · 9:00am–3:00pm", desc:"A gentle, nurturing program for our youngest explorers. Focuses on sensory play, nature connection, creative movement, storytelling, music, and social-emotional development. Through free play and soft structure, children build confidence, coordination, language, and a sense of belonging.", color:OLIVE, emoji:"🌿" },
+  { id:"we",  name:"Wild Explorers",   age:"Ages 5–9", schedule:"Mon–Fri · 9:00am–3:00pm", desc:"A curiosity-led program blending outdoor learning, creative expression, mindfulness, movement, and academics. Hands-on learning across math, reading, writing, geography, and science while developing critical thinking, collaboration, and independence.", color:NAVY, emoji:"🦋" },
 ];
 const STEPS = ["Program","Child Info","Schedule","Payment","Waiver","Confirmation"];
 
@@ -208,18 +219,24 @@ export default function WildChildRegistration() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:TEAL, overflow:"hidden", position:"relative", height:"80px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end" }}>
-        <img src={logo} alt="Wild Child Nosara" style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -50%)", width:"50%", maxWidth:"350px", objectFit:"contain" }} />
-        <p style={{ fontSize:"11px", letterSpacing:"2px", color:"rgba(255,255,255,0.85)", textTransform:"uppercase", margin:"0 0 8px", position:"relative", zIndex:1 }}>Enrollment Registration</p>
+      <div style={{ background:`linear-gradient(135deg, ${OLIVE_DARK} 0%, ${NAVY} 100%)`, overflow:"hidden", position:"relative", height:"80px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px" }}>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", height:"80px", display:"flex", alignItems:"center" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"60px", objectFit:"contain" }} />
+        </div>
+        <div style={{ width:"80px" }}/>
+        <a href="/portal" style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"3px", textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"10px", padding:"6px 10px", backdropFilter:"blur(4px)" }}>
+          <span style={{ fontSize:"16px" }}>🌿</span>
+          <span style={{ fontSize:"9px", letterSpacing:"0.5px", color:"rgba(255,255,255,0.85)", textTransform:"uppercase", whiteSpace:"nowrap" }}>My Portal</span>
+        </a>
       </div>
 
       {/* Step bar */}
-      <div style={{ display:"flex", background:TEAL_DARK, overflowX:"auto" }}>
+      <div style={{ display:"flex", background:NAVY, overflowX:"auto" }}>
         {STEPS.map((s,i)=>(
           <div key={s} onClick={()=>i<step&&setStep(i)}
             style={{ flex:1, padding:"9px 3px", textAlign:"center", fontSize:"11px", whiteSpace:"nowrap", minWidth:"60px",
               color:i===step?"#fff":i<step?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.35)",
-              borderBottom:i===step?`2px solid ${SAND}`:"2px solid transparent", cursor:i<step?"pointer":"default" }}>
+              borderBottom:i===step?`2px solid ${ORANGE}`:"2px solid transparent", cursor:i<step?"pointer":"default" }}>
             {i<step?"✓ ":""}{s}
           </div>
         ))}
@@ -532,7 +549,7 @@ export default function WildChildRegistration() {
               ? <button onClick={()=>setStep(s=>s-1)} style={{ background:"transparent", color:TEXT_MID, border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"13px 22px", fontSize:"13px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:"pointer", textTransform:"uppercase" }}>← Back</button>
               : <div/>}
             <button onClick={next} disabled={busy}
-              style={{ background:busy?"#aaa":TEAL, color:"#fff", border:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:busy?"not-allowed":"pointer", textTransform:"uppercase", transition:"background .2s" }}>
+              style={{ background:busy?"#aaa":ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:busy?"not-allowed":"pointer", textTransform:"uppercase", transition:"background .2s" }}>
               {busy?"Processing...":(step===4?"Submit & Complete ✓":step===3?`Pay $${grandTotal} →`:"Continue →")}
             </button>
           </div>

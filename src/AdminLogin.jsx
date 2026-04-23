@@ -2,12 +2,12 @@ import { useState } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
-const TEAL = "#3d7d8a";
-const TEAL_DARK = "#2c5f6a";
-const CREAM = "#f7f2e8";
-const CREAM_DARK = "#e8dfc8";
-const TEXT_DARK = "#1a2e32";
-const TEXT_LIGHT = "#6b8c91";
+const TEAL = "#6b7a3f";
+const TEAL_DARK = "#4d5a2c";
+const CREAM = "#f5f0e8";
+const CREAM_DARK = "#e0d8c8";
+const TEXT_DARK = "#1a1a2e";
+const TEXT_LIGHT = "#7a7a9a";
 
 const inp = {
   width: "100%", padding: "12px 14px", border: `1px solid ${CREAM_DARK}`,

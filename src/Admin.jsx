@@ -2,16 +2,25 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
-const TEAL = "#3d7d8a";
-const TEAL_DARK = "#2c5f6a";
-const TEAL_LIGHT = "#e8f4f6";
-const CREAM = "#f7f2e8";
-const CREAM_DARK = "#e8dfc8";
-const TEXT_DARK = "#1a2e32";
-const TEXT_MID = "#3d5a5f";
-const TEXT_LIGHT = "#6b8c91";
-const GREEN = "#5a7a4a";
-const SAND = "#c8a96e";
+const OLIVE       = "#6b7a3f";
+const OLIVE_DARK  = "#4d5a2c";
+const OLIVE_LIGHT = "#eef1e6";
+const NAVY        = "#0f1f5c";
+const NAVY_MID    = "#2a3a7a";
+const SAGE        = "#8fa88a";
+const ORANGE      = "#c4682a";
+const CREAM       = "#f5f0e8";
+const CREAM_DARK  = "#e0d8c8";
+const TEXT_DARK   = "#1a1a2e";
+const TEXT_MID    = "#3d3d5c";
+const TEXT_LIGHT  = "#7a7a9a";
+const GREEN       = "#5a7a3a";
+
+// aliases
+const TEAL      = OLIVE;
+const TEAL_DARK = OLIVE_DARK;
+const TEAL_LIGHT = OLIVE_LIGHT;
+const SAND      = ORANGE;
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -198,7 +207,7 @@ export default function Admin() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:TEAL, padding:"16px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div style={{ background:`linear-gradient(135deg, ${OLIVE_DARK} 0%, ${NAVY} 100%)`, padding:"16px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
           <img src={logo} alt="Wild Child Nosara" style={{ height:"48px", objectFit:"contain" }} />
           <div>
@@ -237,7 +246,7 @@ export default function Admin() {
 
             {/* Week header */}
             <div onClick={() => toggleWeek(week.key)}
-              style={{ background:TEAL, borderRadius: expandedWeeks.has(week.key) ? "10px 10px 0 0" : "10px", padding:"14px 20px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              style={{ background:NAVY, borderRadius: expandedWeeks.has(week.key) ? "10px 10px 0 0" : "10px", padding:"14px 20px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
                 <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.75)", margin:"0 0 2px" }}>{week.label}</p>
                 <p style={{ fontSize:"16px", color:"#fff", margin:0 }}>
