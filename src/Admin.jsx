@@ -206,7 +206,11 @@ export default function Admin() {
             <h1 style={{ fontSize:"20px", fontWeight:400, color:"#fff", margin:0 }}>Registrations</h1>
           </div>
         </div>
-        <a href="/" style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px" }}>← Registration Form</a>
+        <a href="/" style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px", marginRight:"16px" }}>← Registration Form</a>
+        <button onClick={async () => { const { supabase } = await import('./supabase'); await supabase.auth.signOut(); window.location.href = '/login'; }}
+          style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", background:"none", border:"1px solid rgba(255,255,255,0.3)", borderRadius:"6px", padding:"6px 12px", cursor:"pointer", fontFamily:"Georgia,serif", letterSpacing:"0.5px" }}>
+          Sign out
+        </button>
       </div>
 
       <div style={{ maxWidth:"700px", margin:"0 auto", padding:"32px 16px 60px" }}>
