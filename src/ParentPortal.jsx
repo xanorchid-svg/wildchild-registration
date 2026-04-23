@@ -131,10 +131,14 @@ export default function ParentPortal() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
       <style>{`
         * { box-sizing: border-box; }
+        input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; cursor: pointer; accent-color: ${OLIVE}; flex-shrink: 0; }
         @media (max-width: 700px) {
           .portal-layout { flex-direction: column !important; }
-          .portal-sidebar { width: 100% !important; position: relative !important; height: auto !important; border-right: none !important; border-bottom: 1px solid ${CREAM_DARK} !important; }
-          .portal-main { padding: 20px 14px !important; }
+          .portal-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid ${CREAM_DARK} !important; padding: 12px 0 !important; display: flex !important; flex-wrap: wrap !important; gap: 0 !important; }
+          .portal-sidebar-label { display: none !important; }
+          .portal-sidebar button, .portal-sidebar a { padding: 10px 14px !important; font-size: 13px !important; border-left: none !important; border-bottom: 3px solid transparent !important; white-space: nowrap !important; }
+          .portal-main { padding: 16px 14px !important; }
+          .child-header { flex-direction: column !important; align-items: flex-start !important; }
         }
       `}</style>
 
@@ -161,14 +165,14 @@ export default function ParentPortal() {
       </div>
 
       {/* Layout */}
-      <div className="portal-layout" style={{ display:"flex", maxWidth:"900px", margin:"0 auto", minHeight:"calc(100vh - 130px)" }}>
+      <div className="portal-layout" style={{ display:"flex", minHeight:"calc(100vh - 130px)" }}>
 
         {/* Sidebar */}
-        <div className="portal-sidebar" style={{ width:"220px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, padding:"24px 0", background:"#fff" }}>
+        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, padding:"28px 0", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)" }}>
 
           {/* Children sub-nav */}
           <div style={{ marginBottom:"8px" }}>
-            <p style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:TEXT_LIGHT, padding:"0 20px", margin:"0 0 8px" }}>Children</p>
+            <p className="portal-sidebar-label" style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:TEXT_LIGHT, padding:"0 20px", margin:"0 0 8px" }}>Children</p>
             {children.length === 0 ? (
               <p style={{ fontSize:"13px", color:TEXT_LIGHT, padding:"0 20px" }}>No children saved yet.</p>
             ) : children.map((ch,i)=>(
@@ -207,7 +211,7 @@ export default function ParentPortal() {
         </div>
 
         {/* Main content */}
-        <div className="portal-main" style={{ flex:1, padding:"28px 24px", minWidth:0 }}>
+        <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px" }}>
 
           {/* ── Children section ── */}
           {activeSection==="children" && children.length>0 && (() => {
@@ -220,7 +224,7 @@ export default function ParentPortal() {
 
             return (
               <div>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"20px", flexWrap:"wrap", gap:"10px" }}>
+                <div className="child-header" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"20px", flexWrap:"wrap", gap:"10px" }}>
                   <div>
                     <h2 style={{ fontSize:"22px", fontWeight:400, color:TEXT_DARK, margin:"0 0 4px" }}>{ch.first_name} {ch.last_name}</h2>
                     <p style={{ fontSize:"13px", color:TEXT_LIGHT, margin:0 }}>{prog}</p>

@@ -303,13 +303,29 @@ export default function WildChildRegistration() {
   const saveChildren = async () => {
     if (!session) return;
     for (const ch of children) {
-      await supabase.from("children").upsert({
+      if (!ch.fn || !ch.ln) continue; // skip empty children
+      // Try insert, if exists update by matching name
+      const { data: existing } = await supabase
+        .from("children")
+        .select("id")
+        .eq("parent_id", session.user.id)
+        .eq("first_name", ch.fn)
+        .eq("last_name", ch.ln)
+        .single();
+
+      const payload = {
         parent_id: session.user.id,
         first_name: ch.fn, last_name: ch.ln,
         dob: ch.dob, allergies: ch.allergies,
         program_id: ch.prog,
         program_name: PROGRAMS.find(p=>p.id===ch.prog)?.name,
-      }, { onConflict: "parent_id,first_name,last_name" });
+      };
+
+      if (existing) {
+        await supabase.from("children").update(payload).eq("id", existing.id);
+      } else {
+        await supabase.from("children").insert(payload);
+      }
     }
   };
 
@@ -364,7 +380,8 @@ export default function WildChildRegistration() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK, WebkitTextSizeAdjust:"100%" }}>
       <style>{`
         * { box-sizing: border-box; }
-        input, button, textarea { font-family: Georgia, serif; -webkit-appearance: none; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="tel"], button, textarea { font-family: Georgia, serif; -webkit-appearance: none; }
+        input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; cursor: pointer; accent-color: ${OLIVE}; flex-shrink: 0; }
         @media (max-width: 480px) {
           .name-row { flex-direction: column !important; gap: 0 !important; }
           .step-label { font-size: 10px !important; min-width: 44px !important; padding: 8px 1px !important; }
