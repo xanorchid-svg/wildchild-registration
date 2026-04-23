@@ -110,10 +110,9 @@ export default function WildChildRegistration() {
 
   // Child 1
   const [child, setChild]   = useState({ fn:"", ln:"", dob:"", allergies:"" });
-  // Child 2 (sibling)
-  const [hasSibling, setHasSibling] = useState(false);
-  const [sibling, setSibling] = useState({ fn:"", ln:"", dob:"", allergies:"" });
-  const [sibProg, setSibProg] = useState(null);
+
+  // Siblings — array of up to 4, each: { fn, ln, dob, allergies, prog, days: Set, lunch }
+  const [siblings, setSiblings] = useState([]);
 
   // Parent
   const [parent, setParent] = useState({ name:"", email:"", phone:"" });
@@ -122,9 +121,7 @@ export default function WildChildRegistration() {
   // Schedule — child 1
   const [selectedDays, setSelectedDays] = useState(new Set());
   const [lunch, setLunch]   = useState(false);
-  // Schedule — child 2
-  const [sibDays, setSibDays] = useState(new Set());
-  const [sibLunch, setSibLunch] = useState(false);
+
   // Which child's schedule tab is active
   const [schedTab, setSchedTab] = useState(0);
 
@@ -142,17 +139,43 @@ export default function WildChildRegistration() {
       const { data: { session: s } } = await supabase.auth.getSession();
       if (s) {
         setSession(s);
-        setParent(prev => ({
-          ...prev,
-          email: s.user.email || prev.email,
-        }));
+        setParent(prev => ({ ...prev, email: s.user.email || prev.email }));
       }
     }
     loadSession();
   }, []);
 
+  // Sibling helpers
+  const addSibling = () => {
+    if (siblings.length >= 4) return;
+    setSiblings(prev => [...prev, { fn:"", ln:"", dob:"", allergies:"", prog:null, days:new Set(), lunch:false }]);
+  };
+  const removeSibling = (i) => {
+    setSiblings(prev => prev.filter((_,idx)=>idx!==i));
+    if (schedTab > i) setSchedTab(schedTab - 1);
+    else if (schedTab === i + 1) setSchedTab(0);
+  };
+  const updateSibling = (i, field, value) => {
+    setSiblings(prev => prev.map((s,idx) => idx===i ? {...s,[field]:value} : s));
+  };
+  const toggleSibDay = (sibIdx, date) => {
+    if (date < today) return;
+    const key = dayKey(date);
+    const wk = weekKey(getMonday(date));
+    setSiblings(prev => prev.map((s, idx) => {
+      if (idx !== sibIdx) return s;
+      const n = new Set(s.days);
+      if (n.has(key)) { n.delete(key); }
+      else {
+        const daysThisWeek = Array.from(n).filter(dk => weekKey(getMonday(new Date(dk))) === wk);
+        if (daysThisWeek.length >= 5) return s;
+        n.add(key);
+      }
+      return { ...s, days: n };
+    }));
+  };
+
   const sp = PROGRAMS.find(p=>p.id===prog);
-  const sibSp = PROGRAMS.find(p=>p.id===sibProg);
 
   // Group selected days by week — child 1
   const weekGroups = {};
@@ -165,17 +188,6 @@ export default function WildChildRegistration() {
   });
   const weekEntries = Object.values(weekGroups).sort((a,b)=>a.monday-b.monday);
 
-  // Group selected days by week — child 2
-  const sibWeekGroups = {};
-  Array.from(sibDays).forEach(dk => {
-    const d = new Date(dk);
-    const mon = getMonday(d);
-    const wk = weekKey(mon);
-    if (!sibWeekGroups[wk]) sibWeekGroups[wk] = { monday: mon, days: [] };
-    sibWeekGroups[wk].days.push(dk);
-  });
-  const sibWeekEntries = Object.values(sibWeekGroups).sort((a,b)=>a.monday-b.monday);
-
   function weekPrice(numDays) {
     if (numDays <= 0) return 0;
     if (numDays <= 3) return PRICE_3;
@@ -187,33 +199,28 @@ export default function WildChildRegistration() {
   const totalDaysWithLunch = lunch ? Array.from(selectedDays).length : 0;
   const subtotalLunch = totalDaysWithLunch * LUNCH_PER_DAY;
 
-  const sibSubtotalTuition = hasSibling ? sibWeekEntries.reduce((sum, wk) => sum + weekPrice(wk.days.length), 0) : 0;
-  const sibTotalDaysWithLunch = sibLunch ? Array.from(sibDays).length : 0;
-  const sibSubtotalLunch = sibTotalDaysWithLunch * LUNCH_PER_DAY;
+  // Sibling totals
+  const siblingsTotal = siblings.reduce((sum, sib) => {
+    const sibGroups = {};
+    Array.from(sib.days).forEach(dk => {
+      const mon = getMonday(new Date(dk));
+      const wk = weekKey(mon);
+      if (!sibGroups[wk]) sibGroups[wk] = { monday:mon, days:[] };
+      sibGroups[wk].days.push(dk);
+    });
+    const sibEntries = Object.values(sibGroups);
+    const tuit = sibEntries.reduce((s, wk) => s + weekPrice(wk.days.length), 0);
+    const lnch = sib.lunch ? Array.from(sib.days).length * LUNCH_PER_DAY : 0;
+    return sum + tuit + lnch;
+  }, 0);
 
-  const grandTotal = subtotalTuition + subtotalLunch + sibSubtotalTuition + sibSubtotalLunch;
+  const grandTotal = subtotalTuition + subtotalLunch + siblingsTotal;
 
   const toggleDay = (date) => {
     if (date < today) return;
     const key = dayKey(date);
     const wk = weekKey(getMonday(date));
     setSelectedDays(prev => {
-      const n = new Set(prev);
-      if (n.has(key)) { n.delete(key); }
-      else {
-        const daysThisWeek = Array.from(n).filter(dk => weekKey(getMonday(new Date(dk))) === wk);
-        if (daysThisWeek.length >= 5) return prev;
-        n.add(key);
-      }
-      return n;
-    });
-  };
-
-  const toggleSibDay = (date) => {
-    if (date < today) return;
-    const key = dayKey(date);
-    const wk = weekKey(getMonday(date));
-    setSibDays(prev => {
       const n = new Set(prev);
       if (n.has(key)) { n.delete(key); }
       else {
@@ -256,24 +263,35 @@ export default function WildChildRegistration() {
       const { error: e1 } = await supabase.from("registrations").insert(reg1);
       if (e1) { setBusy(false); alert("Error saving registration: " + e1.message); return; }
 
-      // Save child 2 if sibling added
-      if (hasSibling) {
-        const reg2 = {
-          program_id: sibProg, program_name: sibSp?.name,
-          child_first_name: sibling.fn, child_last_name: sibling.ln,
-          child_dob: sibling.dob, child_allergies: sibling.allergies,
+      // Save siblings
+      for (const sib of siblings) {
+        const sibGroups = {};
+        Array.from(sib.days).forEach(dk => {
+          const mon = getMonday(new Date(dk));
+          const wk = weekKey(mon);
+          if (!sibGroups[wk]) sibGroups[wk] = { monday:mon, days:[] };
+          sibGroups[wk].days.push(dk);
+        });
+        const sibEntries = Object.values(sibGroups);
+        const sibTuit = sibEntries.reduce((s,wk) => s + weekPrice(wk.days.length), 0);
+        const sibLnch = sib.lunch ? Array.from(sib.days).length * LUNCH_PER_DAY : 0;
+        const sibSp = PROGRAMS.find(p=>p.id===sib.prog);
+        const regSib = {
+          program_id: sib.prog, program_name: sibSp?.name,
+          child_first_name: sib.fn, child_last_name: sib.ln,
+          child_dob: sib.dob, child_allergies: sib.allergies,
           parent_name: parent.name, parent_email: parent.email, parent_phone: parent.phone,
-          selected_days: Array.from(sibDays), lunch: sibLunch,
-          subtotal_tuition: sibSubtotalTuition, subtotal_lunch: sibSubtotalLunch,
-          grand_total: sibSubtotalTuition + sibSubtotalLunch,
+          selected_days: Array.from(sib.days), lunch: sib.lunch,
+          subtotal_tuition: sibTuit, subtotal_lunch: sibLnch,
+          grand_total: sibTuit + sibLnch,
           waiver_liability: w.liab, waiver_medical: w.med,
           waiver_media: w.mediaY ? "yes" : w.mediaN ? "no" : null,
           waiver_excursion: w.excY ? "yes" : w.excN ? "no" : null,
           waiver_signature: sig, waiver_date: new Date().toISOString(),
           payment_status: "pending", parent_user_id: parentUserId,
         };
-        const { error: e2 } = await supabase.from("registrations").insert(reg2);
-        if (e2) { setBusy(false); alert("Error saving sibling registration: " + e2.message); return; }
+        const { error: eSib } = await supabase.from("registrations").insert(regSib);
+        if (eSib) { setBusy(false); alert("Error saving sibling: " + eSib.message); return; }
       }
 
       setBusy(false);
@@ -360,41 +378,39 @@ export default function WildChildRegistration() {
             <input style={inp} value={child.allergies} onChange={e=>setChild({...child,allergies:e.target.value})} placeholder="None, or describe..."/>
           </div>
 
-          {/* Sibling */}
-          {hasSibling && (
-            <div style={{ background:"#fff", border:`1.5px solid ${OLIVE}`, borderRadius:"10px", padding:"18px", marginBottom:"14px" }}>
+          {/* Siblings */}
+          {siblings.map((sib, i) => (
+            <div key={i} style={{ background:"#fff", border:`1.5px solid ${OLIVE}`, borderRadius:"10px", padding:"18px", marginBottom:"14px" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"14px" }}>
-                <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:OLIVE, margin:0 }}>Child 2 — Sibling</p>
-                <button onClick={()=>{setHasSibling(false);setSibling({fn:"",ln:"",dob:"",allergies:""});setSibProg(null);setSibDays(new Set());}}
+                <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:OLIVE, margin:0 }}>Child {i+2}</p>
+                <button onClick={()=>removeSibling(i)}
                   style={{ background:"none", border:"none", color:TEXT_LIGHT, cursor:"pointer", fontSize:"13px", fontFamily:"Georgia,serif" }}>Remove</button>
               </div>
               <div style={{ display:"flex", gap:"12px" }}>
-                <div style={{ flex:1 }}><span style={lbl}>First Name</span><input style={inp} value={sibling.fn} onChange={e=>setSibling({...sibling,fn:e.target.value})} placeholder="First name"/></div>
-                <div style={{ flex:1 }}><span style={lbl}>Last Name</span><input style={inp} value={sibling.ln} onChange={e=>setSibling({...sibling,ln:e.target.value})} placeholder="Last name"/></div>
+                <div style={{ flex:1 }}><span style={lbl}>First Name</span><input style={inp} value={sib.fn} onChange={e=>updateSibling(i,"fn",e.target.value)} placeholder="First name"/></div>
+                <div style={{ flex:1 }}><span style={lbl}>Last Name</span><input style={inp} value={sib.ln} onChange={e=>updateSibling(i,"ln",e.target.value)} placeholder="Last name"/></div>
               </div>
               <span style={lbl}>Date of Birth</span>
-              <input style={inp} type="date" value={sibling.dob} onChange={e=>setSibling({...sibling,dob:e.target.value})}/>
+              <input style={inp} type="date" value={sib.dob} onChange={e=>updateSibling(i,"dob",e.target.value)}/>
               <span style={lbl}>Allergies / Dietary Notes</span>
-              <input style={inp} value={sibling.allergies} onChange={e=>setSibling({...sibling,allergies:e.target.value})} placeholder="None, or describe..."/>
-
-              {/* Sibling program */}
+              <input style={inp} value={sib.allergies} onChange={e=>updateSibling(i,"allergies",e.target.value)} placeholder="None, or describe..."/>
               <span style={{ ...lbl, marginTop:"4px" }}>Program</span>
               <div style={{ display:"flex", gap:"10px" }}>
                 {PROGRAMS.map(p=>(
-                  <div key={p.id} onClick={()=>setSibProg(p.id)}
-                    style={{ flex:1, background:sibProg===p.id?p.color:"#fff", border:`1.5px solid ${sibProg===p.id?p.color:CREAM_DARK}`, borderRadius:"8px", padding:"12px", cursor:"pointer", textAlign:"center", transition:"all .2s" }}>
-                    <p style={{ fontSize:"12px", color:sibProg===p.id?"rgba(255,255,255,0.8)":TEXT_LIGHT, marginBottom:"3px" }}>{p.name}</p>
-                    <p style={{ fontSize:"14px", color:sibProg===p.id?"#fff":TEXT_DARK, margin:0 }}>{p.age}</p>
+                  <div key={p.id} onClick={()=>updateSibling(i,"prog",p.id)}
+                    style={{ flex:1, background:sib.prog===p.id?p.color:"#fff", border:`1.5px solid ${sib.prog===p.id?p.color:CREAM_DARK}`, borderRadius:"8px", padding:"12px", cursor:"pointer", textAlign:"center", transition:"all .2s" }}>
+                    <p style={{ fontSize:"12px", color:sib.prog===p.id?"rgba(255,255,255,0.8)":TEXT_LIGHT, marginBottom:"3px" }}>{p.name}</p>
+                    <p style={{ fontSize:"14px", color:sib.prog===p.id?"#fff":TEXT_DARK, margin:0 }}>{p.age}</p>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          ))}
 
-          {!hasSibling && (
-            <button onClick={()=>setHasSibling(true)}
+          {siblings.length < 4 && (
+            <button onClick={addSibling}
               style={{ width:"100%", background:"transparent", border:`1.5px dashed ${CREAM_DARK}`, borderRadius:"10px", padding:"14px", color:TEXT_LIGHT, fontSize:"13px", fontFamily:"Georgia,serif", cursor:"pointer", marginBottom:"14px", letterSpacing:"0.5px" }}>
-              + Add a Sibling
+              + Add a Child {siblings.length > 0 ? `(${siblings.length + 1} of 5)` : ""}
             </button>
           )}
 
@@ -412,14 +428,14 @@ export default function WildChildRegistration() {
             We offer flexibility for families and children — weekly enrollment of either 3 or 5 days, with the option to add a 4th day (+$85). Tap any individual days on the calendar below to build your schedule. Our organic snack & lunch is an additional $10/day — locally sourced and made with love.
           </p>
 
-          {/* Child tabs — only show if sibling added */}
-          {hasSibling && (
-            <div style={{ display:"flex", gap:"8px", marginBottom:"20px" }}>
-              {[child.fn||"Child 1", sibling.fn||"Sibling"].map((name,i)=>(
+          {/* Child tabs — show if any siblings added */}
+          {siblings.length > 0 && (
+            <div style={{ display:"flex", gap:"8px", marginBottom:"20px", overflowX:"auto" }}>
+              {[child.fn||"Child 1", ...siblings.map((s,i)=>s.fn||`Child ${i+2}`)].map((name,i)=>(
                 <button key={i} onClick={()=>setSchedTab(i)}
-                  style={{ flex:1, background:schedTab===i?OLIVE:"#fff", color:schedTab===i?"#fff":TEXT_MID,
+                  style={{ flex:"0 0 auto", background:schedTab===i?OLIVE:"#fff", color:schedTab===i?"#fff":TEXT_MID,
                     border:`1.5px solid ${schedTab===i?OLIVE:CREAM_DARK}`, borderRadius:"8px",
-                    padding:"10px", fontSize:"13px", fontFamily:"Georgia,serif", cursor:"pointer" }}>
+                    padding:"10px 16px", fontSize:"13px", fontFamily:"Georgia,serif", cursor:"pointer" }}>
                   {name}
                 </button>
               ))}
@@ -443,9 +459,11 @@ export default function WildChildRegistration() {
 
           {/* Lunch toggle */}
           {(() => {
-            const isTab1 = hasSibling && schedTab === 1;
-            const lunchActive = isTab1 ? sibLunch : lunch;
-            const setLunchActive = isTab1 ? setSibLunch : setLunch;
+            const isChild1 = schedTab === 0;
+            const lunchActive = isChild1 ? lunch : siblings[schedTab-1]?.lunch;
+            const setLunchActive = isChild1
+              ? setLunch
+              : (val) => updateSibling(schedTab-1, "lunch", val);
             return (
               <div onClick={()=>setLunchActive(!lunchActive)}
                 style={{ background:lunchActive?GREEN:"#fff", border:`1.5px solid ${lunchActive?GREEN:CREAM_DARK}`, borderRadius:"10px", padding:"14px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"14px", marginBottom:"28px", transition:"all .2s" }}>
@@ -462,9 +480,9 @@ export default function WildChildRegistration() {
 
           {/* Calendar — tap individual days */}
           {(() => {
-            const isTab1 = hasSibling && schedTab === 1;
-            const activeDays = isTab1 ? sibDays : selectedDays;
-            const activeToggle = isTab1 ? toggleSibDay : toggleDay;
+            const isChild1 = schedTab === 0;
+            const activeDays = isChild1 ? selectedDays : (siblings[schedTab-1]?.days || new Set());
+            const activeToggle = isChild1 ? toggleDay : (d) => toggleSibDay(schedTab-1, d);
             return (
               <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginBottom:"4px" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"16px" }}>
@@ -548,26 +566,37 @@ export default function WildChildRegistration() {
                   </div>
                 );
               })}
-              {hasSibling && sibWeekEntries.length > 0 && (
-                <>
-                  <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:OLIVE, margin:"10px 0 8px" }}>{sibling.fn||"Sibling"}</p>
-                  {sibWeekEntries.map(wk => {
-                    const n = wk.days.length; const p = weekPrice(n); const lc = sibLunch ? n * LUNCH_PER_DAY : 0;
-                    const dayNames = wk.days.map(dk => new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).join(", ");
-                    return (
-                      <div key={weekKey(wk.monday)} style={{ borderBottom:`1px solid ${CREAM_DARK}`, paddingBottom:"10px", marginBottom:"10px" }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT_DARK, marginBottom:"3px" }}>
-                          <span>Week of {formatDate(wk.monday)}</span>
-                          <span style={{ color:OLIVE }}>${p+lc}</span>
+              {siblings.length > 0 && siblings.map((sib, i) => {
+                const sibGroups = {};
+                Array.from(sib.days).forEach(dk => {
+                  const mon = getMonday(new Date(dk));
+                  const wk = weekKey(mon);
+                  if (!sibGroups[wk]) sibGroups[wk] = { monday:mon, days:[] };
+                  sibGroups[wk].days.push(dk);
+                });
+                const sibEntries = Object.values(sibGroups).sort((a,b)=>a.monday-b.monday);
+                if (sibEntries.length === 0) return null;
+                return (
+                  <div key={i}>
+                    <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:OLIVE, margin:"10px 0 8px" }}>{sib.fn||`Child ${i+2}`}</p>
+                    {sibEntries.map(wk => {
+                      const n=wk.days.length; const p=weekPrice(n); const lc=sib.lunch?n*LUNCH_PER_DAY:0;
+                      const dayNames = wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).join(", ");
+                      return (
+                        <div key={weekKey(wk.monday)} style={{ borderBottom:`1px solid ${CREAM_DARK}`, paddingBottom:"10px", marginBottom:"10px" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT_DARK, marginBottom:"3px" }}>
+                            <span>Week of {formatDate(wk.monday)}</span>
+                            <span style={{ color:OLIVE }}>${p+lc}</span>
+                          </div>
+                          <div style={{ fontSize:"12px", color:TEXT_LIGHT }}>{n} day{n>1?"s":""} ({dayNames}){sib.lunch?` + lunch`:""}</div>
                         </div>
-                        <div style={{ fontSize:"12px", color:TEXT_LIGHT }}>{n} day{n>1?"s":""} ({dayNames}){sibLunch?` + lunch`:""}</div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })}
               <div style={{ display:"flex", justifyContent:"space-between", fontSize:"16px", paddingTop:"10px", color:TEXT_DARK }}>
-                <span>{weekEntries.length + (hasSibling ? sibWeekEntries.length : 0)} week{weekEntries.length + (hasSibling ? sibWeekEntries.length : 0) !== 1 ? "s" : ""} total</span>
+                <span>Family total</span>
                 <span style={{ color:OLIVE }}>${grandTotal}</span>
               </div>
             </div>
@@ -580,7 +609,7 @@ export default function WildChildRegistration() {
           <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"20px" }}>Full amount due today for all selected weeks.</p>
           <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"22px" }}>
             <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"10px" }}>Order Summary</p>
-            {hasSibling && <p style={{ fontSize:"11px", color:OLIVE, marginBottom:"6px" }}>{child.fn||"Child 1"}</p>}
+            {siblings.length > 0 && <p style={{ fontSize:"11px", color:OLIVE, marginBottom:"6px" }}>{child.fn||"Child 1"}</p>}
             {weekEntries.map(wk=>{
               const n=wk.days.length; const p=weekPrice(n); const lc=lunch?n*LUNCH_PER_DAY:0;
               return (
@@ -590,18 +619,30 @@ export default function WildChildRegistration() {
                 </div>
               );
             })}
-            {hasSibling && sibWeekEntries.length > 0 && <>
-              <p style={{ fontSize:"11px", color:OLIVE, margin:"12px 0 6px" }}>{sibling.fn||"Sibling"}</p>
-              {sibWeekEntries.map(wk=>{
-                const n=wk.days.length; const p=weekPrice(n); const lc=sibLunch?n*LUNCH_PER_DAY:0;
-                return (
-                  <div key={weekKey(wk.monday)} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}`, color:TEXT_MID }}>
-                    <span>Week of {formatDate(wk.monday)} · {n} day{n>1?"s":""}</span>
-                    <span style={{ color:TEXT_DARK }}>${p+lc}</span>
-                  </div>
-                );
-              })}
-            </>}
+            {siblings.map((sib, i) => {
+              const sibGroups = {};
+              Array.from(sib.days).forEach(dk => {
+                const mon = getMonday(new Date(dk)); const wk = weekKey(mon);
+                if (!sibGroups[wk]) sibGroups[wk] = { monday:mon, days:[] };
+                sibGroups[wk].days.push(dk);
+              });
+              const sibEntries = Object.values(sibGroups).sort((a,b)=>a.monday-b.monday);
+              if (sibEntries.length === 0) return null;
+              return (
+                <div key={i}>
+                  <p style={{ fontSize:"11px", color:OLIVE, margin:"10px 0 6px" }}>{sib.fn||`Child ${i+2}`}</p>
+                  {sibEntries.map(wk=>{
+                    const n=wk.days.length; const p=weekPrice(n); const lc=sib.lunch?n*LUNCH_PER_DAY:0;
+                    return (
+                      <div key={weekKey(wk.monday)} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}`, color:TEXT_MID }}>
+                        <span>Week of {formatDate(wk.monday)} · {n} day{n>1?"s":""}</span>
+                        <span style={{ color:TEXT_DARK }}>${p+lc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
             <div style={{ display:"flex", justifyContent:"space-between", fontSize:"17px", paddingTop:"10px", color:TEXT_DARK }}>
               <span>Total Due</span><span style={{ color:OLIVE }}>${grandTotal}</span>
             </div>
@@ -677,15 +718,14 @@ export default function WildChildRegistration() {
             <div style={{ width:"68px", height:"68px", borderRadius:"50%", background:OLIVE, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 20px", fontSize:"30px" }}>🌿</div>
             <h2 style={{ fontSize:"26px", fontWeight:400, marginBottom:"8px" }}>Welcome to the Wild!</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, maxWidth:"420px", margin:"0 auto 24px", lineHeight:1.6 }}>
-              {child.fn}{hasSibling && sibling.fn ? ` and ${sibling.fn}` : ""} {hasSibling && sibling.fn ? "are" : "is"} enrolled at Wild Child Nosara. We're so excited to welcome your family!
+              {child.fn}{siblings.length > 0 ? ` and ${siblings.map((s,i)=>s.fn||`Child ${i+2}`).join(", ")}` : ""} {siblings.length > 0 ? "are" : "is"} enrolled at Wild Child Nosara. We're so excited to welcome your family!
             </p>
             <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"400px", margin:"0 auto 22px", textAlign:"left" }}>
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Enrollment Summary</p>
               {[
                 ["Child 1", `${child.fn} ${child.ln}`.trim()||"—"],
                 ["Program", sp?.name||"—"],
-                hasSibling ? ["Child 2", `${sibling.fn} ${sibling.ln}`.trim()||"—"] : null,
-                hasSibling ? ["Program", sibSp?.name||"—"] : null,
+                ...siblings.map((s,i) => [`Child ${i+2}`, `${s.fn} ${s.ln}`.trim()||"—"]),
                 ["Total Paid", `$${grandTotal}`],
                 ["Confirmation sent to", parent.email||"your email"],
               ].filter(Boolean).map(([k,v],i,arr)=>(
