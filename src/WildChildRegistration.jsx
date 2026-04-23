@@ -257,7 +257,13 @@ export default function WildChildRegistration() {
     setChildren(prev => prev.filter((_,idx)=>idx!==i));
     if (activeChild >= i && activeChild > 0) setActiveChild(activeChild-1);
   };
-  const setChildDays = (i, days) => updateChild(i, "days", days);
+  const setChildDays = (i, updater) => {
+    setChildren(prev => prev.map((c, idx) => {
+      if (idx !== i) return c;
+      const newDays = typeof updater === "function" ? updater(c.days) : updater;
+      return { ...c, days: newDays };
+    }));
+  };
   const setChildLunch = (i, lunch) => updateChild(i, "lunch", lunch);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -547,8 +553,8 @@ export default function WildChildRegistration() {
             <ChildCalendar
               key={activeChild}
               childName={children[activeChild]?.fn||`Child ${activeChild+1}`}
-              days={children[activeChild]?.days||new Set()}
-              setDays={(d)=>setChildDays(activeChild,d)}
+              days={children[activeChild]?.days instanceof Set ? children[activeChild].days : new Set()}
+              setDays={(updater)=>setChildDays(activeChild, updater)}
               lunch={children[activeChild]?.lunch||false}
               setLunch={(l)=>setChildLunch(activeChild,l)}
               today={today}

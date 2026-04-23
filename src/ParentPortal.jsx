@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
-const OLIVE_DARK  = "#4d5a2c";
 const OLIVE       = "#6b7a3f";
+const OLIVE_DARK  = "#4d5a2c";
 const OLIVE_LIGHT = "#eef1e6";
 const NAVY        = "#0f1f5c";
 const ORANGE      = "#c4682a";
-const PINK        = "#d4867a";
+const SAGE        = "#8fa88a";
 const CREAM       = "#f5f0e8";
 const CREAM_DARK  = "#e0d8c8";
 const TEXT_DARK   = "#1a1a2e";
@@ -17,262 +17,400 @@ const GREEN       = "#5a7a3a";
 
 function formatDate(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
+  return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
 }
-
 function getMonday(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
-  d.setHours(0,0,0,0);
-  return d;
+  const d = new Date(date); const day = d.getDay();
+  d.setDate(d.getDate()-day+(day===0?-6:1)); d.setHours(0,0,0,0); return d;
 }
-
 function weekLabel(days) {
-  if (!days || days.length === 0) return "—";
-  const sorted = [...days].sort();
-  const first = new Date(sorted[0]);
-  const mon = getMonday(first);
-  const fri = new Date(mon); fri.setDate(fri.getDate() + 4);
+  if (!days||days.length===0) return "—";
+  const sorted=[...days].sort();
+  const mon=getMonday(new Date(sorted[0]));
+  const fri=new Date(mon); fri.setDate(fri.getDate()+4);
   return `${mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
 }
 
+const inp = { width:"100%", padding:"11px 13px", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", fontSize:"15px", fontFamily:"Georgia,serif", background:"#fff", color:TEXT_DARK, marginBottom:"14px", outline:"none", boxSizing:"border-box" };
+const lbl = { display:"block", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"6px", fontFamily:"Georgia,serif" };
+
 function StatusBadge({ status }) {
-  const isPaid = status === "paid";
+  const paid = status==="paid";
+  return <span style={{ fontSize:"11px", padding:"3px 10px", borderRadius:"20px", color:"#fff", background:paid?GREEN:ORANGE }}>{paid?"Paid":"Pending"}</span>;
+}
+
+function SectionCard({ title, children }) {
   return (
-    <span style={{ fontSize:"11px", padding:"3px 10px", borderRadius:"20px", color:"#fff",
-      background: isPaid ? GREEN : ORANGE, fontFamily:"Georgia,serif" }}>
-      {isPaid ? "Paid" : "Pending"}
-    </span>
+    <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginBottom:"16px" }}>
+      <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 16px" }}>{title}</p>
+      {children}
+    </div>
   );
 }
 
-function EnrollmentCard({ reg, onEnrollMore }) {
-  const [expanded, setExpanded] = useState(false);
-  const days = reg.selected_days || [];
-  const dayNames = days.map(dk =>
-    new Date(dk).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})
-  ).sort();
-
-  // Group days by week
-  const weekGroups = {};
-  days.forEach(dk => {
-    const mon = getMonday(new Date(dk));
-    const wk = mon.toISOString().split("T")[0];
-    if (!weekGroups[wk]) weekGroups[wk] = { monday:mon, days:[] };
-    weekGroups[wk].days.push(dk);
-  });
-  const weeks = Object.values(weekGroups).sort((a,b)=>a.monday-b.monday);
-
+function InfoRow({ label, value }) {
   return (
-    <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", marginBottom:"16px", overflow:"hidden" }}>
-      {/* Card header */}
-      <div style={{ padding:"18px 20px", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-        <div>
-          <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"4px" }}>{reg.program_name}</p>
-          <h3 style={{ fontSize:"18px", fontWeight:400, color:TEXT_DARK, margin:"0 0 4px" }}>
-            {reg.child_first_name} {reg.child_last_name}
-          </h3>
-          <p style={{ fontSize:"13px", color:TEXT_LIGHT, margin:0 }}>
-            {weeks.length} week{weeks.length!==1?"s":""} · {days.length} day{days.length!==1?"s":""}
-            {reg.lunch ? " · Lunch included" : ""}
-          </p>
-        </div>
-        <div style={{ textAlign:"right" }}>
-          <p style={{ fontSize:"18px", color:OLIVE, margin:"0 0 6px" }}>${reg.grand_total ?? "—"}</p>
-          <StatusBadge status={reg.payment_status} />
-        </div>
-      </div>
-
-      {/* Weeks at a glance */}
-      <div style={{ padding:"0 20px 14px" }}>
-        {weeks.map(wk => (
-          <div key={wk.monday.toISOString()} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"5px 0", borderTop:`1px solid ${CREAM_DARK}`, color:TEXT_MID }}>
-            <span>Week of {wk.monday.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
-            <span style={{ color:TEXT_LIGHT }}>{wk.days.length} day{wk.days.length!==1?"s":""}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Expand for details */}
-      <div onClick={()=>setExpanded(!expanded)}
-        style={{ padding:"12px 20px", borderTop:`1px solid ${CREAM_DARK}`, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", background:CREAM }}>
-        <span style={{ fontSize:"12px", color:TEXT_LIGHT, letterSpacing:"0.5px" }}>
-          {expanded ? "Hide details" : "View details"}
-        </span>
-        <span style={{ color:TEXT_LIGHT, fontSize:"14px" }}>{expanded ? "▲" : "▼"}</span>
-      </div>
-
-      {expanded && (
-        <div style={{ padding:"16px 20px", borderTop:`1px solid ${CREAM_DARK}` }}>
-          <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"10px" }}>All Selected Days</p>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"14px" }}>
-            {dayNames.map(d=>(
-              <span key={d} style={{ background:OLIVE_LIGHT, color:OLIVE_DARK, fontSize:"12px", padding:"3px 10px", borderRadius:"20px" }}>{d}</span>
-            ))}
-          </div>
-          <div style={{ fontSize:"13px", color:TEXT_MID }}>
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
-              <span>Registered</span><span>{formatDate(reg.created_at)}</span>
-            </div>
-            {reg.lunch && (
-              <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
-                <span>Lunch</span><span style={{ color:OLIVE }}>Organic Snack & Lunch included</span>
-              </div>
-            )}
-            <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}>
-              <span>Payment status</span><StatusBadge status={reg.payment_status} />
-            </div>
-          </div>
-        </div>
-      )}
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${CREAM_DARK}`, fontSize:"14px" }}>
+      <span style={{ color:TEXT_LIGHT }}>{label}</span>
+      <span style={{ color:TEXT_DARK }}>{value||"—"}</span>
     </div>
   );
 }
 
 export default function ParentPortal() {
   const [user, setUser]               = useState(null);
+  const [profile, setProfile]         = useState({ full_name:"", phone:"", email:"" });
+  const [children, setChildren]       = useState([]);
   const [registrations, setRegs]      = useState([]);
   const [loading, setLoading]         = useState(true);
-  const [activeChild, setActiveChild] = useState(null);
+  const [activeSection, setActiveSection] = useState("children"); // children | general | payments
+  const [activeChild, setActiveChildIdx] = useState(0);
+  const [childView, setChildView]     = useState("info"); // info | enrollments
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editProfile, setEditProfile] = useState({});
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { window.location.href = "/login"; return; }
+      if (!session) { window.location.href="/login"; return; }
       setUser(session.user);
 
-      const { data } = await supabase
-        .from("registrations")
-        .select("*")
-        .eq("parent_email", session.user.email)
-        .order("created_at", { ascending:false });
+      // Load profile
+      const { data: p } = await supabase.from("parent_profiles").select("*").eq("id",session.user.id).single();
+      if (p) { setProfile({ ...p, email: session.user.email }); setEditProfile({ ...p, email: session.user.email }); }
+      else { setProfile(prev=>({...prev,email:session.user.email})); setEditProfile({full_name:"",phone:"",email:session.user.email}); }
 
-      setRegs(data || []);
+      // Load children
+      const { data: ch } = await supabase.from("children").select("*").eq("parent_id",session.user.id).order("created_at");
+      setChildren(ch||[]);
 
-      // Set first child as active
-      if (data && data.length > 0) {
-        const firstChild = `${data[0].child_first_name} ${data[0].child_last_name}`;
-        setActiveChild(firstChild);
-      }
+      // Load registrations
+      const { data: regs } = await supabase.from("registrations").select("*").eq("parent_email",session.user.email).order("created_at",{ascending:false});
+      setRegs(regs||[]);
+
       setLoading(false);
     }
     load();
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+  const signOut = async () => { await supabase.auth.signOut(); window.location.href="/login"; };
+
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    await supabase.from("parent_profiles").upsert({ id:user.id, full_name:editProfile.full_name, phone:editProfile.phone, email:editProfile.email, updated_at:new Date().toISOString() });
+    setProfile(editProfile);
+    setEditingProfile(false);
+    setSavingProfile(false);
   };
 
-  // Get unique children
-  const children = [...new Set(registrations.map(r => `${r.child_first_name} ${r.child_last_name}`))];
-
-  // Filter registrations by active child
-  const childRegs = registrations.filter(r =>
-    `${r.child_first_name} ${r.child_last_name}` === activeChild
+  // Get registrations for a child by name
+  const childRegs = (ch) => registrations.filter(r =>
+    r.child_first_name?.toLowerCase()===ch.first_name?.toLowerCase() &&
+    r.child_last_name?.toLowerCase()===ch.last_name?.toLowerCase()
   );
 
-  // Upcoming vs past
   const today = new Date(); today.setHours(0,0,0,0);
-  const upcoming = childRegs.filter(r => {
-    const days = r.selected_days || [];
-    return days.some(dk => new Date(dk) >= today);
-  });
-  const past = childRegs.filter(r => {
-    const days = r.selected_days || [];
-    return days.length > 0 && days.every(dk => new Date(dk) < today);
-  });
+  const upcoming = (regs) => regs.filter(r=>(r.selected_days||[]).some(dk=>new Date(dk)>=today));
+  const past = (regs) => regs.filter(r=>(r.selected_days||[]).length>0&&(r.selected_days||[]).every(dk=>new Date(dk)<today));
 
-  if (loading) {
-    return (
-      <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <p style={{ color:OLIVE, fontSize:"14px" }}>Loading your portal...</p>
-      </div>
-    );
-  }
+  const navItems = [
+    { id:"children", label:"My Children", icon:"👧" },
+    { id:"general",  label:"My Information", icon:"👤" },
+    { id:"payments", label:"Payments", icon:"💳" },
+  ];
+
+  if (loading) return (
+    <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <p style={{ color:OLIVE }}>Loading your portal...</p>
+    </div>
+  );
 
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
-      <style>{`* { box-sizing: border-box; } button, a { -webkit-tap-highlight-color: transparent; } @media (max-width: 480px) { .portal-welcome { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; } }`}</style>
+      <style>{`
+        * { box-sizing: border-box; }
+        @media (max-width: 700px) {
+          .portal-layout { flex-direction: column !important; }
+          .portal-sidebar { width: 100% !important; position: relative !important; height: auto !important; border-right: none !important; border-bottom: 1px solid ${CREAM_DARK} !important; }
+          .portal-main { padding: 20px 14px !important; }
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%, -40%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }} />
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
-        <div style={{ width:"80px" }}/>
-        <button onClick={signOut}
-          style={{ position:"relative", zIndex:1, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"rgba(255,255,255,0.9)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>
-          Sign Out
-        </button>
+        <div style={{ width:"60px" }}/>
+        <div style={{ position:"relative", zIndex:1, display:"flex", gap:"10px", alignItems:"center" }}>
+          <a href="/" style={{ fontSize:"11px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px" }}>← Enroll</a>
+          <button onClick={signOut} style={{ background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"7px 12px", color:"rgba(255,255,255,0.9)", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>Sign Out</button>
+        </div>
       </div>
 
       {/* Welcome bar */}
-      <div className="portal-welcome" style={{ background:NAVY, padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px" }}>
+      <div style={{ background:NAVY, padding:"12px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"10px" }}>
         <p style={{ color:"rgba(255,255,255,0.85)", fontSize:"13px", margin:0 }}>
-          Welcome back, <strong style={{ color:"#fff" }}>{user?.email}</strong>
+          Welcome, <strong style={{ color:"#fff" }}>{profile.full_name||user?.email}</strong>
         </p>
         <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>
           + Enroll More Weeks
         </a>
       </div>
 
-      <div style={{ maxWidth:"640px", margin:"0 auto", padding:"24px 14px 80px", width:"100%" }}>
+      {/* Layout */}
+      <div className="portal-layout" style={{ display:"flex", maxWidth:"900px", margin:"0 auto", minHeight:"calc(100vh - 130px)" }}>
 
-        {registrations.length === 0 ? (
-          <div style={{ textAlign:"center", padding:"60px 20px" }}>
-            <p style={{ fontSize:"18px", color:TEXT_MID, marginBottom:"8px" }}>No enrollments yet</p>
-            <p style={{ fontSize:"14px", color:TEXT_LIGHT, marginBottom:"24px" }}>Ready to get started?</p>
-            <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"12px 28px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif" }}>
-              Enroll Now
+        {/* Sidebar */}
+        <div className="portal-sidebar" style={{ width:"220px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, padding:"24px 0", background:"#fff" }}>
+
+          {/* Children sub-nav */}
+          <div style={{ marginBottom:"8px" }}>
+            <p style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:TEXT_LIGHT, padding:"0 20px", margin:"0 0 8px" }}>Children</p>
+            {children.length === 0 ? (
+              <p style={{ fontSize:"13px", color:TEXT_LIGHT, padding:"0 20px" }}>No children saved yet.</p>
+            ) : children.map((ch,i)=>(
+              <div key={ch.id}>
+                <button onClick={()=>{setActiveSection("children");setActiveChildIdx(i);setChildView("info");}}
+                  style={{ width:"100%", textAlign:"left", background:activeSection==="children"&&activeChild===i?"rgba(107,122,63,0.1)":"transparent",
+                    border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px",
+                    color:activeSection==="children"&&activeChild===i?OLIVE:TEXT_DARK,
+                    borderLeft:activeSection==="children"&&activeChild===i?`3px solid ${OLIVE}`:"3px solid transparent",
+                    fontFamily:"Georgia,serif" }}>
+                  {ch.first_name} {ch.last_name}
+                </button>
+              </div>
+            ))}
+            <a href="/" style={{ display:"block", padding:"8px 20px", fontSize:"12px", color:ORANGE, textDecoration:"none", letterSpacing:"0.5px" }}>
+              + Enroll a child
             </a>
           </div>
-        ) : (
-          <>
-            {/* Child tabs — show if multiple children */}
-            {children.length > 1 && (
-              <div style={{ display:"flex", gap:"8px", marginBottom:"24px", overflowX:"auto" }}>
-                {children.map(name => (
-                  <button key={name} onClick={()=>setActiveChild(name)}
-                    style={{ background:activeChild===name?OLIVE:"#fff", color:activeChild===name?"#fff":TEXT_MID,
-                      border:`1.5px solid ${activeChild===name?OLIVE:CREAM_DARK}`, borderRadius:"20px",
-                      padding:"8px 18px", fontSize:"13px", fontFamily:"Georgia,serif", cursor:"pointer", whiteSpace:"nowrap" }}>
-                    {name}
-                  </button>
-                ))}
-              </div>
-            )}
 
-            {/* Upcoming enrollments */}
-            {upcoming.length > 0 && (
-              <>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"14px" }}>
-                  <h2 style={{ fontSize:"16px", fontWeight:400, color:TEXT_DARK, margin:0 }}>Upcoming</h2>
-                  <a href="/" style={{ fontSize:"12px", color:ORANGE, textDecoration:"none", letterSpacing:"0.5px" }}>+ Add weeks</a>
+          <div style={{ height:"1px", background:CREAM_DARK, margin:"12px 0" }}/>
+
+          {/* General + Payments */}
+          {[
+            { id:"general",  label:"My Information" },
+            { id:"payments", label:"Payments" },
+          ].map(item=>(
+            <button key={item.id} onClick={()=>setActiveSection(item.id)}
+              style={{ width:"100%", textAlign:"left", background:activeSection===item.id?"rgba(107,122,63,0.1)":"transparent",
+                border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px",
+                color:activeSection===item.id?OLIVE:TEXT_DARK,
+                borderLeft:activeSection===item.id?`3px solid ${OLIVE}`:"3px solid transparent",
+                fontFamily:"Georgia,serif", display:"block" }}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main content */}
+        <div className="portal-main" style={{ flex:1, padding:"28px 24px", minWidth:0 }}>
+
+          {/* ── Children section ── */}
+          {activeSection==="children" && children.length>0 && (() => {
+            const ch = children[activeChild];
+            const regs = childRegs(ch);
+            const upcomingRegs = upcoming(regs);
+            const pastRegs = past(regs);
+            const prog = ch.program_name||ch.program_id||"—";
+            const dob = ch.dob ? new Date(ch.dob).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : "—";
+
+            return (
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"20px", flexWrap:"wrap", gap:"10px" }}>
+                  <div>
+                    <h2 style={{ fontSize:"22px", fontWeight:400, color:TEXT_DARK, margin:"0 0 4px" }}>{ch.first_name} {ch.last_name}</h2>
+                    <p style={{ fontSize:"13px", color:TEXT_LIGHT, margin:0 }}>{prog}</p>
+                  </div>
+                  <a href="/" style={{ background:OLIVE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>
+                    Enroll in More Weeks
+                  </a>
                 </div>
-                {upcoming.map(r => <EnrollmentCard key={r.id} reg={r} />)}
-              </>
-            )}
 
-            {/* Past enrollments */}
-            {past.length > 0 && (
-              <>
-                <h2 style={{ fontSize:"16px", fontWeight:400, color:TEXT_LIGHT, margin:"28px 0 14px" }}>Past Enrollments</h2>
-                {past.map(r => <EnrollmentCard key={r.id} reg={r} />)}
-              </>
-            )}
+                {/* Sub tabs */}
+                <div style={{ display:"flex", gap:"8px", marginBottom:"24px", borderBottom:`1px solid ${CREAM_DARK}`, paddingBottom:"0" }}>
+                  {["info","enrollments"].map(v=>(
+                    <button key={v} onClick={()=>setChildView(v)}
+                      style={{ background:"none", border:"none", borderBottom:childView===v?`2px solid ${OLIVE}`:"2px solid transparent",
+                        padding:"8px 16px", fontSize:"13px", cursor:"pointer", color:childView===v?OLIVE:TEXT_LIGHT,
+                        fontFamily:"Georgia,serif", textTransform:"capitalize", marginBottom:"-1px" }}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Quick enroll CTA */}
-            <div style={{ background:NAVY, borderRadius:"12px", padding:"24px", textAlign:"center", marginTop:"32px" }}>
-              <p style={{ color:"rgba(255,255,255,0.75)", fontSize:"13px", marginBottom:"4px" }}>Want to enroll in more weeks?</p>
-              <p style={{ color:"#fff", fontSize:"15px", marginBottom:"18px", lineHeight:1.5 }}>Keep the rhythm going — pick your next weeks now.</p>
-              <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"12px 28px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif" }}>
-                Enroll More Weeks
-              </a>
+                {/* Info tab */}
+                {childView==="info" && (
+                  <SectionCard title="Child Information">
+                    <InfoRow label="Full Name" value={`${ch.first_name} ${ch.last_name}`}/>
+                    <InfoRow label="Date of Birth" value={dob}/>
+                    <InfoRow label="Program" value={prog}/>
+                    <InfoRow label="Allergies / Notes" value={ch.allergies||"None"}/>
+                  </SectionCard>
+                )}
+
+                {/* Enrollments tab */}
+                {childView==="enrollments" && (
+                  <div>
+                    {upcomingRegs.length===0&&pastRegs.length===0&&(
+                      <div style={{ textAlign:"center", padding:"40px 20px", color:TEXT_LIGHT }}>
+                        <p style={{ fontSize:"15px", marginBottom:"16px" }}>No enrollments yet for {ch.first_name}.</p>
+                        <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase" }}>Enroll Now</a>
+                      </div>
+                    )}
+                    {upcomingRegs.length>0&&(
+                      <>
+                        <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Upcoming</p>
+                        {upcomingRegs.map(reg=>(
+                          <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"12px" }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"8px" }}>
+                              <div>
+                                <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 4px" }}>{weekLabel(reg.selected_days)}</p>
+                                <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
+                                  {(reg.selected_days||[]).length} days
+                                  {reg.lunch?" · Lunch included":""}
+                                </p>
+                              </div>
+                              <div style={{ textAlign:"right" }}>
+                                <p style={{ fontSize:"15px", color:OLIVE, margin:"0 0 4px" }}>${reg.grand_total}</p>
+                                <StatusBadge status={reg.payment_status}/>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {pastRegs.length>0&&(
+                      <>
+                        <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"20px 0 12px" }}>Past</p>
+                        {pastRegs.map(reg=>(
+                          <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"14px 16px", marginBottom:"10px", opacity:0.75 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"8px" }}>
+                              <div>
+                                <p style={{ fontSize:"13px", color:TEXT_DARK, margin:"0 0 2px" }}>{weekLabel(reg.selected_days)}</p>
+                                <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days</p>
+                              </div>
+                              <div style={{ textAlign:"right" }}>
+                                <p style={{ fontSize:"14px", color:TEXT_MID, margin:"0 0 4px" }}>${reg.grand_total}</p>
+                                <StatusBadge status={reg.payment_status}/>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {activeSection==="children" && children.length===0&&(
+            <div style={{ textAlign:"center", padding:"60px 20px", color:TEXT_LIGHT }}>
+              <p style={{ fontSize:"15px", marginBottom:"16px" }}>No children added yet.</p>
+              <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase" }}>Enroll Your First Child</a>
             </div>
-          </>
-        )}
+          )}
+
+          {/* ── General / My Information ── */}
+          {activeSection==="general" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px" }}>
+                <h2 style={{ fontSize:"22px", fontWeight:400, margin:0 }}>My Information</h2>
+                {!editingProfile&&(
+                  <button onClick={()=>setEditingProfile(true)}
+                    style={{ background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"8px 16px", fontSize:"12px", color:TEXT_MID, cursor:"pointer", letterSpacing:"0.5px", textTransform:"uppercase", fontFamily:"Georgia,serif" }}>
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              <SectionCard title="General">
+                {editingProfile ? (
+                  <>
+                    <span style={lbl}>Full Name</span>
+                    <input style={inp} value={editProfile.full_name||""} onChange={e=>setEditProfile({...editProfile,full_name:e.target.value})} placeholder="Your full name"/>
+                    <span style={lbl}>Email</span>
+                    <input style={{ ...inp, background:CREAM, color:TEXT_LIGHT }} value={editProfile.email||""} readOnly/>
+                    <span style={lbl}>Phone / WhatsApp</span>
+                    <input style={inp} value={editProfile.phone||""} onChange={e=>setEditProfile({...editProfile,phone:e.target.value})} placeholder="+1 555 000 0000"/>
+                    <div style={{ display:"flex", gap:"10px", marginTop:"4px" }}>
+                      <button onClick={saveProfile} disabled={savingProfile}
+                        style={{ background:savingProfile?"#aaa":OLIVE, color:"#fff", border:"none", borderRadius:"8px", padding:"11px 20px", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", letterSpacing:"0.5px", textTransform:"uppercase" }}>
+                        {savingProfile?"Saving...":"Save Changes"}
+                      </button>
+                      <button onClick={()=>{setEditingProfile(false);setEditProfile(profile);}}
+                        style={{ background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px 20px", fontSize:"13px", color:TEXT_MID, cursor:"pointer", fontFamily:"Georgia,serif" }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <InfoRow label="Full Name" value={profile.full_name}/>
+                    <InfoRow label="Email" value={profile.email}/>
+                    <InfoRow label="Phone / WhatsApp" value={profile.phone}/>
+                  </>
+                )}
+              </SectionCard>
+
+              <SectionCard title="Children on Account">
+                {children.length===0 ? (
+                  <p style={{ fontSize:"13px", color:TEXT_LIGHT }}>No children saved yet. <a href="/" style={{ color:ORANGE }}>Enroll your first child →</a></p>
+                ) : children.map((ch,i)=>(
+                  <div key={ch.id} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:i<children.length-1?`1px solid ${CREAM_DARK}`:"none", fontSize:"14px" }}>
+                    <span style={{ color:TEXT_DARK }}>{ch.first_name} {ch.last_name}</span>
+                    <span style={{ color:TEXT_LIGHT }}>{ch.program_name||"—"}</span>
+                  </div>
+                ))}
+              </SectionCard>
+            </div>
+          )}
+
+          {/* ── Payments ── */}
+          {activeSection==="payments" && (
+            <div>
+              <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"20px" }}>Payments</h2>
+
+              {/* Payment method placeholder */}
+              <SectionCard title="Payment Method">
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0" }}>
+                  <div>
+                    <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 3px" }}>Stripe integration coming soon</p>
+                    <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>You'll be able to save a card for faster enrollment</p>
+                  </div>
+                  <span style={{ fontSize:"20px" }}>💳</span>
+                </div>
+              </SectionCard>
+
+              {/* Payment history */}
+              <SectionCard title="Payment History">
+                {registrations.length===0 ? (
+                  <p style={{ fontSize:"13px", color:TEXT_LIGHT }}>No payment history yet.</p>
+                ) : registrations.map((reg,i)=>(
+                  <div key={reg.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:i<registrations.length-1?`1px solid ${CREAM_DARK}`:"none", flexWrap:"wrap", gap:"8px" }}>
+                    <div>
+                      <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 3px" }}>
+                        {reg.child_first_name} {reg.child_last_name}
+                      </p>
+                      <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
+                        {weekLabel(reg.selected_days)} · {formatDate(reg.created_at)}
+                      </p>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <p style={{ fontSize:"15px", color:OLIVE, margin:"0 0 4px" }}>${reg.grand_total}</p>
+                      <StatusBadge status={reg.payment_status}/>
+                    </div>
+                  </div>
+                ))}
+              </SectionCard>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
