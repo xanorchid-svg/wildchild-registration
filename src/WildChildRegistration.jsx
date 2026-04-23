@@ -219,14 +219,13 @@ export default function WildChildRegistration() {
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
 
       {/* Header */}
-      <div style={{ background:`linear-gradient(135deg, ${OLIVE_DARK} 0%, ${NAVY} 100%)`, overflow:"hidden", position:"relative", height:"80px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", height:"80px", display:"flex", alignItems:"center" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"60px", objectFit:"contain" }} />
+      <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"100px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px" }}>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", display:"flex", alignItems:"center" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"130px", objectFit:"contain" }} />
         </div>
         <div style={{ width:"80px" }}/>
-        <a href="/portal" style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"3px", textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"10px", padding:"6px 10px", backdropFilter:"blur(4px)" }}>
-          <span style={{ fontSize:"16px" }}>🌿</span>
-          <span style={{ fontSize:"9px", letterSpacing:"0.5px", color:"rgba(255,255,255,0.85)", textTransform:"uppercase", whiteSpace:"nowrap" }}>My Portal</span>
+        <a href="/login" style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", gap:"6px", textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"7px 12px" }}>
+          <span style={{ fontSize:"11px", letterSpacing:"1px", color:"rgba(255,255,255,0.9)", textTransform:"uppercase", whiteSpace:"nowrap", fontFamily:"Georgia,serif" }}>Sign In</span>
         </a>
       </div>
 
@@ -253,7 +252,6 @@ export default function WildChildRegistration() {
               style={{ background:prog===p.id?p.color:"#fff", border:`1.5px solid ${prog===p.id?p.color:CREAM_DARK}`, borderRadius:"12px", padding:"22px", marginBottom:"14px", cursor:"pointer", transition:"all .2s" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"3px" }}>
                 <span style={{ fontSize:"11px", letterSpacing:"1.5px", textTransform:"uppercase", color:prog===p.id?"rgba(255,255,255,0.75)":TEXT_LIGHT }}>{p.name}</span>
-                <span style={{ fontSize:"22px" }}>{p.emoji}</span>
               </div>
               <p style={{ fontSize:"26px", fontWeight:400, color:prog===p.id?"#fff":TEXT_DARK, marginBottom:"4px" }}>{p.age}</p>
               <p style={{ fontSize:"12px", color:prog===p.id?"rgba(255,255,255,0.7)":TEXT_LIGHT, marginBottom:"12px" }}>{p.schedule}</p>

@@ -6,6 +6,7 @@ import WildChildRegistration from './WildChildRegistration'
 import Admin from './Admin'
 import AdminLogin from './AdminLogin'
 import ProtectedRoute from './ProtectedRoute'
+import ParentPortal from './ParentPortal'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/" element={<WildChildRegistration />} />
         <Route path="/login" element={<AdminLogin />} />
+        <Route path="/portal" element={<ParentPortal />} />
         <Route path="/admin" element={
           <ProtectedRoute>
             <Admin />
