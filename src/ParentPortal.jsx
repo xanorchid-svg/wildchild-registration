@@ -194,6 +194,7 @@ export default function ParentPortal() {
 
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
+      <style>{`* { box-sizing: border-box; } button, a { -webkit-tap-highlight-color: transparent; } @media (max-width: 480px) { .portal-welcome { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; } }`}</style>
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
@@ -208,7 +209,7 @@ export default function ParentPortal() {
       </div>
 
       {/* Welcome bar */}
-      <div style={{ background:NAVY, padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+      <div className="portal-welcome" style={{ background:NAVY, padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px" }}>
         <p style={{ color:"rgba(255,255,255,0.85)", fontSize:"13px", margin:0 }}>
           Welcome back, <strong style={{ color:"#fff" }}>{user?.email}</strong>
         </p>
@@ -217,7 +218,7 @@ export default function ParentPortal() {
         </a>
       </div>
 
-      <div style={{ maxWidth:"640px", margin:"0 auto", padding:"28px 16px 80px" }}>
+      <div style={{ maxWidth:"640px", margin:"0 auto", padding:"24px 14px 80px", width:"100%" }}>
 
         {registrations.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>

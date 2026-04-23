@@ -310,7 +310,22 @@ export default function WildChildRegistration() {
   });
 
   return (
-    <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
+    <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK, WebkitTextSizeAdjust:"100%" }}>
+      <style>{`
+        * { box-sizing: border-box; }
+        input, button, textarea, select { font-family: Georgia, serif; -webkit-appearance: none; }
+        @media (max-width: 480px) {
+          .name-row { flex-direction: column !important; gap: 0 !important; }
+          .pricing-row { flex-direction: column !important; gap: 8px !important; }
+          .payment-row { flex-direction: column !important; gap: 0 !important; }
+          .program-age { font-size: 20px !important; }
+          .step-label { font-size: 10px !important; min-width: 50px !important; padding: 10px 2px !important; }
+          .content-pad { padding: 20px 14px 80px !important; }
+          .sched-tabs { flex-wrap: wrap !important; }
+          .sched-tab { flex: 0 0 calc(50% - 4px) !important; }
+          .confirm-card { max-width: 100% !important; }
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"90px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
@@ -329,13 +344,14 @@ export default function WildChildRegistration() {
           <div key={s} onClick={()=>i<step&&setStep(i)}
             style={{ flex:1, padding:"12px 3px", textAlign:"center", fontSize:"12px", whiteSpace:"nowrap", minWidth:"70px",
               color:i===step?"#fff":i<step?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.35)",
-              borderBottom:i===step?`2px solid ${ORANGE}`:"2px solid transparent", cursor:i<step?"pointer":"default" }}>
+              borderBottom:i===step?`2px solid ${ORANGE}`:"2px solid transparent", cursor:i<step?"pointer":"default" }}
+            className="step-label">
             {i<step?"✓ ":""}{s}
           </div>
         ))}
       </div>
 
-      <div style={{ maxWidth:"600px", margin:"0 auto", padding:"28px 16px 80px" }}>
+      <div className="content-pad" style={{ maxWidth:"600px", margin:"0 auto", padding:"28px 16px 80px" }}>
 
         {/* STEP 0 — Program */}
         {step===0 && <>
@@ -368,7 +384,7 @@ export default function WildChildRegistration() {
           {/* Child 1 */}
           <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", marginBottom:"14px" }}>
             <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"14px" }}>Child 1</p>
-            <div style={{ display:"flex", gap:"12px" }}>
+            <div className="name-row" style={{ display:"flex", gap:"12px" }}>
               <div style={{ flex:1 }}><span style={lbl}>First Name</span><input style={inp} value={child.fn} onChange={e=>setChild({...child,fn:e.target.value})} placeholder="First name"/></div>
               <div style={{ flex:1 }}><span style={lbl}>Last Name</span><input style={inp} value={child.ln} onChange={e=>setChild({...child,ln:e.target.value})} placeholder="Last name"/></div>
             </div>
@@ -386,7 +402,7 @@ export default function WildChildRegistration() {
                 <button onClick={()=>removeSibling(i)}
                   style={{ background:"none", border:"none", color:TEXT_LIGHT, cursor:"pointer", fontSize:"13px", fontFamily:"Georgia,serif" }}>Remove</button>
               </div>
-              <div style={{ display:"flex", gap:"12px" }}>
+              <div className="name-row" style={{ display:"flex", gap:"12px" }}>
                 <div style={{ flex:1 }}><span style={lbl}>First Name</span><input style={inp} value={sib.fn} onChange={e=>updateSibling(i,"fn",e.target.value)} placeholder="First name"/></div>
                 <div style={{ flex:1 }}><span style={lbl}>Last Name</span><input style={inp} value={sib.ln} onChange={e=>updateSibling(i,"ln",e.target.value)} placeholder="Last name"/></div>
               </div>
@@ -430,9 +446,9 @@ export default function WildChildRegistration() {
 
           {/* Child tabs — show if any siblings added */}
           {siblings.length > 0 && (
-            <div style={{ display:"flex", gap:"8px", marginBottom:"20px", overflowX:"auto" }}>
+            <div className="sched-tabs" style={{ display:"flex", gap:"8px", marginBottom:"20px", overflowX:"auto" }}>
               {[child.fn||"Child 1", ...siblings.map((s,i)=>s.fn||`Child ${i+2}`)].map((name,i)=>(
-                <button key={i} onClick={()=>setSchedTab(i)}
+                <button key={i} onClick={()=>setSchedTab(i)} className="sched-tab"
                   style={{ flex:"0 0 auto", background:schedTab===i?OLIVE:"#fff", color:schedTab===i?"#fff":TEXT_MID,
                     border:`1.5px solid ${schedTab===i?OLIVE:CREAM_DARK}`, borderRadius:"8px",
                     padding:"10px 16px", fontSize:"13px", fontFamily:"Georgia,serif", cursor:"pointer" }}>
@@ -443,7 +459,7 @@ export default function WildChildRegistration() {
           )}
 
           {/* Pricing reference */}
-          <div style={{ display:"flex", gap:"10px", marginBottom:"20px" }}>
+          <div className="pricing-row" style={{ display:"flex", gap:"10px", marginBottom:"20px" }}>
             {[
               { label:"3 Days / Week", detail:"Any 3 days", price:`$${PRICE_3}/wk` },
               { label:"4th Day",       detail:"Add to 3-day", price:`+$${PRICE_4TH}/wk` },
@@ -653,7 +669,7 @@ export default function WildChildRegistration() {
           </div>
           <span style={lbl}>Card Number</span>
           <input style={inp} value={card.num} onChange={e=>{const v=e.target.value.replace(/\D/g,"").slice(0,16);setCard({...card,num:v.replace(/(.{4})/g,"$1 ").trim()})}} placeholder="1234 5678 9012 3456" maxLength={19}/>
-          <div style={{ display:"flex", gap:"14px" }}>
+          <div className="payment-row" style={{ display:"flex", gap:"14px" }}>
             <div style={{ flex:1 }}>
               <span style={lbl}>Expiry</span>
               <input style={inp} value={card.exp} onChange={e=>{let v=e.target.value.replace(/\D/g,"").slice(0,4);if(v.length>2)v=v.slice(0,2)+"/"+v.slice(2);setCard({...card,exp:v})}} placeholder="MM/YY" maxLength={5}/>
@@ -720,7 +736,7 @@ export default function WildChildRegistration() {
             <p style={{ fontSize:"14px", color:TEXT_MID, maxWidth:"420px", margin:"0 auto 24px", lineHeight:1.6 }}>
               {child.fn}{siblings.length > 0 ? ` and ${siblings.map((s,i)=>s.fn||`Child ${i+2}`).join(", ")}` : ""} {siblings.length > 0 ? "are" : "is"} enrolled at Wild Child Nosara. We're so excited to welcome your family!
             </p>
-            <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"400px", margin:"0 auto 22px", textAlign:"left" }}>
+            <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"400px", margin:"0 auto 22px", width:"100%", textAlign:"left" }}>
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Enrollment Summary</p>
               {[
                 ["Child 1", `${child.fn} ${child.ln}`.trim()||"—"],
@@ -734,14 +750,14 @@ export default function WildChildRegistration() {
                 </div>
               ))}
             </div>
-            <div style={{ background:OLIVE_LIGHT, border:`1px solid ${SAGE}`, borderRadius:"10px", padding:"14px 18px", maxWidth:"400px", margin:"0 auto 20px", textAlign:"left" }}>
+            <div style={{ background:OLIVE_LIGHT, border:`1px solid ${SAGE}`, borderRadius:"10px", padding:"14px 18px", maxWidth:"400px", margin:"0 auto 20px", width:"100%", textAlign:"left" }}>
               <p style={{ fontSize:"13px", color:OLIVE_DARK, marginBottom:"5px", fontWeight:"bold" }}>What happens next</p>
               <p style={{ fontSize:"13px", color:OLIVE_DARK, lineHeight:1.6, margin:0 }}>
                 A confirmation email has been sent to {parent.email||"you"}. Our team at info@dandelionwildschooling.com has been notified. Pura vida! 🌺
               </p>
             </div>
             {!session && (
-              <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"400px", margin:"0 auto 20px" }}>
+              <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"400px", margin:"0 auto 20px", width:"100%" }}>
                 <p style={{ fontSize:"14px", color:TEXT_DARK, marginBottom:"6px" }}>Create an account to track your enrollments</p>
                 <p style={{ fontSize:"12px", color:TEXT_LIGHT, marginBottom:"14px", lineHeight:1.5 }}>Save your info, view your schedule, and easily enroll in future weeks.</p>
                 <a href="/login" style={{ display:"block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"12px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", textAlign:"center" }}>
@@ -760,7 +776,7 @@ export default function WildChildRegistration() {
 
         {/* Nav */}
         {step<5 && (
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:"32px", gap:"12px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:"32px", gap:"12px", flexWrap:"wrap" }}>
             {step>0
               ? <button onClick={()=>setStep(s=>s-1)} style={{ background:"transparent", color:TEXT_MID, border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"13px 22px", fontSize:"13px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:"pointer", textTransform:"uppercase" }}>← Back</button>
               : <div/>}

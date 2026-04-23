@@ -100,6 +100,7 @@ export default function AdminLogin() {
 
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+      <style>{`* { box-sizing: border-box; } input, button { font-family: Georgia, serif; -webkit-appearance: none; }`}</style>
 
       {/* Header */}
       <div style={HEADER}>
