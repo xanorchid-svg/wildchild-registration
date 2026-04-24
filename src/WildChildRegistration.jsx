@@ -410,6 +410,7 @@ export default function WildChildRegistration() {
       });
       await saveChildrenToDB(uid);
     }
+    const savedRegs = [];
     for (const ch of children) {
       const wg={}; Array.from(ch.days).forEach(dk=>{
         const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
@@ -419,7 +420,7 @@ export default function WildChildRegistration() {
       const tuit=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
       const lnch=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
       const sp=PROGRAMS.find(p=>p.id===ch.prog);
-      await supabase.from("registrations").insert({
+      const reg = {
         program_id:ch.prog, program_name:sp?.name,
         child_first_name:ch.fn, child_last_name:ch.ln,
         child_dob:ch.dob, child_allergies:ch.allergies,
@@ -432,8 +433,20 @@ export default function WildChildRegistration() {
         waiver_signature:waiverAlreadySigned?profile?.waiver_signature:sig,
         waiver_date:waiverAlreadySigned?profile?.waiver_signed_at:new Date().toISOString(),
         payment_status:"paid", parent_user_id:uid,
-      });
+      };
+      await supabase.from("registrations").insert(reg);
+      savedRegs.push(reg);
     }
+    // Send email notifications
+    await supabase.functions.invoke("send-enrollment-notification", {
+      body: {
+        children: savedRegs,
+        parentName,
+        parentEmail,
+        parentPhone,
+        grandTotal,
+      }
+    });
   };
 
   if (loadingSession) return (
