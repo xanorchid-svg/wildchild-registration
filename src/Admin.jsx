@@ -28,8 +28,19 @@ function formatDate(iso) {
     month: "short", day: "numeric", year: "numeric"
   });
 }
+function parseLocalKey(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function localDateKey(date) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
-function dayKey(date) { return new Date(date).toISOString().split("T")[0]; }
+function dayKey(date) { return localDateKey(date); }
 const MONTHS_ADM=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const WD_SHORT=["Mon","Tue","Wed","Thu","Fri"];
 function getWeeksForMonthAdm(year,month) {
@@ -69,8 +80,8 @@ function groupByWeek(registrations) {
     }
     // Find all unique weeks this registration covers
     const weekKeys = new Set(days.map(dk => {
-      const mon = getMonday(new Date(dk));
-      return mon.toISOString().split("T")[0];
+      const mon = getMonday(parseLocalKey(dk));
+      return localDateKey(mon);
     }));
     weekKeys.forEach(wk => {
       if (!groups[wk]) groups[wk] = { label: weekLabel(wk), monday: new Date(wk), registrations: [] };
@@ -91,7 +102,7 @@ function groupByWeek(registrations) {
 function DetailModal({ reg, onClose }) {
   const days = reg.selected_days || [];
   const dayNames = days.map(dk =>
-    new Date(dk).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    parseLocalKey(dk).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
   ).sort();
 
   return (
@@ -288,7 +299,7 @@ export default function Admin() {
                       <div>
                         <p style={{ fontSize:"15px", color:TEXT_DARK, margin:"0 0 2px" }}>{reg.child_first_name||"—"} {reg.child_last_name||""}</p>
                         <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
-                          {reg.program_name||"—"} · {(reg.selected_days||[]).filter(dk=>getMonday(new Date(dk)).toISOString().split("T")[0]===week.key).length} days
+                          {reg.program_name||"—"} · {(reg.selected_days||[]).filter(dk=>localDateKey(getMonday(parseLocalKey(dk)))===week.key).length} days
                           {reg.lunch?" · 🥗 Lunch":""}
                         </p>
                       </div>

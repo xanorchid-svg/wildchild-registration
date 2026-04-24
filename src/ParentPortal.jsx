@@ -19,13 +19,34 @@ function formatDate(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
 }
-function getMonday(date) {
-  const d=new Date(date); const day=d.getDay();
-  d.setDate(d.getDate()-day+(day===0?-6:1)); d.setHours(0,0,0,0); return d;
+function parseLocalKey(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
 }
-function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
-function dayKey(date) { return new Date(date).toISOString().split("T")[0]; }
-const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+function localDateKey(date) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function dayKey(date) { return localDateKey(date); }
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+function weekLabel(days) {
+  if (!days || days.length === 0) return "—";
+  const sorted = [...days].sort();
+  const mon = getMonday(parseLocalKey(sorted[0]));
+  const fri = addDays(mon, 4);
+  return `${mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
+}
 const WEEKDAYS_SHORT=["Mon","Tue","Wed","Thu","Fri"];
 function getWeeksForMonth(year,month) {
   const weeks=[]; const firstDay=new Date(year,month,1);
@@ -39,7 +60,7 @@ function getWeeksForMonth(year,month) {
 function weekLabel(days) {
   if (!days||days.length===0) return "—";
   const sorted=[...days].sort();
-  const mon=getMonday(new Date(sorted[0]));
+  const mon=getMonday(parseLocalKey(sorted[0]));
   const fri=new Date(mon); fri.setDate(fri.getDate()+4);
   return `${mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
 }
@@ -183,8 +204,8 @@ export default function ParentPortal() {
     r.child_last_name?.toLowerCase()===ch.last_name?.toLowerCase()
   );
   const today=new Date(); today.setHours(0,0,0,0);
-  const upcoming=(regs)=>regs.filter(r=>(r.selected_days||[]).some(dk=>new Date(dk)>=today));
-  const past=(regs)=>regs.filter(r=>(r.selected_days||[]).length>0&&(r.selected_days||[]).every(dk=>new Date(dk)<today));
+  const upcoming=(regs)=>regs.filter(r=>(r.selected_days||[]).some(dk=>parseLocalKey(dk)>=today));
+  const past=(regs)=>regs.filter(r=>(r.selected_days||[]).length>0&&(r.selected_days||[]).every(dk=>parseLocalKey(dk)<today));
 
   const navigate = (section, childIdx=0, view="info") => {
     setSection(section); setChildIdx(childIdx); setChildView(view);
@@ -395,7 +416,7 @@ export default function ParentPortal() {
                                   // Group days by week
                                   const wg={};
                                   (reg.selected_days||[]).forEach(dk=>{
-                                    const mon=getMonday(new Date(dk)); const wk=mon.toISOString().split("T")[0];
+                                    const mon=getMonday(parseLocalKey(dk)); const wk=localDateKey(mon);
                                     if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);
                                   });
                                   const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
@@ -405,7 +426,7 @@ export default function ParentPortal() {
                                     <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"12px" }}>
                                       {wkEntries.map(wk=>{
                                         const n=wk.days.length; const p=weekPrice(n); const lc=reg.lunch?n*LUNCH:0;
-                                        const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
+                                        const dayNames=wk.days.map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
                                         return (
                                           <div key={wk.monday.toISOString()} style={{ marginBottom:"8px" }}>
                                             <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", color:TEXT_DARK }}>
@@ -436,7 +457,7 @@ export default function ParentPortal() {
                                     <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:"8px" }}>
                                       <div>
                                         <p style={{ fontSize:"13px", color:TEXT_DARK, margin:"0 0 4px" }}>
-                                          {(reg.selected_days||[]).map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ")}
+                                          {(reg.selected_days||[]).map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ")}
                                         </p>
                                         <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days{reg.lunch?" · Lunch":""}</p>
                                       </div>

@@ -36,19 +36,50 @@ function weekPrice(n) {
 }
 function weekValid(n) { return n>=3 && n<=5; }
 function getMonday(date) {
-  const d=new Date(date); const day=d.getDay();
-  d.setDate(d.getDate()-day+(day===0?-6:1)); d.setHours(0,0,0,0); return d;
+  const d = new Date(date);
+  // Work in local time only
+  const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
+  const diff = day === 0 ? -6 : 1 - day; // shift to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
-function addDays(date,n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
-function formatDate(date) { return date.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
-function weekKey(monday) { return monday.toISOString().split("T")[0]; }
-function dayKey(date) { return date.toISOString().split("T")[0]; }
-function getWeeksForMonth(year,month) {
-  const weeks=[]; const firstDay=new Date(year,month,1);
-  let monday=getMonday(firstDay); if(monday>firstDay) monday=addDays(monday,-7);
-  for(let i=0;i<7;i++){
-    const wS=addDays(monday,i*7); const wE=addDays(wS,4);
-    if(wS.getMonth()<=month&&wE.getMonth()>=month) weeks.push(wS);
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+function formatDate(date) {
+  return date.toLocaleDateString("en-US", { month:"short", day:"numeric" });
+}
+// Use local YYYY-MM-DD — never toISOString() which shifts to UTC
+function localDateKey(date) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+// Parse a local date key back to a Date (local midnight, not UTC)
+function parseLocalKey(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function weekKey(monday) { return localDateKey(monday); }
+function dayKey(date) { return localDateKey(date); }
+function getWeeksForMonth(year, month) {
+  const weeks = [];
+  const firstDay = new Date(year, month, 1); // local midnight
+  let monday = getMonday(firstDay);
+  // If that monday is after firstDay, go back one week
+  if (monday > firstDay) monday = addDays(monday, -7);
+  for (let i = 0; i < 7; i++) {
+    const wStart = addDays(monday, i * 7);
+    const wEnd = addDays(wStart, 4);
+    // Include week if any day falls in this month
+    if (wStart.getMonth() <= month && wEnd.getMonth() >= month) {
+      weeks.push(wStart);
+    }
   }
   return weeks;
 }
@@ -69,7 +100,7 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
       const n=new Set(prev);
       if (n.has(key)) { n.delete(key); }
       else {
-        const count=Array.from(n).filter(dk=>weekKey(getMonday(new Date(dk)))===wk).length;
+        const count=Array.from(n).filter(dk=>weekKey(getMonday(parseLocalKey(dk)))===wk).length;
         if(count>=5) return prev; n.add(key);
       }
       return n;
@@ -78,7 +109,7 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
 
   const weekGroups={};
   Array.from(days).forEach(dk=>{
-    const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+    const mon=getMonday(parseLocalKey(dk)); const wk=weekKey(mon);
     if(!weekGroups[wk]) weekGroups[wk]={monday:mon,days:[]};
     weekGroups[wk].days.push(dk);
   });
@@ -114,7 +145,7 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
         </div>
         {weeks.map(monday=>{
           const wk=weekKey(monday);
-          const wkDays=Array.from(days).filter(dk=>weekKey(getMonday(new Date(dk)))===wk);
+          const wkDays=Array.from(days).filter(dk=>weekKey(getMonday(parseLocalKey(dk)))===wk);
           const count=wkDays.length; const isValid=count===0||count>=3; const isFull=count>=5;
           return (
             <div key={wk}>
@@ -158,7 +189,7 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
           {weekEntries.map(wk=>{
             const n=wk.days.length; const valid=weekValid(n); const p=weekPrice(n);
             const lc=lunch&&valid?n*LUNCH_PER_DAY:0;
-            const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
+            const dayNames=wk.days.map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
             return (
               <div key={weekKey(wk.monday)} style={{ padding:"8px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:valid?TEXT_DARK:"#c0392b" }}>
@@ -318,7 +349,7 @@ export default function WildChildRegistration() {
   const grandTotal = children.reduce((sum,ch)=>{
     const wg={};
     Array.from(ch.days).forEach(dk=>{
-      const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+      const mon=getMonday(parseLocalKey(dk)); const wk=weekKey(mon);
       if(!wg[wk]) wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
     });
     const t=Object.values(wg).reduce((s,wk)=>s+weekPrice(wk.days.length),0);
@@ -413,7 +444,7 @@ export default function WildChildRegistration() {
     const savedRegs = [];
     for (const ch of children) {
       const wg={}; Array.from(ch.days).forEach(dk=>{
-        const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+        const mon=getMonday(parseLocalKey(dk)); const wk=weekKey(mon);
         if(!wg[wk])wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
       });
       const wkEntries=Object.values(wg);
@@ -661,7 +692,7 @@ export default function WildChildRegistration() {
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>Order Summary</p>
               {children.map((ch,i)=>{
                 const wg={}; Array.from(ch.days).forEach(dk=>{
-                  const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+                  const mon=getMonday(parseLocalKey(dk)); const wk=weekKey(mon);
                   if(!wg[wk])wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
                 });
                 const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
@@ -671,7 +702,7 @@ export default function WildChildRegistration() {
                     {children.length>1&&<p style={{ fontSize:"11px", color:OLIVE, margin:"8px 0 4px", textTransform:"uppercase", letterSpacing:"1px" }}>{ch.fn||`Child ${i+1}`}</p>}
                     {wkEntries.map(wk=>{
                       const n=wk.days.length; const p=weekPrice(n); const lc=ch.lunch?n*LUNCH_PER_DAY:0;
-                      const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
+                      const dayNames=wk.days.map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
                       return (
                         <div key={weekKey(wk.monday)} style={{ padding:"6px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
                           <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT_DARK }}>
@@ -777,7 +808,7 @@ export default function WildChildRegistration() {
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 12px" }}>Enrollment Summary</p>
               {children.map((ch,i)=>{
                 const sp=PROGRAMS.find(p=>p.id===ch.prog);
-                const wg={}; Array.from(ch.days).forEach(dk=>{const mon=getMonday(new Date(dk));const wk=weekKey(mon);if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);});
+                const wg={}; Array.from(ch.days).forEach(dk=>{const mon=getMonday(parseLocalKey(dk));const wk=weekKey(mon);if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);});
                 const wkEntries=Object.values(wg);
                 return (
                   <div key={i} style={{ marginBottom:"10px", paddingBottom:"10px", borderBottom:`1px solid ${CREAM_DARK}` }}>
