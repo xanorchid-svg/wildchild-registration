@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const OLIVE      = "#6b7a3f";
 const OLIVE_DARK = "#4d5a2c";
@@ -196,6 +200,42 @@ const WAIVER_SECTIONS = [
 ];
 
 // ── Main ──────────────────────────────────────────────────────────────────────
+// ── Stripe inner form ─────────────────────────────────────────────────────────
+function StripePaymentForm({ onSuccess, busy, setBusy }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [err, setErr] = useState("");
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return;
+    setBusy(true);
+    setErr("");
+    const { error } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    });
+    if (error) {
+      setErr(error.message);
+      setBusy(false);
+    } else {
+      onSuccess();
+    }
+  };
+
+  return (
+    <div>
+      <PaymentElement options={{ layout:"tabs" }}/>
+      {err && <p style={{ color:"#c0392b", fontSize:"13px", marginTop:"12px" }}>{err}</p>}
+      <button onClick={handlePay} disabled={busy||!stripe}
+        style={{ width:"100%", background:busy?"#aaa":ORANGE, color:"#fff", border:"none", borderRadius:"8px",
+          padding:"14px", fontSize:"14px", letterSpacing:"1px", fontFamily:"Georgia,serif",
+          cursor:busy?"not-allowed":"pointer", textTransform:"uppercase", marginTop:"20px", transition:"background .2s" }}>
+        {busy ? "Processing..." : "Pay Now"}
+      </button>
+    </div>
+  );
+}
+
 export default function WildChildRegistration() {
   const today=new Date(); today.setHours(0,0,0,0);
 
@@ -221,6 +261,7 @@ export default function WildChildRegistration() {
   const [confirmPw,   setConfirmPw]   = useState("");
 
   const [card, setCard] = useState({ num:"", exp:"", cvc:"" });
+  const [clientSecret, setClientSecret] = useState("");
   const [w, setW] = useState({ liab:false, med:false, mediaY:false, mediaN:false, excY:false, excN:false });
   const [sig, setSig] = useState("");
   const [busy, setBusy] = useState(false);
@@ -322,48 +363,32 @@ export default function WildChildRegistration() {
       setBusy(false);
     }
 
-    // Final submit (payment step or waiver step)
+    // Moving to payment step — create Payment Intent
+    if (step===2) {
+      setBusy(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("create-payment-intent", {
+          body: {
+            amount: grandTotal,
+            currency: "usd",
+            metadata: { parent_email: parentEmail, children: children.map(c=>c.fn).join(", ") }
+          }
+        });
+        if (error || !data?.clientSecret) throw new Error(error?.message || "Failed to create payment");
+        setClientSecret(data.clientSecret);
+      } catch (e) {
+        setErr("Payment setup failed: " + e.message);
+        setBusy(false);
+        return;
+      }
+      setBusy(false);
+    }
+
+    // Final submit — after payment confirmed via Stripe
     const isLastBeforeConfirm = step === totalSteps - 2;
     if (isLastBeforeConfirm) {
       setBusy(true);
-      const uid = session?.user?.id || null;
-
-      // Save profile
-      if (uid) {
-        await supabase.from("parent_profiles").upsert({
-          id:uid, full_name:parentName, phone:parentPhone, email:parentEmail,
-          waiver_signature: waiverAlreadySigned ? profile.waiver_signature : sig,
-          waiver_signed_at: waiverAlreadySigned ? profile.waiver_signed_at : new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        await saveChildrenToDB(uid);
-      }
-
-      // Save registrations
-      for (const ch of children) {
-        const wg={}; Array.from(ch.days).forEach(dk=>{
-          const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
-          if(!wg[wk])wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
-        });
-        const wkEntries=Object.values(wg);
-        const tuit=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
-        const lnch=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
-        const sp=PROGRAMS.find(p=>p.id===ch.prog);
-        await supabase.from("registrations").insert({
-          program_id:ch.prog, program_name:sp?.name,
-          child_first_name:ch.fn, child_last_name:ch.ln,
-          child_dob:ch.dob, child_allergies:ch.allergies,
-          parent_name:parentName, parent_email:parentEmail, parent_phone:parentPhone,
-          selected_days:Array.from(ch.days), lunch:ch.lunch,
-          subtotal_tuition:tuit, subtotal_lunch:lnch, grand_total:tuit+lnch,
-          waiver_liability:w.liab, waiver_medical:w.med,
-          waiver_media:w.mediaY?"yes":w.mediaN?"no":null,
-          waiver_excursion:w.excY?"yes":w.excN?"no":null,
-          waiver_signature:waiverAlreadySigned?profile.waiver_signature:sig,
-          waiver_date: waiverAlreadySigned ? profile.waiver_signed_at : new Date().toISOString(),
-          payment_status:"pending", parent_user_id:uid,
-        });
-      }
+      await saveRegistrations();
       setBusy(false);
       setStep(confirmStep);
       window.scrollTo(0,0);
@@ -372,6 +397,43 @@ export default function WildChildRegistration() {
 
     setStep(s=>s+1);
     window.scrollTo(0,0);
+  };
+
+  const saveRegistrations = async () => {
+    const uid = session?.user?.id || null;
+    if (uid) {
+      await supabase.from("parent_profiles").upsert({
+        id:uid, full_name:parentName, phone:parentPhone, email:parentEmail,
+        waiver_signature: waiverAlreadySigned ? profile.waiver_signature : sig,
+        waiver_signed_at: waiverAlreadySigned ? profile.waiver_signed_at : new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      await saveChildrenToDB(uid);
+    }
+    for (const ch of children) {
+      const wg={}; Array.from(ch.days).forEach(dk=>{
+        const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+        if(!wg[wk])wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
+      });
+      const wkEntries=Object.values(wg);
+      const tuit=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
+      const lnch=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
+      const sp=PROGRAMS.find(p=>p.id===ch.prog);
+      await supabase.from("registrations").insert({
+        program_id:ch.prog, program_name:sp?.name,
+        child_first_name:ch.fn, child_last_name:ch.ln,
+        child_dob:ch.dob, child_allergies:ch.allergies,
+        parent_name:parentName, parent_email:parentEmail, parent_phone:parentPhone,
+        selected_days:Array.from(ch.days), lunch:ch.lunch,
+        subtotal_tuition:tuit, subtotal_lunch:lnch, grand_total:tuit+lnch,
+        waiver_liability:w.liab, waiver_medical:w.med,
+        waiver_media:w.mediaY?"yes":w.mediaN?"no":null,
+        waiver_excursion:w.excY?"yes":w.excN?"no":null,
+        waiver_signature:waiverAlreadySigned?profile?.waiver_signature:sig,
+        waiver_date:waiverAlreadySigned?profile?.waiver_signed_at:new Date().toISOString(),
+        payment_status:"paid", parent_user_id:uid,
+      });
+    }
   };
 
   if (loadingSession) return (
@@ -581,6 +643,7 @@ export default function WildChildRegistration() {
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Payment</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"20px" }}>Full amount due today.</p>
 
+            {/* Order summary */}
             <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"20px" }}>
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>Order Summary</p>
               {children.map((ch,i)=>{
@@ -590,17 +653,21 @@ export default function WildChildRegistration() {
                 });
                 const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
                 if(wkEntries.length===0) return null;
-                const t=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
-                const l=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
                 return (
                   <div key={i} style={{ marginBottom:"8px" }}>
                     {children.length>1&&<p style={{ fontSize:"11px", color:OLIVE, margin:"8px 0 4px", textTransform:"uppercase", letterSpacing:"1px" }}>{ch.fn||`Child ${i+1}`}</p>}
                     {wkEntries.map(wk=>{
                       const n=wk.days.length; const p=weekPrice(n); const lc=ch.lunch?n*LUNCH_PER_DAY:0;
+                      const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
                       return (
-                        <div key={weekKey(wk.monday)} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"4px 0", borderBottom:`1px solid ${CREAM_DARK}`, color:TEXT_MID }}>
-                          <span>Wk of {formatDate(wk.monday)} · {n} day{n>1?"s":""}{ch.lunch?" + lunch":""}</span>
-                          <span style={{ color:TEXT_DARK, flexShrink:0, marginLeft:"8px" }}>${p+lc}</span>
+                        <div key={weekKey(wk.monday)} style={{ padding:"6px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT_DARK }}>
+                            <span>Wk of {formatDate(wk.monday)}</span>
+                            <span>${p+lc}</span>
+                          </div>
+                          <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"2px" }}>
+                            {dayNames} · ${p}{ch.lunch?` + $${lc} lunch (${n}×$10)`:""}
+                          </div>
                         </div>
                       );
                     })}
@@ -612,23 +679,26 @@ export default function WildChildRegistration() {
               </div>
             </div>
 
-            <div style={{ background:OLIVE_LIGHT, border:`1px solid ${SAGE}`, borderRadius:"8px", padding:"11px 14px", marginBottom:"20px", display:"flex", gap:"9px", alignItems:"center" }}>
-              <span>🔒</span>
-              <p style={{ fontSize:"12px", color:OLIVE_DARK, margin:0, lineHeight:1.5 }}>Demo mode — connects to Stripe. Any 16-digit number works.</p>
-            </div>
-
-            <span style={lbl}>Card Number</span>
-            <input style={inp} value={card.num} onChange={e=>{const v=e.target.value.replace(/\D/g,"").slice(0,16);setCard({...card,num:v.replace(/(.{4})/g,"$1 ").trim()})}} placeholder="1234 5678 9012 3456" maxLength={19}/>
-            <div className="pay-row" style={{ display:"flex", gap:"14px" }}>
-              <div style={{ flex:1 }}>
-                <span style={lbl}>Expiry</span>
-                <input style={inp} value={card.exp} onChange={e=>{let v=e.target.value.replace(/\D/g,"").slice(0,4);if(v.length>2)v=v.slice(0,2)+"/"+v.slice(2);setCard({...card,exp:v})}} placeholder="MM/YY" maxLength={5}/>
+            {/* Stripe Elements */}
+            {clientSecret ? (
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance:{ theme:"flat", variables:{ colorPrimary:OLIVE, fontFamily:"Georgia, serif", borderRadius:"8px" } } }}>
+                <StripePaymentForm
+                  busy={busy}
+                  setBusy={setBusy}
+                  onSuccess={async()=>{
+                    setBusy(true);
+                    await saveRegistrations();
+                    setBusy(false);
+                    setStep(waiverAlreadySigned ? confirmStep : 4);
+                    window.scrollTo(0,0);
+                  }}
+                />
+              </Elements>
+            ) : (
+              <div style={{ textAlign:"center", padding:"30px", color:TEXT_LIGHT }}>
+                <p style={{ fontSize:"14px" }}>Setting up payment...</p>
               </div>
-              <div style={{ flex:1 }}>
-                <span style={lbl}>CVC</span>
-                <input style={inp} value={card.cvc} onChange={e=>setCard({...card,cvc:e.target.value.replace(/\D/g,"").slice(0,4)})} placeholder="123" maxLength={4}/>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -728,15 +798,21 @@ export default function WildChildRegistration() {
         )}
 
         {/* Nav */}
-        {step!==confirmStep&&(
+        {step!==confirmStep && step!==3 &&(
           <div className="nav-row" style={{ display:"flex", justifyContent:"space-between", marginTop:"32px", gap:"12px" }}>
             {step>0
               ? <button onClick={()=>setStep(s=>s-1)} style={{ background:"transparent", color:TEXT_MID, border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"13px 22px", fontSize:"13px", letterSpacing:"1px", cursor:"pointer", textTransform:"uppercase" }}>← Back</button>
               : <div/>}
             <button onClick={handleNext} disabled={busy}
               style={{ background:busy?"#aaa":ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", cursor:busy?"not-allowed":"pointer", textTransform:"uppercase", transition:"background .2s", flexShrink:0 }}>
-              {busy?"Please wait...":step===paymentStep?`Pay $${grandTotal} →`:step===waiverStep?"Submit & Complete ✓":"Continue →"}
+              {busy?"Please wait...":step===waiverStep?"Submit & Complete ✓":"Continue →"}
             </button>
+          </div>
+        )}
+        {/* Back button on payment step */}
+        {step===3&&(
+          <div style={{ marginTop:"16px" }}>
+            <button onClick={()=>setStep(2)} style={{ background:"transparent", color:TEXT_MID, border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px 22px", fontSize:"13px", letterSpacing:"1px", cursor:"pointer", textTransform:"uppercase" }}>← Back</button>
           </div>
         )}
       </div>
