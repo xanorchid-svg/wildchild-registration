@@ -23,6 +23,19 @@ function getMonday(date) {
   const d=new Date(date); const day=d.getDay();
   d.setDate(d.getDate()-day+(day===0?-6:1)); d.setHours(0,0,0,0); return d;
 }
+function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function dayKey(date) { return new Date(date).toISOString().split("T")[0]; }
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const WEEKDAYS_SHORT=["Mon","Tue","Wed","Thu","Fri"];
+function getWeeksForMonth(year,month) {
+  const weeks=[]; const firstDay=new Date(year,month,1);
+  let monday=getMonday(firstDay); if(monday>firstDay) monday=addDays(monday,-7);
+  for(let i=0;i<7;i++){
+    const wS=addDays(monday,i*7); const wE=addDays(wS,4);
+    if(wS.getMonth()<=month&&wE.getMonth()>=month) weeks.push(wS);
+  }
+  return weeks;
+}
 function weekLabel(days) {
   if (!days||days.length===0) return "—";
   const sorted=[...days].sort();
@@ -51,6 +64,72 @@ function InfoRow({ label, value }) {
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${CREAM_DARK}`, fontSize:"14px" }}>
       <span style={{ color:TEXT_LIGHT }}>{label}</span>
       <span style={{ color:TEXT_DARK }}>{value||"—"}</span>
+    </div>
+  );
+}
+
+// ── Enrollment Calendar (parent view) ────────────────────────────────────────
+function EnrollmentCalendar({ enrolledDays, hasLunch }) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth());
+  const enrolledSet = new Set(enrolledDays.map(d => dayKey(d)));
+  const weeks = getWeeksForMonth(calYear, calMonth);
+
+  return (
+    <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"16px", marginBottom:"16px" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"14px" }}>
+        <button onClick={()=>{ if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1); }}
+          style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_LIGHT, padding:"2px 10px", lineHeight:1 }}>‹</button>
+        <p style={{ fontSize:"14px", color:TEXT_DARK, margin:0 }}>{MONTHS[calMonth]} {calYear}</p>
+        <button onClick={()=>{ if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1); }}
+          style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_LIGHT, padding:"2px 10px", lineHeight:1 }}>›</button>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"8px", textAlign:"center" }}>
+        {WEEKDAYS_SHORT.map(d=><div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
+      </div>
+
+      {weeks.map(monday=>(
+        <div key={monday.toISOString()} style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"4px" }}>
+          {[0,1,2,3,4].map(offset=>{
+            const d = addDays(monday, offset);
+            const key = dayKey(d);
+            const isEnrolled = enrolledSet.has(key);
+            const isPast = d < today;
+            const inMonth = d.getMonth()===calMonth;
+            return (
+              <div key={offset}
+                style={{ textAlign:"center", padding:"7px 2px", borderRadius:"7px",
+                  background: isEnrolled ? (isPast ? "#8fa88a" : OLIVE) : (inMonth ? CREAM : CREAM_DARK),
+                  color: isEnrolled ? "#fff" : (inMonth ? TEXT_DARK : TEXT_LIGHT),
+                  opacity: inMonth ? 1 : 0.5,
+                  position:"relative" }}>
+                <div style={{ fontSize:"9px", opacity:0.7, marginBottom:"1px" }}>{d.toLocaleDateString("en-US",{month:"short"})}</div>
+                <div style={{ fontSize:"13px" }}>{d.getDate()}</div>
+                {isEnrolled && hasLunch && (
+                  <div style={{ fontSize:"8px", marginTop:"1px", opacity:0.85 }}>🥗</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      <div style={{ display:"flex", gap:"12px", marginTop:"12px", flexWrap:"wrap" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+          <div style={{ width:"12px", height:"12px", borderRadius:"3px", background:OLIVE }}/>
+          <span style={{ fontSize:"11px", color:TEXT_LIGHT }}>Enrolled (upcoming)</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+          <div style={{ width:"12px", height:"12px", borderRadius:"3px", background:"#8fa88a" }}/>
+          <span style={{ fontSize:"11px", color:TEXT_LIGHT }}>Enrolled (past)</span>
+        </div>
+        {hasLunch && <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+          <span style={{ fontSize:"12px" }}>🥗</span>
+          <span style={{ fontSize:"11px", color:TEXT_LIGHT }}>Lunch included</span>
+        </div>}
+      </div>
     </div>
   );
 }
@@ -302,40 +381,76 @@ export default function ParentPortal() {
                             <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase" }}>Enroll Now</a>
                           </div>
                         )}
-                        {upcomingRegs.length>0&&<>
-                          <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Upcoming</p>
-                          {upcomingRegs.map(reg=>(
-                            <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"12px" }}>
-                              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"8px" }}>
-                                <div>
-                                  <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 4px" }}>{weekLabel(reg.selected_days)}</p>
-                                  <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days{reg.lunch?" · Lunch":""}</p>
-                                </div>
-                                <div style={{ textAlign:"right" }}>
-                                  <p style={{ fontSize:"15px", color:OLIVE, margin:"0 0 6px" }}>${reg.grand_total}</p>
-                                  <StatusBadge status={reg.payment_status}/>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </>}
-                        {pastRegs.length>0&&<>
-                          <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"20px 0 12px" }}>Past</p>
-                          {pastRegs.map(reg=>(
-                            <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"14px 16px", marginBottom:"10px", opacity:0.75 }}>
-                              <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:"8px" }}>
-                                <div>
-                                  <p style={{ fontSize:"13px", color:TEXT_DARK, margin:"0 0 2px" }}>{weekLabel(reg.selected_days)}</p>
-                                  <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days</p>
-                                </div>
-                                <div style={{ textAlign:"right" }}>
-                                  <p style={{ fontSize:"14px", color:TEXT_MID, margin:"0 0 4px" }}>${reg.grand_total}</p>
-                                  <StatusBadge status={reg.payment_status}/>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </>}
+                        {[...upcomingRegs,...pastRegs].length>0&&(()=>{
+                          // Collect all enrolled days across all registrations for this child
+                          const allDays=[...upcomingRegs,...pastRegs].flatMap(r=>r.selected_days||[]);
+                          const hasLunch=[...upcomingRegs,...pastRegs].some(r=>r.lunch);
+                          return (
+                            <>
+                              <EnrollmentCalendar enrolledDays={allDays} hasLunch={hasLunch}/>
+
+                              {upcomingRegs.length>0&&<>
+                                <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Upcoming</p>
+                                {upcomingRegs.map(reg=>{
+                                  // Group days by week
+                                  const wg={};
+                                  (reg.selected_days||[]).forEach(dk=>{
+                                    const mon=getMonday(new Date(dk)); const wk=mon.toISOString().split("T")[0];
+                                    if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);
+                                  });
+                                  const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
+                                  const PRICE_3=260,PRICE_5=420,PRICE_4TH=85,LUNCH=10;
+                                  const weekPrice=n=>n<3?0:n===3?PRICE_3:n===4?PRICE_3+PRICE_4TH:PRICE_5;
+                                  return (
+                                    <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"12px" }}>
+                                      {wkEntries.map(wk=>{
+                                        const n=wk.days.length; const p=weekPrice(n); const lc=reg.lunch?n*LUNCH:0;
+                                        const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
+                                        return (
+                                          <div key={wk.monday.toISOString()} style={{ marginBottom:"8px" }}>
+                                            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", color:TEXT_DARK }}>
+                                              <span>Wk of {wk.monday.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
+                                              <span style={{ color:OLIVE }}>${p+lc}</span>
+                                            </div>
+                                            <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"3px", display:"flex", gap:"5px", flexWrap:"wrap" }}>
+                                              <span>{dayNames}</span>
+                                              <span>· tuition ${p}</span>
+                                              {reg.lunch&&<span style={{ color:GREEN }}>+ lunch ${lc} ({n}×$10)</span>}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                      <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                                        <StatusBadge status={reg.payment_status}/>
+                                        <span style={{ fontSize:"15px", color:OLIVE }}>${reg.grand_total} total</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </>}
+
+                              {pastRegs.length>0&&<>
+                                <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"20px 0 12px" }}>Past</p>
+                                {pastRegs.map(reg=>(
+                                  <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"14px 16px", marginBottom:"10px", opacity:0.7 }}>
+                                    <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:"8px" }}>
+                                      <div>
+                                        <p style={{ fontSize:"13px", color:TEXT_DARK, margin:"0 0 4px" }}>
+                                          {(reg.selected_days||[]).map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ")}
+                                        </p>
+                                        <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days{reg.lunch?" · Lunch":""}</p>
+                                      </div>
+                                      <div style={{ textAlign:"right" }}>
+                                        <p style={{ fontSize:"14px", color:TEXT_MID, margin:"0 0 4px" }}>${reg.grand_total}</p>
+                                        <StatusBadge status={reg.payment_status}/>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </>}
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

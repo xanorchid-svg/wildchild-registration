@@ -152,19 +152,32 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
         <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"14px", marginTop:"8px" }}>
           <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>{childName} — Summary</p>
           {weekEntries.map(wk=>{
-            const n=wk.days.length; const valid=weekValid(n); const p=weekPrice(n); const lc=lunch&&valid?n*LUNCH_PER_DAY:0;
-            const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).join(", ");
+            const n=wk.days.length; const valid=weekValid(n); const p=weekPrice(n);
+            const lc=lunch&&valid?n*LUNCH_PER_DAY:0;
+            const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
             return (
-              <div key={weekKey(wk.monday)} style={{ fontSize:"13px", padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}`, color:valid?TEXT_MID:"#c0392b" }}>
-                <div style={{ display:"flex", justifyContent:"space-between" }}>
-                  <span>Wk of {formatDate(wk.monday)} · {n}d ({dayNames})</span>
-                  <span style={{ color:valid?TEXT_DARK:"#c0392b", flexShrink:0, marginLeft:"8px" }}>{valid?`$${p+lc}`:"⚠ Need 3+"}</span>
+              <div key={weekKey(wk.monday)} style={{ padding:"8px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:valid?TEXT_DARK:"#c0392b" }}>
+                  <span>Wk of {formatDate(wk.monday)}</span>
+                  <span style={{ flexShrink:0, marginLeft:"8px" }}>{valid?`$${p+lc}`:"⚠ Need 3+"}</span>
                 </div>
+                {valid&&(
+                  <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"3px", display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                    <span>{dayNames}</span>
+                    <span style={{ color:CREAM_DARK }}>·</span>
+                    <span style={{ color:OLIVE }}>${p}</span>
+                    {lunch&&<><span style={{ color:CREAM_DARK }}>·</span><span style={{ color:GREEN }}>+ ${lc} lunch ({n}×$10)</span></>}
+                  </div>
+                )}
               </div>
             );
           })}
-          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", paddingTop:"8px", color:TEXT_DARK }}>
-            <span>Subtotal</span><span style={{ color:OLIVE }}>${tuition+lunchCost}</span>
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", paddingTop:"10px", color:TEXT_DARK }}>
+            <span>Subtotal</span>
+            <div style={{ textAlign:"right" }}>
+              {lunch&&<div style={{ fontSize:"11px", color:TEXT_LIGHT }}>tuition ${tuition} + lunch ${lunchCost}</div>}
+              <span style={{ color:OLIVE }}>${tuition+lunchCost}</span>
+            </div>
           </div>
         </div>
       )}
@@ -387,13 +400,24 @@ export default function WildChildRegistration() {
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"90px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
+        <div style={{ width:"44px" }}/>
         <div className="header-logo-wrap" style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
           <img className="header-logo" src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
-        <div style={{ width:"80px" }}/>
+        {/* Person icon — links to portal or login */}
         {session
-          ? <a href="/portal" style={{ position:"relative", zIndex:1, textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", fontSize:"12px", letterSpacing:"1px", color:"rgba(255,255,255,0.9)", textTransform:"uppercase", whiteSpace:"nowrap" }}>My Portal</a>
-          : <a href="/login" style={{ position:"relative", zIndex:1, textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", fontSize:"12px", letterSpacing:"1px", color:"rgba(255,255,255,0.9)", textTransform:"uppercase", whiteSpace:"nowrap" }}>Sign In</a>
+          ? <a href="/portal" style={{ position:"relative", zIndex:2, textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"50%", width:"40px", height:"40px", flexShrink:0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="8" r="4" fill="rgba(255,255,255,0.9)"/>
+                <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </a>
+          : <a href="/login" style={{ position:"relative", zIndex:2, textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"50%", width:"40px", height:"40px", flexShrink:0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="8" r="4" fill="rgba(255,255,255,0.9)"/>
+                <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </a>
         }
       </div>
 

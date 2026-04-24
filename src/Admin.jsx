@@ -28,6 +28,19 @@ function formatDate(iso) {
     month: "short", day: "numeric", year: "numeric"
   });
 }
+function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function dayKey(date) { return new Date(date).toISOString().split("T")[0]; }
+const MONTHS_ADM=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const WD_SHORT=["Mon","Tue","Wed","Thu","Fri"];
+function getWeeksForMonthAdm(year,month) {
+  const weeks=[]; const firstDay=new Date(year,month,1);
+  let monday=getMonday(firstDay); if(monday>firstDay) monday=addDays(monday,-7);
+  for(let i=0;i<7;i++){
+    const wS=addDays(monday,i*7); const wE=addDays(wS,4);
+    if(wS.getMonth()<=month&&wE.getMonth()>=month) weeks.push(wS);
+  }
+  return weeks;
+}
 
 function getMonday(date) {
   const d = new Date(date);
@@ -201,6 +214,11 @@ export default function Admin() {
     });
   };
 
+  const [adminView, setAdminView] = useState("weeks"); // weeks | calendar
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [selectedDay, setSelectedDay] = useState(null); // ISO date string
+
   const weeks = groupByWeek(registrations);
 
   return (
@@ -221,81 +239,63 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Admin label bar */}
-      <div style={{ background:NAVY, padding:"10px 20px" }}>
-        <p style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", margin:0 }}>Admin · Registrations</p>
+      {/* Admin label bar + view tabs */}
+      <div style={{ background:NAVY, padding:"0 20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <p style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", margin:0, padding:"10px 0" }}>Admin · Registrations</p>
+        <div style={{ display:"flex", gap:"4px" }}>
+          {["weeks","calendar"].map(v=>(
+            <button key={v} onClick={()=>setAdminView(v)}
+              style={{ background:adminView===v?"rgba(255,255,255,0.15)":"transparent", border:"none", borderRadius:"6px", padding:"6px 14px", color:adminView===v?"#fff":"rgba(255,255,255,0.5)", fontSize:"12px", cursor:"pointer", fontFamily:"Georgia,serif", textTransform:"capitalize", letterSpacing:"0.5px" }}>
+              {v==="weeks"?"By Week":"Calendar"}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ maxWidth:"700px", margin:"0 auto", padding:"32px 16px 60px" }}>
 
-        {loading && (
-          <div style={{ textAlign:"center", padding:"60px 0", color:TEXT_LIGHT, fontSize:"14px" }}>Loading registrations...</div>
-        )}
-
-        {error && (
-          <div style={{ background:"#fdecea", border:"1px solid #f5c6c6", borderRadius:"10px", padding:"16px", color:"#a32d2d", fontSize:"14px" }}>
-            Error loading registrations: {error}
-          </div>
-        )}
-
-        {!loading && !error && registrations.length === 0 && (
+        {loading && <div style={{ textAlign:"center", padding:"60px 0", color:TEXT_LIGHT, fontSize:"14px" }}>Loading registrations...</div>}
+        {error && <div style={{ background:"#fdecea", border:"1px solid #f5c6c6", borderRadius:"10px", padding:"16px", color:"#a32d2d", fontSize:"14px" }}>Error: {error}</div>}
+        {!loading && !error && registrations.length===0 && (
           <div style={{ textAlign:"center", padding:"60px 0", color:TEXT_LIGHT }}>
-            <p style={{ fontSize:"18px", marginBottom:"8px" }}>🌿</p>
             <p style={{ fontSize:"15px" }}>No registrations yet.</p>
           </div>
         )}
 
-        {!loading && weeks.map(week => (
+        {/* ── BY WEEK VIEW ── */}
+        {!loading && adminView==="weeks" && weeks.map(week => (
           <div key={week.key} style={{ marginBottom:"16px" }}>
-
-            {/* Week header */}
             <div onClick={() => toggleWeek(week.key)}
               style={{ background:NAVY, borderRadius: expandedWeeks.has(week.key) ? "10px 10px 0 0" : "10px", padding:"14px 20px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
                 <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.75)", margin:"0 0 2px" }}>{week.label}</p>
-                <p style={{ fontSize:"16px", color:"#fff", margin:0 }}>
-                  {week.registrations.length} child{week.registrations.length !== 1 ? "ren" : ""}
-                </p>
+                <p style={{ fontSize:"16px", color:"#fff", margin:0 }}>{week.registrations.length} child{week.registrations.length!==1?"ren":""}</p>
               </div>
-              <span style={{ color:"rgba(255,255,255,0.8)", fontSize:"18px" }}>
-                {expandedWeeks.has(week.key) ? "▲" : "▼"}
-              </span>
+              <span style={{ color:"rgba(255,255,255,0.8)", fontSize:"18px" }}>{expandedWeeks.has(week.key)?"▲":"▼"}</span>
             </div>
-
-            {/* Registrations for this week */}
-            {expandedWeeks.has(week.key) && (
+            {expandedWeeks.has(week.key)&&(
               <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderTop:"none", borderRadius:"0 0 10px 10px", overflow:"hidden" }}>
-                {week.registrations.map((reg, i) => (
-                  <div key={reg.id} onClick={() => setSelected(reg)}
+                {week.registrations.map((reg,i)=>(
+                  <div key={reg.id} onClick={()=>setSelected(reg)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px",
-                      borderBottom: i < week.registrations.length - 1 ? `1px solid ${CREAM_DARK}` : "none",
-                      cursor:"pointer", transition:"background .15s" }}
-                    onMouseEnter={e => e.currentTarget.style.background = CREAM}
-                    onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                      borderBottom:i<week.registrations.length-1?`1px solid ${CREAM_DARK}`:"none", cursor:"pointer" }}
+                    onMouseEnter={e=>e.currentTarget.style.background=CREAM}
+                    onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
                     <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
-                      {/* Avatar */}
-                      <div style={{ width:"38px", height:"38px", borderRadius:"50%", background:TEAL_LIGHT, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", color:TEAL_DARK, fontWeight:500, flexShrink:0 }}>
-                        {(reg.child_first_name?.[0] || "?")}{(reg.child_last_name?.[0] || "")}
+                      <div style={{ width:"38px", height:"38px", borderRadius:"50%", background:OLIVE_LIGHT, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", color:OLIVE_DARK, fontWeight:500, flexShrink:0 }}>
+                        {(reg.child_first_name?.[0]||"?")}{(reg.child_last_name?.[0]||"")}
                       </div>
                       <div>
-                        <p style={{ fontSize:"15px", color:TEXT_DARK, margin:"0 0 2px" }}>
-                          {reg.child_first_name || "—"} {reg.child_last_name || ""}
-                        </p>
+                        <p style={{ fontSize:"15px", color:TEXT_DARK, margin:"0 0 2px" }}>{reg.child_first_name||"—"} {reg.child_last_name||""}</p>
                         <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
-                          {reg.program_name || "—"} · {(reg.selected_days || []).filter(dk => {
-                            const mon = getMonday(new Date(dk));
-                            return mon.toISOString().split("T")[0] === week.key;
-                          }).length} days
-                          {reg.lunch ? " · 🥗 Lunch" : ""}
+                          {reg.program_name||"—"} · {(reg.selected_days||[]).filter(dk=>getMonday(new Date(dk)).toISOString().split("T")[0]===week.key).length} days
+                          {reg.lunch?" · 🥗 Lunch":""}
                         </p>
                       </div>
                     </div>
                     <div style={{ textAlign:"right" }}>
-                      <p style={{ fontSize:"14px", color:TEAL, margin:"0 0 2px" }}>${reg.grand_total ?? "—"}</p>
-                      <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"20px", color:"#fff",
-                        background: reg.payment_status === "paid" ? GREEN : SAND }}>
-                        {reg.payment_status || "pending"}
-                      </span>
+                      <p style={{ fontSize:"14px", color:OLIVE, margin:"0 0 2px" }}>${reg.grand_total??""}</p>
+                      <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"20px", color:"#fff", background:reg.payment_status==="paid"?GREEN:ORANGE }}>{reg.payment_status||"pending"}</span>
                     </div>
                   </div>
                 ))}
@@ -303,6 +303,104 @@ export default function Admin() {
             )}
           </div>
         ))}
+
+        {/* ── CALENDAR VIEW ── */}
+        {!loading && adminView==="calendar" && (()=>{
+          // Build a map of dayKey → registrations enrolled that day
+          const dayMap={};
+          registrations.forEach(reg=>{
+            (reg.selected_days||[]).forEach(dk=>{
+              if(!dayMap[dk]) dayMap[dk]=[];
+              dayMap[dk].push(reg);
+            });
+          });
+
+          const calWeeks=getWeeksForMonthAdm(calYear,calMonth);
+          const dayRegs=selectedDay?dayMap[selectedDay]||[]:[];
+
+          return (
+            <div>
+              {/* Calendar */}
+              <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginBottom:"16px" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"16px" }}>
+                  <button onClick={()=>{if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1);}}
+                    style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>‹</button>
+                  <p style={{ fontSize:"16px", color:TEXT_DARK, margin:0, fontWeight:400 }}>{MONTHS_ADM[calMonth]} {calYear}</p>
+                  <button onClick={()=>{if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1);}}
+                    style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>›</button>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"5px", marginBottom:"8px", textAlign:"center" }}>
+                  {WD_SHORT.map(d=><div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
+                </div>
+                {calWeeks.map(monday=>(
+                  <div key={monday.toISOString()} style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"5px", marginBottom:"5px" }}>
+                    {[0,1,2,3,4].map(offset=>{
+                      const d=addDays(monday,offset);
+                      const key=dayKey(d);
+                      const count=(dayMap[key]||[]).length;
+                      const isSelected=selectedDay===key;
+                      const inMonth=d.getMonth()===calMonth;
+                      const isToday=key===dayKey(new Date());
+                      return (
+                        <div key={offset} onClick={()=>setSelectedDay(isSelected?null:key)}
+                          style={{ textAlign:"center", padding:"8px 4px", borderRadius:"8px", cursor:"pointer", transition:"all .15s",
+                            background:isSelected?NAVY:(count>0?(inMonth?OLIVE_LIGHT:CREAM_DARK):(inMonth?CREAM:CREAM_DARK)),
+                            border:isSelected?`2px solid ${NAVY}`:isToday?`2px solid ${ORANGE}`:"2px solid transparent",
+                            color:isSelected?"#fff":(inMonth?TEXT_DARK:TEXT_LIGHT),
+                            opacity:inMonth?1:0.5 }}>
+                          <div style={{ fontSize:"9px", opacity:0.7, marginBottom:"1px" }}>{d.toLocaleDateString("en-US",{month:"short"})}</div>
+                          <div style={{ fontSize:"14px", fontWeight:count>0?"500":"400" }}>{d.getDate()}</div>
+                          {count>0&&<div style={{ fontSize:"10px", marginTop:"2px", color:isSelected?"rgba(255,255,255,0.85)":OLIVE, fontWeight:500 }}>{count}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                <p style={{ fontSize:"11px", color:TEXT_LIGHT, textAlign:"center", marginTop:"12px", margin:"12px 0 0" }}>
+                  Tap a day to see enrolled children · numbers show student count
+                </p>
+              </div>
+
+              {/* Day detail panel */}
+              {selectedDay&&(
+                <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
+                    <h3 style={{ fontSize:"16px", fontWeight:400, color:TEXT_DARK, margin:0 }}>
+                      {new Date(selectedDay).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
+                    </h3>
+                    <button onClick={()=>setSelectedDay(null)} style={{ background:"none", border:"none", fontSize:"18px", cursor:"pointer", color:TEXT_LIGHT }}>✕</button>
+                  </div>
+
+                  {dayRegs.length===0
+                    ? <p style={{ fontSize:"14px", color:TEXT_LIGHT, textAlign:"center", padding:"20px 0" }}>No children enrolled this day.</p>
+                    : <>
+                        <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 12px" }}>{dayRegs.length} child{dayRegs.length!==1?"ren":""} enrolled</p>
+                        {dayRegs.map((reg,i)=>(
+                          <div key={reg.id} onClick={()=>setSelected(reg)}
+                            style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px",
+                              background:i%2===0?CREAM:"#fff", borderRadius:"8px", cursor:"pointer", marginBottom:"4px" }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                              <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:OLIVE_LIGHT, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", color:OLIVE_DARK, fontWeight:500, flexShrink:0 }}>
+                                {(reg.child_first_name?.[0]||"?")}{(reg.child_last_name?.[0]||"")}
+                              </div>
+                              <div>
+                                <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 2px" }}>{reg.child_first_name} {reg.child_last_name}</p>
+                                <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
+                                  {reg.program_name||"—"}
+                                  {reg.lunch&&<span style={{ color:GREEN, marginLeft:"6px" }}>🥗 Lunch</span>}
+                                </p>
+                              </div>
+                            </div>
+                            <span style={{ fontSize:"11px", color:TEXT_LIGHT }}>→</span>
+                          </div>
+                        ))}
+                      </>
+                  }
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Detail modal */}
