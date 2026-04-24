@@ -2,137 +2,123 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
-// ── Brand colors ──────────────────────────────────────────────────────────────
-const OLIVE       = "#6b7a3f";
-const OLIVE_DARK  = "#4d5a2c";
-const OLIVE_LIGHT = "#eef1e6";
-const NAVY        = "#0f1f5c";
-const NAVY_MID    = "#2a3a7a";
-const SAGE        = "#8fa88a";
-const ORANGE      = "#c4682a";
-const CREAM       = "#f5f0e8";
-const CREAM_DARK  = "#e0d8c8";
-const TEXT_DARK   = "#1a1a2e";
-const TEXT_MID    = "#3d3d5c";
-const TEXT_LIGHT  = "#7a7a9a";
-const GREEN       = "#5a7a3a";
-const TEAL = OLIVE; const TEAL_DARK = OLIVE_DARK; const TEAL_LIGHT = OLIVE_LIGHT;
-const TEAL_MID = SAGE; const SAND = ORANGE;
+const OLIVE      = "#6b7a3f";
+const OLIVE_DARK = "#4d5a2c";
+const OLIVE_LIGHT= "#eef1e6";
+const NAVY       = "#0f1f5c";
+const ORANGE     = "#c4682a";
+const SAGE       = "#8fa88a";
+const CREAM      = "#f5f0e8";
+const CREAM_DARK = "#e0d8c8";
+const TEXT_DARK  = "#1a1a2e";
+const TEXT_MID   = "#3d3d5c";
+const TEXT_LIGHT = "#7a7a9a";
+const GREEN      = "#5a7a3a";
 
-// ── Pricing ───────────────────────────────────────────────────────────────────
 const PRICE_3 = 260; const PRICE_5 = 420; const PRICE_4TH = 85; const LUNCH_PER_DAY = 10;
 const WEEKDAYS = ["Mon","Tue","Wed","Thu","Fri"];
-
-function weekPrice(n) {
-  if (n <= 0) return 0;
-  if (n <= 3) return PRICE_3;
-  if (n === 4) return PRICE_3 + PRICE_4TH;
-  return PRICE_5;
-}
-
-// ── Date helpers ──────────────────────────────────────────────────────────────
-function getMonday(date) {
-  const d = new Date(date); const day = d.getDay();
-  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1)); d.setHours(0,0,0,0); return d;
-}
-function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate()+n); return d; }
-function formatDate(date) { return date.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
-function weekKey(monday) { return monday.toISOString().split("T")[0]; }
-function dayKey(date) { return date.toISOString().split("T")[0]; }
-function getWeeksForMonth(year, month) {
-  const weeks = []; const firstDay = new Date(year, month, 1);
-  let monday = getMonday(firstDay);
-  if (monday > firstDay) monday = addDays(monday, -7);
-  for (let i = 0; i < 7; i++) {
-    const wStart = addDays(monday, i*7); const wEnd = addDays(wStart, 4);
-    if (wStart.getMonth() <= month && wEnd.getMonth() >= month) weeks.push(wStart);
-  }
-  return weeks;
-}
-
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
 const PROGRAMS = [
   { id:"lwo", name:"Little Wild Ones", age:"Ages 1–4", desc:"Sensory play, nature connection, creative movement, storytelling, music, and social-emotional development.", color:OLIVE },
   { id:"we",  name:"Wild Explorers",   age:"Ages 5–9", desc:"Outdoor learning, creative expression, mindfulness, movement, and academics — math, reading, writing, geography, and science.", color:NAVY },
 ];
-const STEPS = ["Account","Family","Children","Schedule","Payment","Waiver","Confirmation"];
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-const inp = { width:"100%", padding:"12px 14px", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", fontSize:"15px", fontFamily:"Georgia,serif", background:"#fff", color:TEXT_DARK, marginBottom:"14px", outline:"none", boxSizing:"border-box" };
-const lbl = { display:"block", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"6px", fontFamily:"Georgia,serif" };
+function weekPrice(n) {
+  if (n<3) return 0; // incomplete week — no charge, will warn user
+  if (n===3) return PRICE_3;
+  if (n===4) return PRICE_3+PRICE_4TH;
+  return PRICE_5;
+}
+function weekValid(n) { return n>=3 && n<=5; }
+function getMonday(date) {
+  const d=new Date(date); const day=d.getDay();
+  d.setDate(d.getDate()-day+(day===0?-6:1)); d.setHours(0,0,0,0); return d;
+}
+function addDays(date,n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function formatDate(date) { return date.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function weekKey(monday) { return monday.toISOString().split("T")[0]; }
+function dayKey(date) { return date.toISOString().split("T")[0]; }
+function getWeeksForMonth(year,month) {
+  const weeks=[]; const firstDay=new Date(year,month,1);
+  let monday=getMonday(firstDay); if(monday>firstDay) monday=addDays(monday,-7);
+  for(let i=0;i<7;i++){
+    const wS=addDays(monday,i*7); const wE=addDays(wS,4);
+    if(wS.getMonth()<=month&&wE.getMonth()>=month) weeks.push(wS);
+  }
+  return weeks;
+}
 
-// ── Calendar component ────────────────────────────────────────────────────────
+const inp  = { width:"100%", padding:"12px 14px", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", fontSize:"15px", fontFamily:"Georgia,serif", background:"#fff", color:TEXT_DARK, marginBottom:"14px", outline:"none", boxSizing:"border-box" };
+const lbl  = { display:"block", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"6px", fontFamily:"Georgia,serif" };
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
 function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
   const weeks = getWeeksForMonth(calYear, calMonth);
 
   const toggleDay = (date) => {
-    if (date < today) return;
-    const key = dayKey(date);
-    const wk = weekKey(getMonday(date));
+    if (date<today) return;
+    const key=dayKey(date); const wk=weekKey(getMonday(date));
     setDays(prev => {
-      const n = new Set(prev);
+      const n=new Set(prev);
       if (n.has(key)) { n.delete(key); }
       else {
-        const count = Array.from(n).filter(dk => weekKey(getMonday(new Date(dk))) === wk).length;
-        if (count >= 5) return prev;
-        n.add(key);
+        const count=Array.from(n).filter(dk=>weekKey(getMonday(new Date(dk)))===wk).length;
+        if(count>=5) return prev; n.add(key);
       }
       return n;
     });
   };
 
-  // Compute week groups for summary
-  const weekGroups = {};
-  Array.from(days).forEach(dk => {
-    const mon = getMonday(new Date(dk)); const wk = weekKey(mon);
-    if (!weekGroups[wk]) weekGroups[wk] = { monday:mon, days:[] };
+  const weekGroups={};
+  Array.from(days).forEach(dk=>{
+    const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+    if(!weekGroups[wk]) weekGroups[wk]={monday:mon,days:[]};
     weekGroups[wk].days.push(dk);
   });
-  const weekEntries = Object.values(weekGroups).sort((a,b)=>a.monday-b.monday);
-  const tuition = weekEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
-  const lunchCost = lunch ? Array.from(days).length * LUNCH_PER_DAY : 0;
+  const weekEntries=Object.values(weekGroups).sort((a,b)=>a.monday-b.monday);
+  const tuition=weekEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
+  const lunchCost=lunch?Array.from(days).length*LUNCH_PER_DAY:0;
 
   return (
     <div>
-      {/* Lunch toggle */}
+      {/* Lunch */}
       <div onClick={()=>setLunch(!lunch)}
         style={{ background:lunch?GREEN:"#fff", border:`1.5px solid ${lunch?GREEN:CREAM_DARK}`, borderRadius:"10px", padding:"14px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"14px", marginBottom:"20px", transition:"all .2s" }}>
         <div style={{ flex:1 }}>
-          <p style={{ fontSize:"14px", color:lunch?"#fff":TEXT_DARK, marginBottom:"2px", margin:"0 0 2px" }}>Add Organic Snack & Lunch</p>
+          <p style={{ fontSize:"14px", color:lunch?"#fff":TEXT_DARK, margin:"0 0 2px" }}>Add Organic Snack & Lunch</p>
           <p style={{ fontSize:"12px", color:lunch?"rgba(255,255,255,0.75)":TEXT_LIGHT, margin:0, lineHeight:1.4 }}>All organic, locally sourced, made with love. $10/day</p>
         </div>
-        <div style={{ width:"20px", height:"20px", borderRadius:"50%", border:`2px solid ${lunch?"#fff":CREAM_DARK}`, background:lunch?"#fff":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-          {lunch && <div style={{ width:"10px", height:"10px", borderRadius:"50%", background:GREEN }}/>}
+        <div style={{ width:"22px", height:"22px", borderRadius:"50%", border:`2px solid ${lunch?"#fff":CREAM_DARK}`, background:lunch?"#fff":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          {lunch&&<div style={{ width:"12px", height:"12px", borderRadius:"50%", background:GREEN }}/>}
         </div>
       </div>
 
       {/* Calendar */}
       <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"16px", marginBottom:"8px" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"14px" }}>
-          <button onClick={()=>{ if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1); }}
+          <button onClick={()=>{if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1);}}
             style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>‹</button>
           <p style={{ fontSize:"15px", color:TEXT_DARK, margin:0 }}>{MONTHS[calMonth]} {calYear}</p>
-          <button onClick={()=>{ if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1); }}
+          <button onClick={()=>{if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1);}}
             style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>›</button>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"8px", textAlign:"center" }}>
           {WEEKDAYS.map(d=><div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
         </div>
         {weeks.map(monday=>{
-          const wk = weekKey(monday);
-          const wkDays = Array.from(days).filter(dk=>weekKey(getMonday(new Date(dk)))===wk);
-          const count = wkDays.length;
-          const isValid = count===0||count>=3; const isFull = count>=5;
+          const wk=weekKey(monday);
+          const wkDays=Array.from(days).filter(dk=>weekKey(getMonday(new Date(dk)))===wk);
+          const count=wkDays.length; const isValid=count===0||count>=3; const isFull=count>=5;
           return (
             <div key={wk}>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"3px" }}>
                 {[0,1,2,3,4].map(offset=>{
-                  const d = addDays(monday,offset);
-                  const key = dayKey(d); const isSel = days.has(key);
-                  const isPast = d<today; const inMonth = d.getMonth()===calMonth;
-                  const isBlocked = !isSel&&isFull;
+                  const d=addDays(monday,offset); const key=dayKey(d);
+                  const isSel=days.has(key); const isPast=d<today; const inMonth=d.getMonth()===calMonth;
+                  const isBlocked=!isSel&&isFull;
                   return (
                     <div key={offset} onClick={()=>!isPast&&!isBlocked&&toggleDay(d)}
                       style={{ textAlign:"center", padding:"8px 2px", borderRadius:"8px", transition:"all .15s",
@@ -151,7 +137,7 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
                 <div style={{ textAlign:"right", marginBottom:"4px" }}>
                   <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"10px", color:"#fff",
                     background:!isValid?"#e08c00":isFull?OLIVE:GREEN }}>
-                    {count}/5 days{!isValid?" · select at least 3":isFull?" · full week ✓":count===4?" · 4-day week ✓":" · 3-day week ✓"}
+                    {count}/5 days{!isValid?" · select at least 3":isFull?" · full ✓":count===4?" · 4-day ✓":" · 3-day ✓"}
                   </span>
                 </div>
               )}
@@ -162,17 +148,18 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
         <p style={{ fontSize:"11px", color:TEXT_LIGHT, marginTop:"10px", textAlign:"center", margin:"10px 0 0" }}>Min 3 · max 5 days per week</p>
       </div>
 
-      {/* Weekly summary */}
       {weekEntries.length>0&&(
         <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"14px", marginTop:"8px" }}>
-          <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"10px", margin:"0 0 10px" }}>{childName} — Schedule Summary</p>
+          <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>{childName} — Summary</p>
           {weekEntries.map(wk=>{
-            const n=wk.days.length; const p=weekPrice(n); const lc=lunch?n*LUNCH_PER_DAY:0;
+            const n=wk.days.length; const valid=weekValid(n); const p=weekPrice(n); const lc=lunch&&valid?n*LUNCH_PER_DAY:0;
             const dayNames=wk.days.map(dk=>new Date(dk).toLocaleDateString("en-US",{weekday:"short"})).join(", ");
             return (
-              <div key={weekKey(wk.monday)} style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}`, color:TEXT_MID }}>
-                <span>Wk of {formatDate(wk.monday)} · {n}d ({dayNames}){lunch?` + lunch`:""}</span>
-                <span style={{ color:TEXT_DARK, flexShrink:0, marginLeft:"8px" }}>${p+lc}</span>
+              <div key={weekKey(wk.monday)} style={{ fontSize:"13px", padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}`, color:valid?TEXT_MID:"#c0392b" }}>
+                <div style={{ display:"flex", justifyContent:"space-between" }}>
+                  <span>Wk of {formatDate(wk.monday)} · {n}d ({dayNames})</span>
+                  <span style={{ color:valid?TEXT_DARK:"#c0392b", flexShrink:0, marginLeft:"8px" }}>{valid?`$${p+lc}`:"⚠ Need 3+"}</span>
+                </div>
               </div>
             );
           })}
@@ -185,217 +172,221 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, today }) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Waiver text (reusable) ────────────────────────────────────────────────────
+const WAIVER_SECTIONS = [
+  { key:"liab", title:"1. Assumption of Risk & Release of Liability",
+    text:"Wild Child Playgarden & Wildschooling Nosara is a nature-based, outdoor educational program. Activities include outdoor play, gardening, forest and beach exploration, physical movement, water play, and exposure to uneven terrain, insects, plants, wildlife, and weather. I knowingly assume all risks and release Wild Child and its staff from all claims arising from my child's participation.",
+    checkLabel:"I agree to the Assumption of Risk and Release of Liability." },
+  { key:"med", title:"2. Medical & Emergency Consent",
+    text:"I authorize Wild Child to seek emergency medical care for my child if I cannot be reached. I consent to examination, diagnosis, treatment, and/or hospital care deemed necessary by a licensed physician. All medical expenses are my responsibility.",
+    checkLabel:"I agree to Medical & Emergency Care Consent." },
+];
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function WildChildRegistration() {
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today=new Date(); today.setHours(0,0,0,0);
 
-  const [step, setStep]     = useState(0);
-  const [session, setSession] = useState(null);
-  const [loadingSession, setLoadingSession] = useState(true);
+  const [session, setSession]         = useState(null);
+  const [loadingSession, setLoading]  = useState(true);
+  const [profile, setProfile]         = useState(null); // parent_profiles row
+  const [savedChildren, setSavedChildren] = useState([]); // children from DB
 
-  // Step 0 — Account
-  const [authMode, setAuthMode] = useState("signup"); // signup | login
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [authError, setAuthError] = useState(null);
-  const [authBusy, setAuthBusy] = useState(false);
+  // Steps: 0=Children, 1=Schedule, 2=ParentInfo, 3=Payment, 4=Waiver, 5=Confirmation
+  const [step, setStep] = useState(0);
 
-  // Step 1 — Parent info
-  const [parentName, setParentName] = useState("");
-  const [parentPhone, setParentPhone] = useState("");
-
-  // Step 2 — Children (array, each: {fn,ln,dob,allergies,prog,days:Set,lunch})
+  // Form state
   const [children, setChildren] = useState([
-    { fn:"", ln:"", dob:"", allergies:"", prog:null, days:new Set(), lunch:false }
+    { fn:"", ln:"", dob:"", allergies:"", prog:null, days:new Set(), lunch:false, savedId:null }
   ]);
-  const [activeChild, setActiveChild] = useState(0); // for schedule tabs
+  const [activeChild, setActiveChild] = useState(0);
+
+  const [parentName,  setParentName]  = useState("");
+  const [parentEmail, setParentEmail] = useState("");
+  const [parentPhone, setParentPhone] = useState("");
+  const [createAcct,  setCreateAcct]  = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPw,   setConfirmPw]   = useState("");
 
   const [card, setCard] = useState({ num:"", exp:"", cvc:"" });
   const [w, setW] = useState({ liab:false, med:false, mediaY:false, mediaN:false, excY:false, excN:false });
   const [sig, setSig] = useState("");
   const [busy, setBusy] = useState(false);
-  const [errs, setErrs] = useState({});
+  const [err, setErr] = useState("");
 
-  // Load session on mount
+  // Load session + profile + saved children
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    async function load() {
+      const { data:{ session:s } } = await supabase.auth.getSession();
       if (s) {
         setSession(s);
-        setEmail(s.user.email || "");
-        // Load parent profile
-        supabase.from("parent_profiles").select("*").eq("id", s.user.id).single()
-          .then(({ data }) => {
-            if (data) { setParentName(data.full_name||""); setParentPhone(data.phone||""); }
-          });
-        setStep(1); // skip account step if already logged in
+        setParentEmail(s.user.email||"");
+
+        const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",s.user.id).single();
+        if (p) {
+          setProfile(p);
+          setParentName(p.full_name||"");
+          setParentPhone(p.phone||"");
+          if (p.waiver_signature) {
+            // Pre-fill waiver as signed
+            setW({ liab:true, med:true, mediaY:true, mediaN:false, excY:true, excN:false });
+            setSig(p.waiver_signature||"");
+          }
+        }
+
+        const { data:ch } = await supabase.from("children").select("*").eq("parent_id",s.user.id).order("created_at");
+        if (ch&&ch.length>0) {
+          setSavedChildren(ch);
+          setChildren(ch.map(c=>({ fn:c.first_name, ln:c.last_name, dob:c.dob||"", allergies:c.allergies||"", prog:c.program_id, days:new Set(), lunch:false, savedId:c.id })));
+        }
       }
-      setLoadingSession(false);
-    });
+      setLoading(false);
+    }
+    load();
   }, []);
 
-  // Computed totals
-  const grandTotal = children.reduce((sum, ch) => {
-    const wg = {};
-    Array.from(ch.days).forEach(dk => {
-      const mon = getMonday(new Date(dk)); const wk = weekKey(mon);
-      if (!wg[wk]) wg[wk] = { monday:mon, days:[] }; wg[wk].days.push(dk);
-    });
-    const tuit = Object.values(wg).reduce((s,wk)=>s+weekPrice(wk.days.length),0);
-    const lnch = ch.lunch ? Array.from(ch.days).length * LUNCH_PER_DAY : 0;
-    return sum + tuit + lnch;
-  }, 0);
-
-  // Child helpers
-  const updateChild = (i, field, value) =>
-    setChildren(prev => prev.map((c,idx)=>idx===i?{...c,[field]:value}:c));
+  // Helpers
+  const updateChild = (i,field,val) => setChildren(prev=>prev.map((c,idx)=>idx===i?{...c,[field]:val}:c));
+  const setChildDays = (i, updater) => setChildren(prev=>prev.map((c,idx)=>{
+    if(idx!==i) return c;
+    const newDays = typeof updater==="function" ? updater(c.days) : updater;
+    return {...c,days:newDays};
+  }));
+  const setChildLunch = (i,val) => updateChild(i,"lunch",val);
   const addChild = () => {
-    if (children.length >= 5) return;
-    setChildren(prev => [...prev, { fn:"", ln:"", dob:"", allergies:"", prog:null, days:new Set(), lunch:false }]);
+    if(children.length>=5) return;
+    setChildren(prev=>[...prev,{fn:"",ln:"",dob:"",allergies:"",prog:null,days:new Set(),lunch:false,savedId:null}]);
   };
   const removeChild = (i) => {
-    setChildren(prev => prev.filter((_,idx)=>idx!==i));
-    if (activeChild >= i && activeChild > 0) setActiveChild(activeChild-1);
-  };
-  const setChildDays = (i, updater) => {
-    setChildren(prev => prev.map((c, idx) => {
-      if (idx !== i) return c;
-      const newDays = typeof updater === "function" ? updater(c.days) : updater;
-      return { ...c, days: newDays };
-    }));
-  };
-  const setChildLunch = (i, lunch) => updateChild(i, "lunch", lunch);
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
-  const handleAuth = async () => {
-    setAuthError(null); setAuthBusy(true);
-    if (authMode === "signup") {
-      if (password !== confirmPw) { setAuthError("Passwords don't match."); setAuthBusy(false); return; }
-      if (password.length < 6) { setAuthError("Password must be at least 6 characters."); setAuthBusy(false); return; }
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) { setAuthError(error.message); setAuthBusy(false); return; }
-      setSession(data.session);
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) { setAuthError("Incorrect email or password."); setAuthBusy(false); return; }
-      setSession(data.session);
-      setEmail(data.user.email || "");
-      // Load existing profile
-      const { data: profile } = await supabase.from("parent_profiles").select("*").eq("id", data.user.id).single();
-      if (profile) { setParentName(profile.full_name||""); setParentPhone(profile.phone||""); }
-      // Load existing children
-      const { data: savedChildren } = await supabase.from("children").select("*").eq("parent_id", data.user.id);
-      if (savedChildren && savedChildren.length > 0) {
-        setChildren(savedChildren.map(c=>({ fn:c.first_name, ln:c.last_name, dob:c.dob||"", allergies:c.allergies||"", prog:c.program_id, days:new Set(), lunch:false })));
-      }
-    }
-    setAuthBusy(false);
-    setStep(1);
+    setChildren(prev=>prev.filter((_,idx)=>idx!==i));
+    if(activeChild>=i&&activeChild>0) setActiveChild(activeChild-1);
   };
 
-  const saveProfile = async () => {
-    if (!session) return;
-    await supabase.from("parent_profiles").upsert({
-      id: session.user.id, email, full_name: parentName, phone: parentPhone, updated_at: new Date().toISOString()
+  const grandTotal = children.reduce((sum,ch)=>{
+    const wg={};
+    Array.from(ch.days).forEach(dk=>{
+      const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+      if(!wg[wk]) wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
     });
-  };
+    const t=Object.values(wg).reduce((s,wk)=>s+weekPrice(wk.days.length),0);
+    const l=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
+    return sum+t+l;
+  },0);
 
-  const saveChildren = async () => {
-    if (!session) return;
+  const waiverAlreadySigned = !!profile?.waiver_signature;
+  const STEPS = waiverAlreadySigned
+    ? ["Children","Schedule","Your Info","Payment","Confirmation"]
+    : ["Children","Schedule","Your Info","Payment","Waiver","Confirmation"];
+  const totalSteps = STEPS.length;
+  const confirmStep = totalSteps - 1;
+  const waiverStep  = waiverAlreadySigned ? -1 : totalSteps - 2;
+  const paymentStep = waiverAlreadySigned ? 3 : 3;
+
+  const saveChildrenToDB = async (uid) => {
     for (const ch of children) {
-      if (!ch.fn || !ch.ln) continue; // skip empty children
-      // Try insert, if exists update by matching name
-      const { data: existing } = await supabase
-        .from("children")
-        .select("id")
-        .eq("parent_id", session.user.id)
-        .eq("first_name", ch.fn)
-        .eq("last_name", ch.ln)
-        .single();
-
-      const payload = {
-        parent_id: session.user.id,
-        first_name: ch.fn, last_name: ch.ln,
-        dob: ch.dob, allergies: ch.allergies,
-        program_id: ch.prog,
-        program_name: PROGRAMS.find(p=>p.id===ch.prog)?.name,
-      };
-
-      if (existing) {
-        await supabase.from("children").update(payload).eq("id", existing.id);
+      if (!ch.fn||!ch.ln) continue;
+      const payload = { parent_id:uid, first_name:ch.fn, last_name:ch.ln, dob:ch.dob, allergies:ch.allergies, program_id:ch.prog, program_name:PROGRAMS.find(p=>p.id===ch.prog)?.name };
+      if (ch.savedId) {
+        await supabase.from("children").update(payload).eq("id",ch.savedId);
       } else {
-        await supabase.from("children").insert(payload);
+        const { data:existing } = await supabase.from("children").select("id").eq("parent_id",uid).eq("first_name",ch.fn).eq("last_name",ch.ln).single();
+        if (existing) { await supabase.from("children").update(payload).eq("id",existing.id); }
+        else { await supabase.from("children").insert(payload); }
       }
     }
   };
 
-  const handleSubmit = async () => {
-    setBusy(true);
-    await saveProfile();
-    await saveChildren();
-    const parentUserId = session?.user?.id || null;
-    for (const ch of children) {
-      const wg = {};
-      Array.from(ch.days).forEach(dk => {
-        const mon = getMonday(new Date(dk)); const wk = weekKey(mon);
-        if (!wg[wk]) wg[wk] = { monday:mon, days:[] }; wg[wk].days.push(dk);
-      });
-      const wkEntries = Object.values(wg);
-      const tuit = wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
-      const lnch = ch.lunch ? Array.from(ch.days).length * LUNCH_PER_DAY : 0;
-      const sp = PROGRAMS.find(p=>p.id===ch.prog);
-      await supabase.from("registrations").insert({
-        program_id: ch.prog, program_name: sp?.name,
-        child_first_name: ch.fn, child_last_name: ch.ln,
-        child_dob: ch.dob, child_allergies: ch.allergies,
-        parent_name: parentName, parent_email: email, parent_phone: parentPhone,
-        selected_days: Array.from(ch.days), lunch: ch.lunch,
-        subtotal_tuition: tuit, subtotal_lunch: lnch, grand_total: tuit+lnch,
-        waiver_liability: w.liab, waiver_medical: w.med,
-        waiver_media: w.mediaY?"yes":w.mediaN?"no":null,
-        waiver_excursion: w.excY?"yes":w.excN?"no":null,
-        waiver_signature: sig, waiver_date: new Date().toISOString(),
-        payment_status: "pending", parent_user_id: parentUserId,
-      });
-    }
-    setBusy(false);
-    setStep(6);
-  };
+  const handleNext = async () => {
+    setErr("");
 
-  const next = async () => {
-    if (step === 0) { await handleAuth(); return; }
-    if (step === 5) { await handleSubmit(); return; }
-    if (step === 1) await saveProfile();
-    setStep(s=>s+1); window.scrollTo(0,0);
+    // Step 2 — parent info: optionally create account
+    if (step===2 && createAcct && !session) {
+      if (newPassword!==confirmPw) { setErr("Passwords don't match."); return; }
+      if (newPassword.length<6) { setErr("Password must be at least 6 characters."); return; }
+      setBusy(true);
+      const { data, error } = await supabase.auth.signUp({ email:parentEmail, password:newPassword });
+      if (error) { setErr(error.message); setBusy(false); return; }
+      setSession(data.session);
+      setBusy(false);
+    }
+
+    // Final submit (payment step or waiver step)
+    const isLastBeforeConfirm = step === totalSteps - 2;
+    if (isLastBeforeConfirm) {
+      setBusy(true);
+      const uid = session?.user?.id || null;
+
+      // Save profile
+      if (uid) {
+        await supabase.from("parent_profiles").upsert({
+          id:uid, full_name:parentName, phone:parentPhone, email:parentEmail,
+          waiver_signature: waiverAlreadySigned ? profile.waiver_signature : sig,
+          waiver_signed_at: waiverAlreadySigned ? profile.waiver_signed_at : new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        await saveChildrenToDB(uid);
+      }
+
+      // Save registrations
+      for (const ch of children) {
+        const wg={}; Array.from(ch.days).forEach(dk=>{
+          const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
+          if(!wg[wk])wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
+        });
+        const wkEntries=Object.values(wg);
+        const tuit=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
+        const lnch=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
+        const sp=PROGRAMS.find(p=>p.id===ch.prog);
+        await supabase.from("registrations").insert({
+          program_id:ch.prog, program_name:sp?.name,
+          child_first_name:ch.fn, child_last_name:ch.ln,
+          child_dob:ch.dob, child_allergies:ch.allergies,
+          parent_name:parentName, parent_email:parentEmail, parent_phone:parentPhone,
+          selected_days:Array.from(ch.days), lunch:ch.lunch,
+          subtotal_tuition:tuit, subtotal_lunch:lnch, grand_total:tuit+lnch,
+          waiver_liability:w.liab, waiver_medical:w.med,
+          waiver_media:w.mediaY?"yes":w.mediaN?"no":null,
+          waiver_excursion:w.excY?"yes":w.excN?"no":null,
+          waiver_signature:waiverAlreadySigned?profile.waiver_signature:sig,
+          waiver_date: waiverAlreadySigned ? profile.waiver_signed_at : new Date().toISOString(),
+          payment_status:"pending", parent_user_id:uid,
+        });
+      }
+      setBusy(false);
+      setStep(confirmStep);
+      window.scrollTo(0,0);
+      return;
+    }
+
+    setStep(s=>s+1);
+    window.scrollTo(0,0);
   };
 
   if (loadingSession) return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <p style={{ color:OLIVE, fontSize:"14px" }}>Loading...</p>
+      <p style={{ color:OLIVE }}>Loading...</p>
     </div>
   );
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK, WebkitTextSizeAdjust:"100%" }}>
       <style>{`
         * { box-sizing: border-box; }
-        input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="tel"], button, textarea { font-family: Georgia, serif; -webkit-appearance: none; }
-        input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; cursor: pointer; accent-color: ${OLIVE}; flex-shrink: 0; }
-        @media (max-width: 480px) {
-          .name-row { flex-direction: column !important; gap: 0 !important; }
-          .step-label { font-size: 10px !important; min-width: 44px !important; padding: 8px 1px !important; }
-          .pricing-row { flex-direction: column !important; }
-          .pay-row { flex-direction: column !important; gap: 0 !important; }
-          .nav-row { flex-wrap: wrap !important; }
-          .confirm-inner { max-width: 100% !important; width: 100% !important; }
+        input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="tel"],button,textarea { font-family: Georgia,serif; }
+        input[type="checkbox"],input[type="radio"] { width:18px; height:18px; cursor:pointer; accent-color:${OLIVE}; flex-shrink:0; margin-top:2px; }
+        @media (max-width:480px) {
+          .name-row { flex-direction:column !important; gap:0 !important; }
+          .step-lbl { font-size:9px !important; min-width:40px !important; padding:8px 1px !important; }
+          .pay-row { flex-direction:column !important; gap:0 !important; }
+          .nav-row { flex-wrap:wrap !important; }
+          .price-cards { flex-direction:column !important; }
+          .prog-cards { flex-direction:column !important; }
         }
       `}</style>
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"90px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%, -40%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }} />
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
         <div style={{ width:"80px" }}/>
         {session
@@ -407,7 +398,7 @@ export default function WildChildRegistration() {
       {/* Step bar */}
       <div style={{ display:"flex", background:NAVY, overflowX:"auto" }}>
         {STEPS.map((s,i)=>(
-          <div key={s} onClick={()=>i<step&&setStep(i)} className="step-label"
+          <div key={s} className="step-lbl" onClick={()=>i<step&&setStep(i)}
             style={{ flex:1, padding:"10px 2px", textAlign:"center", fontSize:"11px", whiteSpace:"nowrap", minWidth:"56px",
               color:i===step?"#fff":i<step?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.3)",
               borderBottom:i===step?`2px solid ${ORANGE}`:"2px solid transparent", cursor:i<step?"pointer":"default" }}>
@@ -418,82 +409,27 @@ export default function WildChildRegistration() {
 
       <div style={{ maxWidth:"600px", margin:"0 auto", padding:"28px 16px 100px", width:"100%" }}>
 
-        {/* ── STEP 0 — Account ── */}
-        {step===0 && (
+        {/* ── STEP 0 — Children ── */}
+        {step===0&&(
           <div>
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>
-              {authMode==="signup" ? "Create Your Account" : "Welcome Back"}
+              {session&&savedChildren.length>0 ? "Your Children" : "Add Your Child"}
             </h2>
-            <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"24px", lineHeight:1.6 }}>
-              {authMode==="signup"
-                ? "Your account keeps your children's info saved so future enrollments take just a few taps."
-                : "Sign in to load your saved family info and enroll quickly."}
-            </p>
-
-            {authError && (
-              <div style={{ background:"#fdecea", border:"1px solid #f5c6c6", borderRadius:"8px", padding:"12px 14px", marginBottom:"18px", fontSize:"13px", color:"#a32d2d" }}>
-                {authError}
-              </div>
-            )}
-
-            <div style={{ background:"#fff", borderRadius:"12px", padding:"24px", border:`1px solid ${CREAM_DARK}` }}>
-              <span style={lbl}>Email</span>
-              <input style={inp} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com"/>
-              <span style={lbl}>Password</span>
-              <input style={inp} type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/>
-              {authMode==="signup" && <>
-                <span style={lbl}>Confirm Password</span>
-                <input style={inp} type="password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} placeholder="••••••••"/>
-              </>}
-            </div>
-
-            <div style={{ height:"1px", background:CREAM_DARK, margin:"20px 0" }}/>
-            <p style={{ textAlign:"center", fontSize:"13px", color:TEXT_LIGHT }}>
-              {authMode==="signup" ? "Already have an account? " : "New here? "}
-              <button onClick={()=>{setAuthMode(authMode==="signup"?"login":"signup");setAuthError(null);}}
-                style={{ background:"none", border:"none", color:ORANGE, cursor:"pointer", fontSize:"13px", padding:0 }}>
-                {authMode==="signup" ? "Sign in instead" : "Create an account"}
-              </button>
-            </p>
-          </div>
-        )}
-
-        {/* ── STEP 1 — Parent Info ── */}
-        {step===1 && (
-          <div>
-            <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Your Information</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"22px", lineHeight:1.5 }}>
-              This is saved to your account and pre-fills automatically for future enrollments.
-            </p>
-            <div style={{ background:"#fff", borderRadius:"12px", padding:"24px", border:`1px solid ${CREAM_DARK}` }}>
-              <span style={lbl}>Full Name</span>
-              <input style={inp} value={parentName} onChange={e=>setParentName(e.target.value)} placeholder="Your full name"/>
-              <span style={lbl}>Email</span>
-              <input style={inp} type="email" value={email} readOnly style={{ ...inp, background:CREAM, color:TEXT_LIGHT, cursor:"default" }}/>
-              <span style={lbl}>Phone / WhatsApp</span>
-              <input style={inp} value={parentPhone} onChange={e=>setParentPhone(e.target.value)} placeholder="+1 555 000 0000"/>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 2 — Children ── */}
-        {step===2 && (
-          <div>
-            <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Your Children</h2>
-            <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"22px", lineHeight:1.5 }}>
-              Add each child you'd like to enroll. Their info is saved to your account.
+              {session&&savedChildren.length>0
+                ? "Your saved children are pre-filled. Add new ones or update info below."
+                : "Tell us about your child. You can add more below."}
             </p>
 
-            {children.map((ch, i) => (
+            {children.map((ch,i)=>(
               <div key={i} style={{ background:"#fff", border:`1.5px solid ${i===0?CREAM_DARK:OLIVE}`, borderRadius:"12px", padding:"20px", marginBottom:"16px" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
                   <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:i===0?TEXT_LIGHT:OLIVE, margin:0 }}>Child {i+1}</p>
-                  {i>0 && (
+                  {i>0&&(
                     <button onClick={()=>removeChild(i)}
-                      style={{ background:"none", border:"none", color:TEXT_LIGHT, cursor:"pointer", fontSize:"13px" }}>Remove</button>
+                      style={{ background:"none", border:"none", color:"#c0392b", cursor:"pointer", fontSize:"13px" }}>Remove</button>
                   )}
                 </div>
-
                 <div className="name-row" style={{ display:"flex", gap:"12px" }}>
                   <div style={{ flex:1 }}><span style={lbl}>First Name</span><input style={inp} value={ch.fn} onChange={e=>updateChild(i,"fn",e.target.value)} placeholder="First name"/></div>
                   <div style={{ flex:1 }}><span style={lbl}>Last Name</span><input style={inp} value={ch.ln} onChange={e=>updateChild(i,"ln",e.target.value)} placeholder="Last name"/></div>
@@ -502,14 +438,12 @@ export default function WildChildRegistration() {
                 <input style={inp} type="date" value={ch.dob} onChange={e=>updateChild(i,"dob",e.target.value)}/>
                 <span style={lbl}>Allergies / Dietary Notes</span>
                 <input style={inp} value={ch.allergies} onChange={e=>updateChild(i,"allergies",e.target.value)} placeholder="None, or describe..."/>
-
-                {/* Program selector */}
                 <span style={{ ...lbl, marginTop:"4px" }}>Program</span>
-                <div style={{ display:"flex", gap:"10px" }}>
+                <div className="prog-cards" style={{ display:"flex", gap:"10px" }}>
                   {PROGRAMS.map(p=>(
                     <div key={p.id} onClick={()=>updateChild(i,"prog",p.id)}
                       style={{ flex:1, background:ch.prog===p.id?p.color:"#fff", border:`1.5px solid ${ch.prog===p.id?p.color:CREAM_DARK}`, borderRadius:"10px", padding:"14px 12px", cursor:"pointer", transition:"all .2s" }}>
-                      <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:ch.prog===p.id?"rgba(255,255,255,0.8)":TEXT_LIGHT, marginBottom:"3px", margin:"0 0 3px" }}>{p.name}</p>
+                      <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:ch.prog===p.id?"rgba(255,255,255,0.8)":TEXT_LIGHT, margin:"0 0 3px" }}>{p.name}</p>
                       <p style={{ fontSize:"16px", fontWeight:400, color:ch.prog===p.id?"#fff":TEXT_DARK, margin:"0 0 6px" }}>{p.age}</p>
                       <p style={{ fontSize:"12px", color:ch.prog===p.id?"rgba(255,255,255,0.8)":TEXT_LIGHT, lineHeight:1.4, margin:0 }}>{p.desc}</p>
                     </div>
@@ -518,25 +452,24 @@ export default function WildChildRegistration() {
               </div>
             ))}
 
-            {children.length < 5 && (
+            {children.length<5&&(
               <button onClick={addChild}
-                style={{ width:"100%", background:"transparent", border:`1.5px dashed ${CREAM_DARK}`, borderRadius:"10px", padding:"14px", color:TEXT_LIGHT, fontSize:"13px", cursor:"pointer", marginBottom:"8px", letterSpacing:"0.5px" }}>
-                + Add Another Child {children.length > 0 ? `(${children.length+1} of 5)` : ""}
+                style={{ width:"100%", background:"transparent", border:`1.5px dashed ${CREAM_DARK}`, borderRadius:"10px", padding:"14px", color:TEXT_LIGHT, fontSize:"13px", cursor:"pointer", letterSpacing:"0.5px" }}>
+                + Add Another Child {children.length>0?`(${children.length+1} of 5)`:""}
               </button>
             )}
           </div>
         )}
 
-        {/* ── STEP 3 — Schedule ── */}
-        {step===3 && (
+        {/* ── STEP 1 — Schedule ── */}
+        {step===1&&(
           <div>
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Choose Your Rhythm</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"20px", lineHeight:1.6 }}>
-              Weekly enrollment of 3 or 5 days, with an optional 4th day (+$85). Tap days to build each child's schedule.
+              3 or 5 days per week, with an optional 4th day (+$85). Tap individual days to build each child's schedule.
             </p>
 
-            {/* Pricing reference */}
-            <div className="pricing-row" style={{ display:"flex", gap:"8px", marginBottom:"20px" }}>
+            <div className="price-cards" style={{ display:"flex", gap:"8px", marginBottom:"20px" }}>
               {[{l:"3 Days/wk",p:`$${PRICE_3}`},{l:"4th Day",p:`+$${PRICE_4TH}`},{l:"5 Days/wk",p:`$${PRICE_5}`}].map(o=>(
                 <div key={o.l} style={{ flex:1, background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"10px", textAlign:"center" }}>
                   <p style={{ fontSize:"12px", color:TEXT_MID, margin:"0 0 3px" }}>{o.l}</p>
@@ -545,21 +478,18 @@ export default function WildChildRegistration() {
               ))}
             </div>
 
-            {/* Child tabs */}
-            {children.length > 1 && (
+            {children.length>1&&(
               <div style={{ display:"flex", gap:"8px", marginBottom:"20px", flexWrap:"wrap" }}>
                 {children.map((ch,i)=>(
                   <button key={i} onClick={()=>setActiveChild(i)}
                     style={{ flex:"0 0 auto", background:activeChild===i?OLIVE:"#fff", color:activeChild===i?"#fff":TEXT_MID,
-                      border:`1.5px solid ${activeChild===i?OLIVE:CREAM_DARK}`, borderRadius:"8px",
-                      padding:"9px 16px", fontSize:"13px", cursor:"pointer" }}>
+                      border:`1.5px solid ${activeChild===i?OLIVE:CREAM_DARK}`, borderRadius:"8px", padding:"9px 16px", fontSize:"13px", cursor:"pointer" }}>
                     {ch.fn||`Child ${i+1}`}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Active child's name + program */}
             <div style={{ background:OLIVE_LIGHT, borderRadius:"8px", padding:"10px 14px", marginBottom:"16px" }}>
               <p style={{ fontSize:"13px", color:OLIVE_DARK, margin:0 }}>
                 <strong>{children[activeChild]?.fn||`Child ${activeChild+1}`}</strong>
@@ -570,8 +500,8 @@ export default function WildChildRegistration() {
             <ChildCalendar
               key={activeChild}
               childName={children[activeChild]?.fn||`Child ${activeChild+1}`}
-              days={children[activeChild]?.days instanceof Set ? children[activeChild].days : new Set()}
-              setDays={(updater)=>setChildDays(activeChild, updater)}
+              days={children[activeChild]?.days instanceof Set?children[activeChild].days:new Set()}
+              setDays={(u)=>setChildDays(activeChild,u)}
               lunch={children[activeChild]?.lunch||false}
               setLunch={(l)=>setChildLunch(activeChild,l)}
               today={today}
@@ -579,8 +509,48 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* ── STEP 4 — Payment ── */}
-        {step===4 && (
+        {/* ── STEP 2 — Parent Info ── */}
+        {step===2&&(
+          <div>
+            <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Your Information</h2>
+            <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"22px", lineHeight:1.5 }}>
+              {session ? "Confirm your details — saved from your account." : "Tell us how to reach you."}
+            </p>
+
+            <div style={{ background:"#fff", borderRadius:"12px", padding:"24px", border:`1px solid ${CREAM_DARK}` }}>
+              <span style={lbl}>Full Name</span>
+              <input style={inp} value={parentName} onChange={e=>setParentName(e.target.value)} placeholder="Your full name"/>
+              <span style={lbl}>Email Address</span>
+              <input style={inp} type="email" value={parentEmail} onChange={e=>setParentEmail(e.target.value)} placeholder="your@email.com" readOnly={!!session}/>
+              <span style={lbl}>Phone / WhatsApp</span>
+              <input style={inp} value={parentPhone} onChange={e=>setParentPhone(e.target.value)} placeholder="+1 555 000 0000"/>
+            </div>
+
+            {!session&&(
+              <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginTop:"16px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"4px", cursor:"pointer" }} onClick={()=>setCreateAcct(!createAcct)}>
+                  <input type="checkbox" checked={createAcct} onChange={e=>setCreateAcct(e.target.checked)}/>
+                  <span style={{ fontSize:"14px", color:TEXT_DARK }}>Save my info for faster future enrollments</span>
+                </div>
+                <p style={{ fontSize:"12px", color:TEXT_LIGHT, marginLeft:"28px", lineHeight:1.5, margin:"4px 0 0 28px" }}>
+                  Creates a free account. Next time, your children's info and waiver are already on file.
+                </p>
+                {createAcct&&(
+                  <div style={{ marginTop:"16px" }}>
+                    <span style={lbl}>Create Password</span>
+                    <input style={inp} type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="At least 6 characters"/>
+                    <span style={lbl}>Confirm Password</span>
+                    <input style={inp} type="password" value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} placeholder="Repeat password"/>
+                  </div>
+                )}
+              </div>
+            )}
+            {err&&<p style={{ color:"#c0392b", fontSize:"13px", marginTop:"12px" }}>{err}</p>}
+          </div>
+        )}
+
+        {/* ── STEP 3 — Payment ── */}
+        {step===3&&(
           <div>
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Payment</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"20px" }}>Full amount due today.</p>
@@ -588,16 +558,16 @@ export default function WildChildRegistration() {
             <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"20px" }}>
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>Order Summary</p>
               {children.map((ch,i)=>{
-                const wg = {}; Array.from(ch.days).forEach(dk=>{
+                const wg={}; Array.from(ch.days).forEach(dk=>{
                   const mon=getMonday(new Date(dk)); const wk=weekKey(mon);
                   if(!wg[wk])wg[wk]={monday:mon,days:[]}; wg[wk].days.push(dk);
                 });
                 const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
-                if(wkEntries.length===0)return null;
-                const tuit=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
-                const lnch=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
+                if(wkEntries.length===0) return null;
+                const t=wkEntries.reduce((s,wk)=>s+weekPrice(wk.days.length),0);
+                const l=ch.lunch?Array.from(ch.days).length*LUNCH_PER_DAY:0;
                 return (
-                  <div key={i} style={{ marginBottom:"10px" }}>
+                  <div key={i} style={{ marginBottom:"8px" }}>
                     {children.length>1&&<p style={{ fontSize:"11px", color:OLIVE, margin:"8px 0 4px", textTransform:"uppercase", letterSpacing:"1px" }}>{ch.fn||`Child ${i+1}`}</p>}
                     {wkEntries.map(wk=>{
                       const n=wk.days.length; const p=weekPrice(n); const lc=ch.lunch?n*LUNCH_PER_DAY:0;
@@ -618,7 +588,7 @@ export default function WildChildRegistration() {
 
             <div style={{ background:OLIVE_LIGHT, border:`1px solid ${SAGE}`, borderRadius:"8px", padding:"11px 14px", marginBottom:"20px", display:"flex", gap:"9px", alignItems:"center" }}>
               <span>🔒</span>
-              <p style={{ fontSize:"12px", color:OLIVE_DARK, margin:0, lineHeight:1.5 }}>Demo mode — connects to Stripe in production. Any 16-digit number works.</p>
+              <p style={{ fontSize:"12px", color:OLIVE_DARK, margin:0, lineHeight:1.5 }}>Demo mode — connects to Stripe. Any 16-digit number works.</p>
             </div>
 
             <span style={lbl}>Card Number</span>
@@ -636,32 +606,25 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* ── STEP 5 — Waiver ── */}
-        {step===5 && (
+        {/* ── STEP 4 — Waiver (only if not signed before) ── */}
+        {!waiverAlreadySigned&&step===4&&(
           <div>
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Waiver & Consent</h2>
-            <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"22px" }}>Please read and complete each section.</p>
+            <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"22px" }}>Please read and complete each section. Once signed, this is saved to your account.</p>
 
-            {[
-              { key:"liab", title:"1. Assumption of Risk & Release of Liability",
-                text:"Wild Child Playgarden & Wildschooling Nosara is a nature-based, outdoor educational program. Activities include outdoor play, gardening, forest and beach exploration, physical movement, water play, and exposure to uneven terrain, insects, plants, wildlife, and weather. I knowingly assume all risks and release Wild Child and its staff from all claims arising from my child's participation.",
-                checkLabel:"I agree to the Assumption of Risk and Release of Liability." },
-              { key:"med", title:"2. Medical & Emergency Consent",
-                text:"I authorize Wild Child to seek emergency medical care for my child if I cannot be reached. I consent to examination, diagnosis, treatment, and/or hospital care deemed necessary by a licensed physician. All medical expenses are my responsibility.",
-                checkLabel:"I agree to Medical & Emergency Care Consent." },
-            ].map(s=>(
+            {WAIVER_SECTIONS.map(s=>(
               <div key={s.key} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", marginBottom:"14px" }}>
                 <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 9px" }}>{s.title}</p>
                 <p style={{ fontSize:"13px", lineHeight:1.7, color:TEXT_MID, margin:"0 0 12px" }}>{s.text}</p>
-                <label style={{ display:"flex", gap:"8px", alignItems:"flex-start", cursor:"pointer" }}>
-                  <input type="checkbox" checked={w[s.key]} onChange={e=>setW({...w,[s.key]:e.target.checked})} style={{ marginTop:"3px", accentColor:OLIVE }}/>
+                <label style={{ display:"flex", gap:"10px", alignItems:"flex-start", cursor:"pointer" }}>
+                  <input type="checkbox" checked={w[s.key]} onChange={e=>setW({...w,[s.key]:e.target.checked})}/>
                   <span style={{ fontSize:"13px", color:TEXT_DARK, lineHeight:1.5 }}>{s.checkLabel}</span>
                 </label>
               </div>
             ))}
 
             {[
-              { key:"media", title:"3. Media Release", text:"Photos/videos may be taken during activities and used for educational documentation and promotional purposes including the Wild Child website and social media.",
+              { key:"media", title:"3. Media Release", text:"Photos/videos may be taken during activities and used for educational documentation and promotional purposes.",
                 opts:[{id:"mediaY",checked:w.mediaY,onChange:()=>setW({...w,mediaY:true,mediaN:false}),label:"YES – I grant permission"},
                       {id:"mediaN",checked:w.mediaN,onChange:()=>setW({...w,mediaY:false,mediaN:true}),label:"NO – I do not grant permission"}] },
               { key:"exc", title:"4. Excursion Permission", text:"Wild Child may organize supervised local outings: neighborhood walks, beaches, farms, and community spaces.",
@@ -672,8 +635,8 @@ export default function WildChildRegistration() {
                 <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 9px" }}>{s.title}</p>
                 <p style={{ fontSize:"13px", lineHeight:1.7, color:TEXT_MID, margin:"0 0 12px" }}>{s.text}</p>
                 {s.opts.map(o=>(
-                  <label key={o.id} style={{ display:"flex", gap:"8px", cursor:"pointer", marginBottom:"8px" }}>
-                    <input type="radio" name={s.key} checked={o.checked} onChange={o.onChange} style={{ marginTop:"3px", accentColor:OLIVE }}/>
+                  <label key={o.id} style={{ display:"flex", gap:"10px", cursor:"pointer", marginBottom:"10px", alignItems:"flex-start" }}>
+                    <input type="radio" name={s.key} checked={o.checked} onChange={o.onChange}/>
                     <span style={{ fontSize:"13px", color:TEXT_DARK }}>{o.label}</span>
                   </label>
                 ))}
@@ -692,27 +655,24 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* ── STEP 6 — Confirmation ── */}
-        {step===6 && (
+        {/* ── Confirmation ── */}
+        {step===confirmStep&&(
           <div style={{ textAlign:"center", padding:"16px 0" }}>
             <div style={{ width:"68px", height:"68px", borderRadius:"50%", background:OLIVE, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 20px", fontSize:"28px" }}>🌿</div>
             <h2 style={{ fontSize:"26px", fontWeight:400, marginBottom:"8px" }}>Welcome to the Wild!</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, maxWidth:"420px", margin:"0 auto 24px", lineHeight:1.6 }}>
-              {children.map((c,i)=>c.fn||`Child ${i+1}`).join(" and ")} {children.length>1?"are":"is"} enrolled at Wild Child Nosara.
+              {children.map((c,i)=>c.fn||`Child ${i+1}`).join(" and ")} {children.length>1?"are":"is"} enrolled. We're so excited to welcome your family!
             </p>
 
-            <div className="confirm-inner" style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"400px", margin:"0 auto 20px", textAlign:"left", width:"100%" }}>
+            <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"420px", margin:"0 auto 20px", textAlign:"left", width:"100%" }}>
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 12px" }}>Enrollment Summary</p>
               {children.map((ch,i)=>{
                 const sp=PROGRAMS.find(p=>p.id===ch.prog);
-                const wg={}; Array.from(ch.days).forEach(dk=>{
-                  const mon=getMonday(new Date(dk));const wk=weekKey(mon);
-                  if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);
-                });
-                const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
+                const wg={}; Array.from(ch.days).forEach(dk=>{const mon=getMonday(new Date(dk));const wk=weekKey(mon);if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);});
+                const wkEntries=Object.values(wg);
                 return (
-                  <div key={i} style={{ marginBottom:"12px", paddingBottom:"12px", borderBottom:`1px solid ${CREAM_DARK}` }}>
-                    <p style={{ fontSize:"13px", color:OLIVE, margin:"0 0 4px", fontWeight:500 }}>{ch.fn||`Child ${i+1}`} — {sp?.name||"—"}</p>
+                  <div key={i} style={{ marginBottom:"10px", paddingBottom:"10px", borderBottom:`1px solid ${CREAM_DARK}` }}>
+                    <p style={{ fontSize:"13px", color:OLIVE, margin:"0 0 3px", fontWeight:500 }}>{ch.fn||`Child ${i+1}`} — {sp?.name||"—"}</p>
                     <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{wkEntries.length} week{wkEntries.length!==1?"s":""} · {Array.from(ch.days).length} days{ch.lunch?" · Lunch":""}</p>
                   </div>
                 );
@@ -722,30 +682,34 @@ export default function WildChildRegistration() {
               </div>
             </div>
 
-            <div className="confirm-inner" style={{ background:OLIVE_LIGHT, border:`1px solid ${SAGE}`, borderRadius:"10px", padding:"14px 18px", maxWidth:"400px", margin:"0 auto 20px", textAlign:"left", width:"100%" }}>
+            <div style={{ background:OLIVE_LIGHT, border:`1px solid ${SAGE}`, borderRadius:"10px", padding:"14px 18px", maxWidth:"420px", margin:"0 auto 20px", textAlign:"left", width:"100%" }}>
               <p style={{ fontSize:"13px", color:OLIVE_DARK, margin:"0 0 5px", fontWeight:"bold" }}>What happens next</p>
               <p style={{ fontSize:"13px", color:OLIVE_DARK, lineHeight:1.6, margin:0 }}>
-                A confirmation has been sent to {email}. Our team at info@dandelionwildschooling.com has been notified. Pura vida! 🌺
+                Confirmation sent to {parentEmail}. Our team at info@dandelionwildschooling.com has been notified. Pura vida! 🌺
               </p>
             </div>
 
-            <a href="/portal" style={{ display:"inline-block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", marginBottom:"16px" }}>
-              View My Portal
-            </a>
-            <br/>
+            {session
+              ? <a href="/portal" style={{ display:"inline-block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", marginBottom:"16px" }}>View My Portal</a>
+              : <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"420px", margin:"0 auto 20px", width:"100%" }}>
+                  <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 6px" }}>Track your enrollments anytime</p>
+                  <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"0 0 14px", lineHeight:1.5 }}>Create a free account to see your schedule, history, and easily enroll in more weeks.</p>
+                  <a href="/login" style={{ display:"block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"12px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", textAlign:"center" }}>Create Account / Sign In</a>
+                </div>
+            }
             <p style={{ fontSize:"12px", color:TEXT_LIGHT }}>Questions? <a href="mailto:info@dandelionwildschooling.com" style={{ color:OLIVE }}>info@dandelionwildschooling.com</a></p>
           </div>
         )}
 
-        {/* ── Nav buttons ── */}
-        {step<6 && (
+        {/* Nav */}
+        {step!==confirmStep&&(
           <div className="nav-row" style={{ display:"flex", justifyContent:"space-between", marginTop:"32px", gap:"12px" }}>
             {step>0
               ? <button onClick={()=>setStep(s=>s-1)} style={{ background:"transparent", color:TEXT_MID, border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"13px 22px", fontSize:"13px", letterSpacing:"1px", cursor:"pointer", textTransform:"uppercase" }}>← Back</button>
               : <div/>}
-            <button onClick={next} disabled={busy||authBusy}
-              style={{ background:(busy||authBusy)?"#aaa":ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", cursor:(busy||authBusy)?"not-allowed":"pointer", textTransform:"uppercase", transition:"background .2s", flexShrink:0 }}>
-              {busy||authBusy ? "Please wait..." : step===5 ? "Submit & Complete ✓" : step===4 ? `Pay $${grandTotal} →` : step===0 ? (authMode==="signup"?"Create Account →":"Sign In →") : "Continue →"}
+            <button onClick={handleNext} disabled={busy}
+              style={{ background:busy?"#aaa":ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", cursor:busy?"not-allowed":"pointer", textTransform:"uppercase", transition:"background .2s", flexShrink:0 }}>
+              {busy?"Please wait...":step===paymentStep?`Pay $${grandTotal} →`:step===waiverStep?"Submit & Complete ✓":"Continue →"}
             </button>
           </div>
         )}
