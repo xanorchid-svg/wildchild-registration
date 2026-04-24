@@ -168,6 +168,8 @@ export default function ParentPortal() {
           .portal-sidebar { display: none !important; }
           .portal-main { padding: 16px 14px !important; }
           .info-row { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
+          .header-logo { height:110px !important; }
+          .header-logo-wrap { transform:translate(-50%,-35%) !important; }
         }
         @media (min-width:701px) {
           .hamburger-btn { display: none !important; }
@@ -177,8 +179,8 @@ export default function ParentPortal() {
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
+        <div className="header-logo-wrap" style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
+          <img className="header-logo" src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
         {/* Hamburger — mobile only */}
         <button className="hamburger-btn" onClick={()=>setMenuOpen(true)}

@@ -380,13 +380,15 @@ export default function WildChildRegistration() {
           .nav-row { flex-wrap:wrap !important; }
           .price-cards { flex-direction:column !important; }
           .prog-cards { flex-direction:column !important; }
+          .header-logo { height:110px !important; }
+          .header-logo-wrap { transform:translate(-50%,-35%) !important; }
         }
       `}</style>
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"90px", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
+        <div className="header-logo-wrap" style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
+          <img className="header-logo" src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
         <div style={{ width:"80px" }}/>
         {session
