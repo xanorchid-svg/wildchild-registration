@@ -168,8 +168,6 @@ export default function ParentPortal() {
           .portal-sidebar { display: none !important; }
           .portal-main { padding: 16px 14px !important; }
           .info-row { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
-          .header-logo { height:110px !important; }
-          .header-logo-wrap { transform:translate(-50%,-35%) !important; }
         }
         @media (min-width:701px) {
           .hamburger-btn { display: none !important; }
@@ -179,21 +177,19 @@ export default function ParentPortal() {
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div className="header-logo-wrap" style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
-          <img className="header-logo" src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
-        </div>
-        {/* Hamburger — mobile only */}
+        {/* Hamburger — top left, mobile only */}
         <button className="hamburger-btn" onClick={()=>setMenuOpen(true)}
-          style={{ position:"relative", zIndex:1, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 12px", cursor:"pointer", display:"flex", flexDirection:"column", gap:"4px" }}>
+          style={{ position:"relative", zIndex:2, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"9px 11px", cursor:"pointer", display:"flex", flexDirection:"column", gap:"4px", flexShrink:0 }}>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
         </button>
-        <div style={{ width:"80px" }} className="hamburger-btn"/>
-        <div style={{ position:"relative", zIndex:1, display:"flex", gap:"10px", alignItems:"center" }}>
-          <a href="/" style={{ fontSize:"11px", color:"rgba(255,255,255,0.7)", textDecoration:"none" }}>← Enroll</a>
-          <button onClick={signOut} style={{ background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"7px 12px", color:"rgba(255,255,255,0.9)", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>Sign Out</button>
+        {/* Logo — always centred */}
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
+        {/* Spacer to keep logo centred */}
+        <div style={{ width:"44px" }}/>
       </div>
 
       {/* Welcome bar */}
@@ -220,6 +216,13 @@ export default function ParentPortal() {
             <div style={{ paddingTop:"12px" }}>
               <SidebarContent/>
             </div>
+            {/* Sign Out at bottom of menu */}
+            <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"12px 0 0", padding:"12px 20px" }}>
+              <button onClick={signOut}
+                style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left" }}>
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -230,23 +233,17 @@ export default function ParentPortal() {
         {/* Desktop sidebar */}
         <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)" }}>
           <SidebarContent/>
+          {/* Sign Out at bottom of desktop sidebar */}
+          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"16px 0 0", padding:"12px 0" }}>
+            <button onClick={signOut}
+              style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {/* Main */}
         <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px" }}>
-
-          {/* Mobile section title */}
-          <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
-            <button className="hamburger-btn" onClick={()=>setMenuOpen(true)}
-              style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"8px 12px", cursor:"pointer", display:"flex", flexDirection:"column", gap:"3px", flexShrink:0 }}>
-              <div style={{ width:"16px", height:"2px", background:TEXT_MID, borderRadius:"1px" }}/>
-              <div style={{ width:"16px", height:"2px", background:TEXT_MID, borderRadius:"1px" }}/>
-              <div style={{ width:"16px", height:"2px", background:TEXT_MID, borderRadius:"1px" }}/>
-            </button>
-            <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0, letterSpacing:"0.5px" }}>
-              {activeSection==="children"&&children[activeChildIdx] ? `${children[activeChildIdx].first_name} ${children[activeChildIdx].last_name}` : activeSection==="general"?"My Information":"Payments"}
-            </p>
-          </div>
 
           {/* ── Children ── */}
           {activeSection==="children"&&(
