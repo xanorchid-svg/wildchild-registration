@@ -58,8 +58,8 @@ function getWeeksForMonthAdm(year, month) {
 
 function getMonday(date) {
   const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  const daysFromMonday = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - daysFromMonday);
   d.setHours(0, 0, 0, 0);
   return d;
 }

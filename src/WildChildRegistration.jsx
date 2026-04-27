@@ -36,11 +36,13 @@ function weekPrice(n) {
 }
 function weekValid(n) { return n>=3 && n<=5; }
 function getMonday(date) {
+  // Work entirely in local year/month/day — never rely on UTC conversion
   const d = new Date(date);
-  // Work in local time only
-  const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
-  const diff = day === 0 ? -6 : 1 - day; // shift to Monday
-  d.setDate(d.getDate() + diff);
+  // getDay() returns local day of week (0=Sun through 6=Sat)
+  let day = d.getDay();
+  // Convert so Monday=0, Tuesday=1, ..., Sunday=6
+  const daysFromMonday = (day + 6) % 7; // Mon→0, Tue→1, ... Sun→6
+  d.setDate(d.getDate() - daysFromMonday);
   d.setHours(0, 0, 0, 0);
   return d;
 }

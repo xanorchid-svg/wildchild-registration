@@ -33,9 +33,8 @@ function localDateKey(date) {
 function dayKey(date) { return localDateKey(date); }
 function getMonday(date) {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
+  const daysFromMonday = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - daysFromMonday);
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -47,6 +46,7 @@ function weekLabel(days) {
   const fri = addDays(mon, 4);
   return `${mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
 }
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const WEEKDAYS_SHORT=["Mon","Tue","Wed","Thu","Fri"];
 function getWeeksForMonth(year, month) {
   const weeks = [];
