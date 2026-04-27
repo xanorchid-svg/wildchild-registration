@@ -39,7 +39,7 @@ function localDateKey(date) {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
-function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); d.setHours(0,0,0,0); return d; }
 function dayKey(date) { return localDateKey(date); }
 const MONTHS_ADM=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const WD_SHORT=["Mon","Tue","Wed","Thu","Fri"];

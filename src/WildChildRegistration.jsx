@@ -49,6 +49,7 @@ function getMonday(date) {
 function addDays(date, n) {
   const d = new Date(date);
   d.setDate(d.getDate() + n);
+  d.setHours(0, 0, 0, 0); // always local midnight
   return d;
 }
 function formatDate(date) {
