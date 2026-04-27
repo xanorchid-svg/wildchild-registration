@@ -48,12 +48,15 @@ function weekLabel(days) {
   return `${mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
 }
 const WEEKDAYS_SHORT=["Mon","Tue","Wed","Thu","Fri"];
-function getWeeksForMonth(year,month) {
-  const weeks=[]; const firstDay=new Date(year,month,1);
-  let monday=getMonday(firstDay); if(monday>firstDay) monday=addDays(monday,-7);
-  for(let i=0;i<7;i++){
-    const wS=addDays(monday,i*7); const wE=addDays(wS,4);
-    if(wS.getMonth()<=month&&wE.getMonth()>=month) weeks.push(wS);
+function getWeeksForMonth(year, month) {
+  const weeks = [];
+  const firstDay = new Date(year, month, 1);
+  const monday = getMonday(firstDay);
+  const monthEnd = new Date(year, month + 1, 0);
+  for (let i = 0; i < 6; i++) {
+    const wStart = addDays(monday, i * 7);
+    const wEnd = addDays(wStart, 4);
+    if (wEnd >= firstDay && wStart <= monthEnd) weeks.push(wStart);
   }
   return weeks;
 }

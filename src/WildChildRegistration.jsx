@@ -69,15 +69,16 @@ function weekKey(monday) { return localDateKey(monday); }
 function dayKey(date) { return localDateKey(date); }
 function getWeeksForMonth(year, month) {
   const weeks = [];
-  const firstDay = new Date(year, month, 1); // local midnight
+  // Find the Monday of the week containing the 1st of the month
+  const firstDay = new Date(year, month, 1);
   let monday = getMonday(firstDay);
-  // If that monday is after firstDay, go back one week
-  if (monday > firstDay) monday = addDays(monday, -7);
-  for (let i = 0; i < 7; i++) {
+  // Walk forward through weeks, include any week that overlaps the month
+  for (let i = 0; i < 6; i++) {
     const wStart = addDays(monday, i * 7);
-    const wEnd = addDays(wStart, 4);
-    // Include week if any day falls in this month
-    if (wStart.getMonth() <= month && wEnd.getMonth() >= month) {
+    const wEnd = addDays(wStart, 4); // Friday
+    // Week overlaps this month if Friday >= month start AND Monday <= month end
+    const monthEnd = new Date(year, month + 1, 0); // last day of month
+    if (wEnd >= firstDay && wStart <= monthEnd) {
       weeks.push(wStart);
     }
   }
