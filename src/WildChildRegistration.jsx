@@ -37,26 +37,23 @@ function weekPrice(n) {
 function weekValid(n) { return n >= 3 && n <= 5; }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TIMEZONE-SAFE DATE UTILITIES
+// FULLY TIMEZONE-IMMUNE DATE UTILITIES
 //
-// Root cause of the Monday bug: any path that mixes Date object mutation
-// with getDay()/getDate() can produce off-by-one errors in UTC-6 (Costa Rica)
-// when JavaScript's internal UTC timestamp sits near a day boundary.
+// The bug: even with {y,m,d} integers, calling makeLocalDate().getDay() to
+// find the day-of-week still uses a Date object, which can read the wrong
+// local day in UTC-6 (Costa Rica) when the internal UTC timestamp sits near
+// midnight. The only complete fix is to compute day-of-week using pure
+// arithmetic — zero Date objects involved.
 //
-// Fix: all internal date math uses plain integers {y, m, d} (1-indexed month).
-// We only construct Date objects for display (toLocaleDateString) and for the
-// "is this day in the past?" comparison — both of which are safe because they
-// use local time methods on a Date that we fully control.
+// All week math (mondayOf, weekKeyOf, addDaysYmd, getWeeksForMonth) is now
+// entirely arithmetic. Date objects are only used for:
+//   1. formatYmd()  — display only, never affects logic
+//   2. weekdayName() — display only, never affects logic
+//   3. isBeforeToday() — integer comparison, Date only used to get today's y/m/d
+//   4. daysInMonth() — Date(y, m, 0).getDate() is safe (no timezone edge)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Build a local-midnight Date from integers — the ONLY safe way to construct
-// a Date from y/m/d without risking UTC offset issues.
-function makeLocalDate(y, m, d) {
-  // new Date(y, m-1, d) is always interpreted as LOCAL midnight. Safe.
-  return new Date(y, m - 1, d);
-}
-
-// Produce a YYYY-MM-DD key from integer parts — never from a Date object.
+// Produce a YYYY-MM-DD string from integer parts.
 function ymdKey(y, m, d) {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
@@ -67,50 +64,74 @@ function parseKey(key) {
   return { y: parts[0], m: parts[1], d: parts[2] };
 }
 
-// Day-of-week for a {y,m,d} object: 0=Sun … 6=Sat.
-// Uses makeLocalDate so getDay() reads local time — correct everywhere.
-function dowOf(ymd) {
-  return makeLocalDate(ymd.y, ymd.m, ymd.d).getDay();
+// Day-of-week using Tomohiko Sakamoto's algorithm — pure math, no Date object.
+// Returns 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat.
+function dowOf(y, m, d) {
+  const t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+  let yr = y;
+  if (m < 3) yr--;
+  return (yr + Math.floor(yr/4) - Math.floor(yr/100) + Math.floor(yr/400) + t[m-1] + d) % 7;
 }
 
-// Add n days to a {y,m,d}, returning a new {y,m,d}.
-// Delegates to the Date constructor's overflow handling (e.g. Jan 32 → Feb 1).
+// How many days are in a given month (1-indexed). Uses Date(y,m,0) which is safe.
+function daysInMonth(y, m) {
+  return new Date(y, m, 0).getDate();
+}
+
+// Add n days to {y,m,d} using pure arithmetic (handles month/year overflow).
 function addDaysYmd(ymd, n) {
-  const dt = makeLocalDate(ymd.y, ymd.m, ymd.d + n);
-  return { y: dt.getFullYear(), m: dt.getMonth() + 1, d: dt.getDate() };
+  let { y, m, d } = ymd;
+  d += n;
+  // Normalize forward (positive overflow)
+  while (d > daysInMonth(y, m)) {
+    d -= daysInMonth(y, m);
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  // Normalize backward (negative overflow)
+  while (d < 1) {
+    m--;
+    if (m < 1) { m = 12; y--; }
+    d += daysInMonth(y, m);
+  }
+  return { y, m, d };
 }
 
-// Return the Monday of the week containing {y,m,d}.
-// Monday = getDay() 1. If getDay()=0 (Sunday), go back 6 days; else go back (dow-1).
+// Return the Monday of the week containing {y,m,d} — purely arithmetic.
 function mondayOf(ymd) {
-  const dow = dowOf(ymd);                   // 0=Sun … 6=Sat
-  const daysBack = dow === 0 ? 6 : dow - 1; // Mon→0, Tue→1, … Sun→6
+  const dow = dowOf(ymd.y, ymd.m, ymd.d); // 0=Sun…6=Sat
+  const daysBack = dow === 0 ? 6 : dow - 1; // Mon→0 days back, Sun→6 days back
   return addDaysYmd(ymd, -daysBack);
 }
 
-// The "week key" is just the YYYY-MM-DD of that week's Monday.
+// The week key is the YYYY-MM-DD of that week's Monday.
 function weekKeyOf(ymd) {
   const mon = mondayOf(ymd);
   return ymdKey(mon.y, mon.m, mon.d);
 }
 
-// Format a {y,m,d} for display: "Apr 27"
+// Format {y,m,d} for display: "Apr 27". Only used for rendering, not logic.
 function formatYmd(ymd) {
-  return makeLocalDate(ymd.y, ymd.m, ymd.d)
+  return new Date(ymd.y, ymd.m - 1, ymd.d)
     .toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Short weekday name for a {y,m,d}: "Mon", "Tue", etc.
+// Short weekday name for display: "Mon", "Tue", etc. Only used for rendering.
 function weekdayName(ymd) {
-  return makeLocalDate(ymd.y, ymd.m, ymd.d)
+  return new Date(ymd.y, ymd.m - 1, ymd.d)
     .toLocaleDateString("en-US", { weekday: "short" });
 }
 
-// Is {y,m,d} strictly before {y,m,d} today?
+// Compare two {y,m,d} objects: is a strictly before b?
+function ymdBefore(a, b) {
+  if (a.y !== b.y) return a.y < b.y;
+  if (a.m !== b.m) return a.m < b.m;
+  return a.d < b.d;
+}
+
+// Is {y,m,d} strictly before today?
 function isBeforeToday(ymd, todayYmd) {
-  if (ymd.y !== todayYmd.y) return ymd.y < todayYmd.y;
-  if (ymd.m !== todayYmd.m) return ymd.m < todayYmd.m;
-  return ymd.d < todayYmd.d;
+  return ymdBefore(ymd, todayYmd);
 }
 
 // Is {y,m,d} in the given month (1-indexed)?
@@ -119,30 +140,23 @@ function inMonth(ymd, y, m) {
 }
 
 // Build the list of Monday {y,m,d} objects for the weeks visible in a calendar
-// month (year, month 1-indexed). Includes any week that overlaps the month.
+// month (year, month 1-indexed). Pure arithmetic — no Date objects.
 function getWeeksForMonth(year, month) {
   const firstDay = { y: year, m: month, d: 1 };
-  const lastDay  = { y: year, m: month, d: new Date(year, month, 0).getDate() };
+  const lastDay  = { y: year, m: month, d: daysInMonth(year, month) };
   const weeks = [];
   let monday = mondayOf(firstDay);
   for (let i = 0; i < 6; i++) {
     const wStart = addDaysYmd(monday, i * 7);
     const wEnd   = addDaysYmd(wStart, 4); // Friday
-    // Overlaps the month if: Friday >= firstDay AND Monday <= lastDay
-    const fridayAfterFirst =
-      wEnd.y > firstDay.y ||
-      (wEnd.y === firstDay.y && wEnd.m > firstDay.m) ||
-      (wEnd.y === firstDay.y && wEnd.m === firstDay.m && wEnd.d >= firstDay.d);
-    const mondayBeforeLast =
-      wStart.y < lastDay.y ||
-      (wStart.y === lastDay.y && wStart.m < lastDay.m) ||
-      (wStart.y === lastDay.y && wStart.m === lastDay.m && wStart.d <= lastDay.d);
-    if (fridayAfterFirst && mondayBeforeLast) {
-      weeks.push(wStart);
-    }
+    // Include week if Friday >= firstDay AND Monday <= lastDay
+    const fridayAfterFirst = !ymdBefore(wEnd, firstDay);
+    const mondayBeforeLast = !ymdBefore(lastDay, wStart);
+    if (fridayAfterFirst && mondayBeforeLast) weeks.push(wStart);
   }
   return weeks;
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
