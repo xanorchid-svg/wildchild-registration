@@ -60,13 +60,6 @@ function getWeeksForMonth(year, month) {
   }
   return weeks;
 }
-function weekLabel(days) {
-  if (!days||days.length===0) return "—";
-  const sorted=[...days].sort();
-  const mon=getMonday(parseLocalKey(sorted[0]));
-  const fri=new Date(mon); fri.setDate(fri.getDate()+4);
-  return `${mon.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${fri.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
-}
 
 const inp = { width:"100%", padding:"11px 13px", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", fontSize:"15px", fontFamily:"Georgia,serif", background:"#fff", color:TEXT_DARK, marginBottom:"14px", outline:"none", boxSizing:"border-box" };
 const lbl = { display:"block", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"6px", fontFamily:"Georgia,serif" };
@@ -216,12 +209,6 @@ export default function ParentPortal() {
     window.scrollTo(0,0);
   };
 
-  const NAV = [
-    { id:"children", label:"My Children" },
-    { id:"general",  label:"My Information" },
-    { id:"payments", label:"Payments" },
-  ];
-
   if (loading) return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <p style={{ color:OLIVE }}>Loading your portal...</p>
@@ -230,7 +217,6 @@ export default function ParentPortal() {
 
   const SidebarContent = () => (
     <>
-      {/* Children */}
       <div style={{ marginBottom:"8px" }}>
         <p style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:TEXT_LIGHT, padding:"0 20px", margin:"0 0 6px" }}>Children</p>
         {children.length===0
@@ -241,7 +227,7 @@ export default function ParentPortal() {
                 border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px",
                 color:activeSection==="children"&&activeChildIdx===i?OLIVE:TEXT_DARK,
                 borderLeft:activeSection==="children"&&activeChildIdx===i?`3px solid ${OLIVE}`:"3px solid transparent",
-                fontFamily:"Georgia,serif", display:"block", width:"100%" }}>
+                fontFamily:"Georgia,serif", display:"block" }}>
               {ch.first_name} {ch.last_name}
             </button>
           ))
@@ -280,18 +266,15 @@ export default function ParentPortal() {
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        {/* Hamburger — top left, mobile only */}
         <button className="hamburger-btn" onClick={()=>setMenuOpen(true)}
           style={{ position:"relative", zIndex:2, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"9px 11px", cursor:"pointer", display:"flex", flexDirection:"column", gap:"4px", flexShrink:0 }}>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
         </button>
-        {/* Logo — always centred */}
         <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
           <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
-        {/* Spacer to keep logo centred */}
         <div style={{ width:"44px" }}/>
       </div>
 
@@ -319,7 +302,6 @@ export default function ParentPortal() {
             <div style={{ paddingTop:"12px" }}>
               <SidebarContent/>
             </div>
-            {/* Sign Out at bottom of menu */}
             <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"12px 0 0", padding:"12px 20px" }}>
               <button onClick={signOut}
                 style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left" }}>
@@ -336,7 +318,6 @@ export default function ParentPortal() {
         {/* Desktop sidebar */}
         <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)" }}>
           <SidebarContent/>
-          {/* Sign Out at bottom of desktop sidebar */}
           <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"16px 0 0", padding:"12px 0" }}>
             <button onClick={signOut}
               style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
@@ -406,7 +387,6 @@ export default function ParentPortal() {
                           </div>
                         )}
                         {[...upcomingRegs,...pastRegs].length>0&&(()=>{
-                          // Collect all enrolled days across all registrations for this child
                           const allDays=[...upcomingRegs,...pastRegs].flatMap(r=>r.selected_days||[]);
                           const hasLunch=[...upcomingRegs,...pastRegs].some(r=>r.lunch);
                           return (
@@ -416,7 +396,6 @@ export default function ParentPortal() {
                               {upcomingRegs.length>0&&<>
                                 <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Upcoming</p>
                                 {upcomingRegs.map(reg=>{
-                                  // Group days by week
                                   const wg={};
                                   (reg.selected_days||[]).forEach(dk=>{
                                     const mon=getMonday(parseLocalKey(dk)); const wk=localDateKey(mon);
