@@ -1,12 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import './index.css'
-import WildChildRegistration from './WildChildRegistration'
-import Admin from './Admin'
-import AdminLogin from './AdminLogin'
-import ProtectedRoute from './ProtectedRoute'
-import ParentPortal from './ParentPortal'
+import WildChildRegistration from './WildChildRegistration.jsx'
+import AdminLogin from './AdminLogin.jsx'
+import Admin from './Admin.jsx'
+import ParentPortal from './ParentPortal.jsx'
+import ProtectedRoute from './ProtectedRoute.jsx'
+import ScheduleView from './ScheduleView.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -15,6 +15,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<WildChildRegistration />} />
         <Route path="/login" element={<AdminLogin />} />
         <Route path="/portal" element={<ParentPortal />} />
+        <Route path="/schedule" element={<ScheduleView />} />
         <Route path="/admin" element={
           <ProtectedRoute>
             <Admin />
