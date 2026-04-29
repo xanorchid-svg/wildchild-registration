@@ -634,9 +634,12 @@ export default function WildChildRegistration() {
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK, WebkitTextSizeAdjust:"100%" }}>
       <style>{`
+        html, body, #root { margin:0; padding:0; width:100%; }
         * { box-sizing: border-box; }
         input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="tel"],button,textarea { font-family: Georgia,serif; }
         input[type="checkbox"],input[type="radio"] { width:18px; height:18px; cursor:pointer; accent-color:${OLIVE}; flex-shrink:0; margin-top:2px; }
+        input[type="date"] { display:block; width:100%; -webkit-appearance:none; appearance:none; text-align:left; }
+        input[type="date"]::-webkit-date-and-time-value { text-align:left; }
         @media (max-width:480px) {
           .name-row { flex-direction:column !important; gap:0 !important; }
           .step-lbl { font-size:9px !important; min-width:40px !important; padding:8px 1px !important; }

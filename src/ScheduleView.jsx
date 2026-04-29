@@ -400,6 +400,7 @@ export default function ScheduleView() {
   return (
     <div style={{ fontFamily: "Georgia, serif", background: CREAM, minHeight: "100vh", color: TEXT_DARK }}>
       <style>{`
+        html, body, #root { margin:0; padding:0; width:100%; }
         * { box-sizing: border-box; }
         @media (max-width: 600px) {
           .schedule-header-actions { flex-direction: column !important; align-items: flex-start !important; }

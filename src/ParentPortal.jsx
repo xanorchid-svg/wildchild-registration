@@ -245,12 +245,21 @@ export default function ParentPortal() {
           {item.label}
         </button>
       ))}
+      <div style={{ height:"1px", background:CREAM_DARK, margin:"10px 0" }}/>
+      <a href="/schedule" onClick={()=>setMenuOpen(false)}
+        style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 20px", fontSize:"14px",
+          color:TEXT_DARK, textDecoration:"none", fontFamily:"Georgia,serif",
+          borderLeft:"3px solid transparent",
+          background:"transparent" }}>
+        📅 Schedule
+      </a>
     </>
   );
 
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
       <style>{`
+        html, body, #root { margin:0; padding:0; width:100%; }
         * { box-sizing: border-box; }
         input[type="checkbox"],input[type="radio"] { width:18px; height:18px; cursor:pointer; accent-color:${OLIVE}; flex-shrink:0; }
         @media (max-width:700px) {

@@ -264,6 +264,10 @@ export default function Admin() {
             </button>
           ))}
         </div>
+        <a href="/schedule"
+          style={{ color:"rgba(255,255,255,0.65)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", textDecoration:"none", fontFamily:"Georgia,serif", padding:"10px 0 10px 20px", whiteSpace:"nowrap" }}>
+          📅 Schedule
+        </a>
       </div>
 
       <div style={{ maxWidth:"700px", margin:"0 auto", padding:"32px 16px 60px" }}>
