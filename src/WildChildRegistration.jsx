@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
-import logo from "./assets/logo1.svg";
+import logo from "./assets/logo_new.png";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
@@ -654,8 +654,8 @@ export default function WildChildRegistration() {
       <div style={{ background:OLIVE_DARK, overflow:"hidden", position:"relative", height:"90px",
         display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
         <div style={{ width:"44px" }}/>
-        <div className="header-logo-wrap" style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
-          <img className="header-logo" src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
+        <div className="header-logo-wrap" style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}>
+          <img className="header-logo" src={logo} alt="Wild Child Nosara" style={{ height:"70px", width:"70px", objectFit:"cover", borderRadius:"50%", border:"2px solid rgba(255,255,255,0.3)" }}/>
         </div>
         {session
           ? <a href="/portal" style={{ position:"relative", zIndex:2, textDecoration:"none", display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"50%", width:"40px", height:"40px", flexShrink:0 }}>

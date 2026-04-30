@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
-import logo from "./assets/logo1.svg";
+import logo from "./assets/logo_new.png";
 
 const OLIVE      = "#6b7a3f";
 const OLIVE_DARK = "#4d5a2c";
@@ -281,8 +281,8 @@ export default function ParentPortal() {
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
           <div style={{ width:"18px", height:"2px", background:"#fff", borderRadius:"1px" }}/>
         </button>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"70px", width:"70px", objectFit:"cover", borderRadius:"50%", border:"2px solid rgba(255,255,255,0.3)" }}/>
         </div>
         <div style={{ width:"44px" }}/>
       </div>
