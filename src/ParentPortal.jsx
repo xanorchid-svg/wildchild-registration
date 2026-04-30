@@ -525,8 +525,8 @@ export default function ParentPortal() {
               <SectionCard title="Payment Method">
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0" }}>
                   <div>
-                    <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 3px" }}>Stripe integration coming soon</p>
-                    <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>You'll be able to save a card for faster enrollment</p>
+                    <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 3px" }}>Credit or debit card</p>
+                    <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>Payments are processed securely via Stripe at checkout. Your card details are never stored.</p>
                   </div>
                   <span style={{ fontSize:"20px" }}>💳</span>
                 </div>
