@@ -25,10 +25,7 @@ function parseLocalKey(key) {
 }
 function localDateKey(date) {
   const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 function dayKey(date) { return localDateKey(date); }
 function getMonday(date) {
@@ -61,6 +58,14 @@ function getWeeksForMonth(year, month) {
   return weeks;
 }
 
+// Generate referral code (same logic as registration form)
+function generateReferralCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "WC-";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 const inp = { width:"100%", padding:"11px 13px", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", fontSize:"15px", fontFamily:"Georgia,serif", background:"#fff", color:TEXT_DARK, marginBottom:"14px", outline:"none", boxSizing:"border-box" };
 const lbl = { display:"block", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"6px", fontFamily:"Georgia,serif" };
 
@@ -85,7 +90,85 @@ function InfoRow({ label, value }) {
   );
 }
 
-// ── Enrollment Calendar (parent view) ────────────────────────────────────────
+// ── Referral Code Card ────────────────────────────────────────────────────────
+function ReferralCard({ profile, userId, onCodeGenerated }) {
+  const [copied, setCopied]   = useState(false);
+  const [generating, setGen]  = useState(false);
+  const code = profile?.referral_code;
+  const hasCreditPending = profile?.referral_credit_pending === true;
+
+  const handleCopy = () => {
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleGenerate = async () => {
+    setGen(true);
+    const newCode = generateReferralCode();
+    await supabase.from("parent_profiles").update({ referral_code: newCode }).eq("id", userId);
+    onCodeGenerated(newCode);
+    setGen(false);
+  };
+
+  return (
+    <div style={{ background:"linear-gradient(135deg, #4d5a2c 0%, #6b7a3f 100%)", borderRadius:"14px", padding:"22px", marginBottom:"16px", color:"#fff" }}>
+      <div style={{ display:"flex", alignItems:"flex-start", gap:"14px", marginBottom:"16px" }}>
+        <span style={{ fontSize:"28px", lineHeight:1 }}>🌿</span>
+        <div>
+          <p style={{ fontSize:"15px", fontWeight:500, margin:"0 0 4px", color:"#fff" }}>Bring a Friend to Wild Child</p>
+          <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.78)", margin:0, lineHeight:1.5 }}>
+            Share your code with a family — they get 5% off their first enrollment, and you'll earn a 5% credit on your next one.
+          </p>
+        </div>
+      </div>
+
+      {hasCreditPending && (
+        <div style={{ background:"rgba(255,255,255,0.15)", borderRadius:"8px", padding:"10px 14px", marginBottom:"14px", display:"flex", alignItems:"center", gap:"8px" }}>
+          <span style={{ fontSize:"16px" }}>🎉</span>
+          <p style={{ fontSize:"13px", color:"#fff", margin:0 }}>
+            <strong>You have a referral credit waiting!</strong> 5% off your next enrollment — applied automatically at checkout.
+          </p>
+        </div>
+      )}
+
+      {code ? (
+        <div>
+          <p style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:"rgba(255,255,255,0.6)", margin:"0 0 8px" }}>Your referral code</p>
+          <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>
+            <div style={{ flex:1, background:"rgba(255,255,255,0.15)", borderRadius:"8px", padding:"12px 16px", letterSpacing:"3px", fontSize:"18px", fontFamily:"monospace", color:"#fff", border:"1px solid rgba(255,255,255,0.25)" }}>
+              {code}
+            </div>
+            <button
+              onClick={handleCopy}
+              style={{ background:copied?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.18)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:"8px", padding:"12px 16px", color:"#fff", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", whiteSpace:"nowrap", transition:"all .2s" }}>
+              {copied ? "Copied ✓" : "Copy"}
+            </button>
+          </div>
+          <p style={{ fontSize:"12px", color:"rgba(255,255,255,0.6)", margin:"12px 0 0", lineHeight:1.5 }}>
+            Share via WhatsApp, text, or email. Your friend enters this code at Step 3 of enrollment.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.8)", margin:"0 0 12px" }}>
+            Generate your personal referral code to start sharing.
+          </p>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:"8px", padding:"11px 20px", color:"#fff", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", transition:"all .2s" }}>
+            {generating ? "Generating..." : "Get My Referral Code"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Enrollment Calendar ───────────────────────────────────────────────────────
 function EnrollmentCalendar({ enrolledDays, hasLunch }) {
   const today = new Date(); today.setHours(0,0,0,0);
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -102,11 +185,9 @@ function EnrollmentCalendar({ enrolledDays, hasLunch }) {
         <button onClick={()=>{ if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1); }}
           style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_LIGHT, padding:"2px 10px", lineHeight:1 }}>›</button>
       </div>
-
       <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"8px", textAlign:"center" }}>
         {WEEKDAYS_SHORT.map(d=><div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
       </div>
-
       {weeks.map(monday=>(
         <div key={monday.toISOString()} style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"4px" }}>
           {[0,1,2,3,4].map(offset=>{
@@ -120,19 +201,15 @@ function EnrollmentCalendar({ enrolledDays, hasLunch }) {
                 style={{ textAlign:"center", padding:"7px 2px", borderRadius:"7px",
                   background: isEnrolled ? (isPast ? "#8fa88a" : OLIVE) : (inMonth ? CREAM : CREAM_DARK),
                   color: isEnrolled ? "#fff" : (inMonth ? TEXT_DARK : TEXT_LIGHT),
-                  opacity: inMonth ? 1 : 0.5,
-                  position:"relative" }}>
+                  opacity: inMonth ? 1 : 0.5 }}>
                 <div style={{ fontSize:"9px", opacity:0.7, marginBottom:"1px" }}>{d.toLocaleDateString("en-US",{month:"short"})}</div>
                 <div style={{ fontSize:"13px" }}>{d.getDate()}</div>
-                {isEnrolled && hasLunch && (
-                  <div style={{ fontSize:"8px", marginTop:"1px", opacity:0.85 }}>🥗</div>
-                )}
+                {isEnrolled && hasLunch && <div style={{ fontSize:"8px", marginTop:"1px", opacity:0.85 }}>🥗</div>}
               </div>
             );
           })}
         </div>
       ))}
-
       <div style={{ display:"flex", gap:"12px", marginTop:"12px", flexWrap:"wrap" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
           <div style={{ width:"12px", height:"12px", borderRadius:"3px", background:OLIVE }}/>
@@ -195,6 +272,10 @@ export default function ParentPortal() {
     setChildIdx(0);
   };
 
+  const handleCodeGenerated = (newCode) => {
+    setProfile(prev => ({ ...prev, referral_code: newCode }));
+  };
+
   const childRegs = (ch) => registrations.filter(r=>
     r.child_first_name?.toLowerCase()===ch.first_name?.toLowerCase()&&
     r.child_last_name?.toLowerCase()===ch.last_name?.toLowerCase()
@@ -205,8 +286,7 @@ export default function ParentPortal() {
 
   const navigate = (section, childIdx=0, view="info") => {
     setSection(section); setChildIdx(childIdx); setChildView(view);
-    setMenuOpen(false);
-    window.scrollTo(0,0);
+    setMenuOpen(false); window.scrollTo(0,0);
   };
 
   if (loading) return (
@@ -248,9 +328,7 @@ export default function ParentPortal() {
       <div style={{ height:"1px", background:CREAM_DARK, margin:"10px 0" }}/>
       <a href="/schedule" onClick={()=>setMenuOpen(false)}
         style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 20px", fontSize:"14px",
-          color:TEXT_DARK, textDecoration:"none", fontFamily:"Georgia,serif",
-          borderLeft:"3px solid transparent",
-          background:"transparent" }}>
+          color:TEXT_DARK, textDecoration:"none", fontFamily:"Georgia,serif", borderLeft:"3px solid transparent" }}>
         📅 Schedule
       </a>
     </>
@@ -291,6 +369,11 @@ export default function ParentPortal() {
       <div style={{ background:NAVY, padding:"12px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"10px" }}>
         <p style={{ color:"rgba(255,255,255,0.85)", fontSize:"13px", margin:0 }}>
           Welcome, <strong style={{ color:"#fff" }}>{profile.full_name||user?.email}</strong>
+          {profile.referral_credit_pending && (
+            <span style={{ marginLeft:"10px", background:ORANGE, color:"#fff", fontSize:"11px", padding:"2px 8px", borderRadius:"10px", verticalAlign:"middle" }}>
+              🎉 Referral credit waiting
+            </span>
+          )}
         </p>
         <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>
           + Enroll More Weeks
@@ -308,9 +391,7 @@ export default function ParentPortal() {
               <button onClick={()=>setMenuOpen(false)}
                 style={{ background:"none", border:"none", fontSize:"20px", cursor:"pointer", color:TEXT_LIGHT, lineHeight:1 }}>✕</button>
             </div>
-            <div style={{ paddingTop:"12px" }}>
-              <SidebarContent/>
-            </div>
+            <div style={{ paddingTop:"12px" }}><SidebarContent/></div>
             <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"12px 0 0", padding:"12px 20px" }}>
               <button onClick={signOut}
                 style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left" }}>
@@ -321,7 +402,6 @@ export default function ParentPortal() {
         </div>
       )}
 
-      {/* Layout */}
       <div style={{ display:"flex", minHeight:"calc(100vh - 130px)" }}>
 
         {/* Desktop sidebar */}
@@ -366,7 +446,6 @@ export default function ParentPortal() {
                       </div>
                     </div>
 
-                    {/* Sub-tabs */}
                     <div style={{ display:"flex", gap:"0", marginBottom:"24px", borderBottom:`1px solid ${CREAM_DARK}` }}>
                       {["info","enrollments"].map(v=>(
                         <button key={v} onClick={()=>setChildView(v)}
@@ -401,7 +480,6 @@ export default function ParentPortal() {
                           return (
                             <>
                               <EnrollmentCalendar enrolledDays={allDays} hasLunch={hasLunch}/>
-
                               {upcomingRegs.length>0&&<>
                                 <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"12px" }}>Upcoming</p>
                                 {upcomingRegs.map(reg=>{
@@ -411,27 +489,31 @@ export default function ParentPortal() {
                                     if(!wg[wk])wg[wk]={monday:mon,days:[]};wg[wk].days.push(dk);
                                   });
                                   const wkEntries=Object.values(wg).sort((a,b)=>a.monday-b.monday);
-                                  const PRICE_3=260,PRICE_5=420,PRICE_4TH=85,LUNCH=10;
-                                  const weekPrice=n=>n<3?0:n===3?PRICE_3:n===4?PRICE_3+PRICE_4TH:PRICE_5;
                                   return (
                                     <div key={reg.id} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"12px" }}>
                                       {wkEntries.map(wk=>{
-                                        const n=wk.days.length; const p=weekPrice(n); const lc=reg.lunch?n*LUNCH:0;
+                                        const n=wk.days.length;
                                         const dayNames=wk.days.map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ");
                                         return (
                                           <div key={wk.monday.toISOString()} style={{ marginBottom:"8px" }}>
                                             <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", color:TEXT_DARK }}>
                                               <span>Wk of {wk.monday.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
-                                              <span style={{ color:OLIVE }}>${p+lc}</span>
                                             </div>
-                                            <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"3px", display:"flex", gap:"5px", flexWrap:"wrap" }}>
-                                              <span>{dayNames}</span>
-                                              <span>· tuition ${p}</span>
-                                              {reg.lunch&&<span style={{ color:GREEN }}>+ lunch ${lc} ({n}×$10)</span>}
+                                            <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"3px" }}>
+                                              {dayNames} · {n} days{reg.lunch?" · Lunch":""}
                                             </div>
                                           </div>
                                         );
                                       })}
+                                      {/* Discount breakdown if stored */}
+                                      {(reg.discount_volume > 0 || reg.discount_sibling > 0 || reg.discount_referral > 0) && (
+                                        <div style={{ background:OLIVE_LIGHT, borderRadius:"6px", padding:"8px 10px", marginBottom:"8px" }}>
+                                          <p style={{ fontSize:"11px", color:OLIVE_DARK, margin:"0 0 4px" }}>Discounts applied</p>
+                                          {reg.discount_volume > 0 && <p style={{ fontSize:"11px", color:GREEN, margin:"1px 0" }}>Volume: −${reg.discount_volume}</p>}
+                                          {reg.discount_sibling > 0 && <p style={{ fontSize:"11px", color:ORANGE, margin:"1px 0" }}>Sibling: −${reg.discount_sibling}</p>}
+                                          {reg.discount_referral > 0 && <p style={{ fontSize:"11px", color:GREEN, margin:"1px 0" }}>Referral: −${reg.discount_referral}</p>}
+                                        </div>
+                                      )}
                                       <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                                         <StatusBadge status={reg.payment_status}/>
                                         <span style={{ fontSize:"15px", color:OLIVE }}>${reg.grand_total} total</span>
@@ -440,7 +522,6 @@ export default function ParentPortal() {
                                   );
                                 })}
                               </>}
-
                               {pastRegs.length>0&&<>
                                 <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"20px 0 12px" }}>Past</p>
                                 {pastRegs.map(reg=>(
@@ -478,6 +559,14 @@ export default function ParentPortal() {
                 {!editingProfile&&<button onClick={()=>setEditingProfile(true)}
                   style={{ background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"8px 16px", fontSize:"12px", color:TEXT_MID, cursor:"pointer", letterSpacing:"0.5px", textTransform:"uppercase", fontFamily:"Georgia,serif" }}>Edit</button>}
               </div>
+
+              {/* Referral code card — always visible in My Information */}
+              <ReferralCard
+                profile={profile}
+                userId={user?.id}
+                onCodeGenerated={handleCodeGenerated}
+              />
+
               <SectionCard title="General">
                 {editingProfile ? <>
                   <span style={lbl}>Full Name</span>
@@ -500,6 +589,7 @@ export default function ParentPortal() {
                   <InfoRow label="Phone / WhatsApp" value={profile.phone}/>
                 </>}
               </SectionCard>
+
               <SectionCard title="Children on Account">
                 {children.length===0
                   ? <p style={{ fontSize:"13px", color:TEXT_LIGHT }}>No children yet. <a href="/" style={{ color:ORANGE }}>Enroll →</a></p>
@@ -535,15 +625,24 @@ export default function ParentPortal() {
                 {registrations.length===0
                   ? <p style={{ fontSize:"13px", color:TEXT_LIGHT }}>No payment history yet.</p>
                   : registrations.map((reg,i)=>(
-                    <div key={reg.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:i<registrations.length-1?`1px solid ${CREAM_DARK}`:"none", flexWrap:"wrap", gap:"8px" }}>
-                      <div>
-                        <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 3px" }}>{reg.child_first_name} {reg.child_last_name}</p>
-                        <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{weekLabel(reg.selected_days)} · {formatDate(reg.created_at)}</p>
+                    <div key={reg.id} style={{ padding:"10px 0", borderBottom:i<registrations.length-1?`1px solid ${CREAM_DARK}`:"none" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"8px" }}>
+                        <div>
+                          <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 3px" }}>{reg.child_first_name} {reg.child_last_name}</p>
+                          <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{weekLabel(reg.selected_days)} · {formatDate(reg.created_at)}</p>
+                        </div>
+                        <div style={{ textAlign:"right" }}>
+                          <p style={{ fontSize:"15px", color:OLIVE, margin:"0 0 4px" }}>${reg.grand_total}</p>
+                          <StatusBadge status={reg.payment_status}/>
+                        </div>
                       </div>
-                      <div style={{ textAlign:"right" }}>
-                        <p style={{ fontSize:"15px", color:OLIVE, margin:"0 0 4px" }}>${reg.grand_total}</p>
-                        <StatusBadge status={reg.payment_status}/>
-                      </div>
+                      {(reg.discount_volume > 0 || reg.discount_sibling > 0 || reg.discount_referral > 0) && (
+                        <div style={{ marginTop:"6px", display:"flex", gap:"8px", flexWrap:"wrap" }}>
+                          {reg.discount_volume  > 0 && <span style={{ fontSize:"10px", background:OLIVE_LIGHT, color:OLIVE_DARK, padding:"2px 7px", borderRadius:"10px" }}>Volume −${reg.discount_volume}</span>}
+                          {reg.discount_sibling > 0 && <span style={{ fontSize:"10px", background:"#fff3eb", color:ORANGE, padding:"2px 7px", borderRadius:"10px" }}>Sibling −${reg.discount_sibling}</span>}
+                          {reg.discount_referral> 0 && <span style={{ fontSize:"10px", background:"#f0f7ec", color:GREEN, padding:"2px 7px", borderRadius:"10px" }}>Referral −${reg.discount_referral}</span>}
+                        </div>
+                      )}
                     </div>
                   ))
                 }

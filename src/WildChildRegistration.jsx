@@ -19,7 +19,7 @@ const TEXT_MID   = "#3d3d5c";
 const TEXT_LIGHT = "#7a7a9a";
 const GREEN      = "#5a7a3a";
 
-const PRICE_3 = 260; const PRICE_5 = 420; const PRICE_4TH = 85; const LUNCH_PER_DAY = 10;
+const LUNCH_PER_DAY = 10;
 const WEEKDAYS = ["Mon","Tue","Wed","Thu","Fri"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -28,119 +28,91 @@ const PROGRAMS = [
   { id:"we",  name:"Wild Explorers",   age:"Ages 5–9", desc:"Outdoor learning, creative expression, mindfulness, movement, and academics — math, reading, writing, geography, and science.", color:NAVY },
 ];
 
-function weekPrice(n) {
-  if (n < 3) return 0;
-  if (n === 3) return PRICE_3;
-  if (n === 4) return PRICE_3 + PRICE_4TH;
-  return PRICE_5;
+// ─────────────────────────────────────────────────────────────────────────────
+// PRICING
+// Standard weekly rates by day count
+const STANDARD_PRICE = { 3: 260, 4: 345, 5: 420 };
+// 18+ week flat rates by day count
+const LONGTERM_PRICE  = { 3: 180, 4: 230, 5: 275 };
+
+// Returns the base weekly price for n days, given total weeks enrolled for that child.
+// 18+ weeks → flat rate. Otherwise standard rate.
+function baseWeekPrice(nDays, totalWeeks) {
+  if (nDays < 3 || nDays > 5) return 0;
+  if (totalWeeks >= 18) return LONGTERM_PRICE[nDays] || 0;
+  return STANDARD_PRICE[nDays] || 0;
 }
+
+// Volume discount % on tuition (not applied when 18+ since that's already a flat deal).
+// Returns a fraction e.g. 0.05, 0.15, or 0.
+function volumeDiscountRate(totalWeeks) {
+  if (totalWeeks >= 18) return 0;   // flat rate already
+  if (totalWeeks >= 12) return 0.15;
+  if (totalWeeks >= 4)  return 0.05;
+  return 0;
+}
+
+// Compute the full tuition for one child (no sibling/referral yet).
+// Returns { baseTuition, volumeDiscount, tuitionAfterVolume }
+function calcChildTuition(weekGroups) {
+  const validWeeks = weekGroups.filter(wk => weekValid(wk.days.length));
+  const totalWeeks = validWeeks.length;
+  const vRate = volumeDiscountRate(totalWeeks);
+  let baseTuition = 0;
+  validWeeks.forEach(wk => {
+    baseTuition += baseWeekPrice(wk.days.length, totalWeeks);
+  });
+  const volumeDiscount = Math.round(baseTuition * vRate * 100) / 100;
+  const tuitionAfterVolume = baseTuition - volumeDiscount;
+  return { baseTuition, volumeDiscount, tuitionAfterVolume, totalWeeks, vRate };
+}
+
 function weekValid(n) { return n >= 3 && n <= 5; }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FULLY TIMEZONE-IMMUNE DATE UTILITIES
-//
-// The bug: even with {y,m,d} integers, calling makeLocalDate().getDay() to
-// find the day-of-week still uses a Date object, which can read the wrong
-// local day in UTC-6 (Costa Rica) when the internal UTC timestamp sits near
-// midnight. The only complete fix is to compute day-of-week using pure
-// arithmetic — zero Date objects involved.
-//
-// All week math (mondayOf, weekKeyOf, addDaysYmd, getWeeksForMonth) is now
-// entirely arithmetic. Date objects are only used for:
-//   1. formatYmd()  — display only, never affects logic
-//   2. weekdayName() — display only, never affects logic
-//   3. isBeforeToday() — integer comparison, Date only used to get today's y/m/d
-//   4. daysInMonth() — Date(y, m, 0).getDate() is safe (no timezone edge)
-// ─────────────────────────────────────────────────────────────────────────────
+// DISCOUNT LABEL HELPERS
+function pct(rate) { return Math.round(rate * 100) + "%"; }
+function volumeLabel(totalWeeks) {
+  if (totalWeeks >= 18) return "18+ week flat rate";
+  if (totalWeeks >= 12) return "15% volume discount (12+ wks)";
+  if (totalWeeks >= 4)  return "5% volume discount (4+ wks)";
+  return null;
+}
 
-// Produce a YYYY-MM-DD string from integer parts.
+// ─────────────────────────────────────────────────────────────────────────────
+// TIMEZONE-IMMUNE DATE UTILITIES (Sakamoto algorithm)
 function ymdKey(y, m, d) {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
-
-// Parse a YYYY-MM-DD key back to {y, m, d} integers.
 function parseKey(key) {
   const parts = key.split("-").map(Number);
   return { y: parts[0], m: parts[1], d: parts[2] };
 }
-
-// Day-of-week using Tomohiko Sakamoto's algorithm — pure math, no Date object.
-// Returns 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat.
 function dowOf(y, m, d) {
   const t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
   let yr = y;
   if (m < 3) yr--;
   return (yr + Math.floor(yr/4) - Math.floor(yr/100) + Math.floor(yr/400) + t[m-1] + d) % 7;
 }
-
-// How many days are in a given month (1-indexed). Uses Date(y,m,0) which is safe.
-function daysInMonth(y, m) {
-  return new Date(y, m, 0).getDate();
-}
-
-// Add n days to {y,m,d} using pure arithmetic (handles month/year overflow).
+function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
 function addDaysYmd(ymd, n) {
   let { y, m, d } = ymd;
   d += n;
-  // Normalize forward (positive overflow)
-  while (d > daysInMonth(y, m)) {
-    d -= daysInMonth(y, m);
-    m++;
-    if (m > 12) { m = 1; y++; }
-  }
-  // Normalize backward (negative overflow)
-  while (d < 1) {
-    m--;
-    if (m < 1) { m = 12; y--; }
-    d += daysInMonth(y, m);
-  }
+  while (d > daysInMonth(y, m)) { d -= daysInMonth(y, m); m++; if (m > 12) { m = 1; y++; } }
+  while (d < 1) { m--; if (m < 1) { m = 12; y--; } d += daysInMonth(y, m); }
   return { y, m, d };
 }
-
-// Return the Monday of the week containing {y,m,d} — purely arithmetic.
 function mondayOf(ymd) {
-  const dow = dowOf(ymd.y, ymd.m, ymd.d); // 0=Sun…6=Sat
-  const daysBack = dow === 0 ? 6 : dow - 1; // Mon→0 days back, Sun→6 days back
+  const dow = dowOf(ymd.y, ymd.m, ymd.d);
+  const daysBack = dow === 0 ? 6 : dow - 1;
   return addDaysYmd(ymd, -daysBack);
 }
-
-// The week key is the YYYY-MM-DD of that week's Monday.
-function weekKeyOf(ymd) {
-  const mon = mondayOf(ymd);
-  return ymdKey(mon.y, mon.m, mon.d);
-}
-
-// Format {y,m,d} for display: "Apr 27". Only used for rendering, not logic.
-function formatYmd(ymd) {
-  return new Date(ymd.y, ymd.m - 1, ymd.d)
-    .toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-// Short weekday name for display: "Mon", "Tue", etc. Only used for rendering.
-function weekdayName(ymd) {
-  return new Date(ymd.y, ymd.m - 1, ymd.d)
-    .toLocaleDateString("en-US", { weekday: "short" });
-}
-
-// Compare two {y,m,d} objects: is a strictly before b?
-function ymdBefore(a, b) {
-  if (a.y !== b.y) return a.y < b.y;
-  if (a.m !== b.m) return a.m < b.m;
-  return a.d < b.d;
-}
-
-// Is {y,m,d} strictly before today?
-function isBeforeToday(ymd, todayYmd) {
-  return ymdBefore(ymd, todayYmd);
-}
-
-// Is {y,m,d} in the given month (1-indexed)?
-function inMonth(ymd, y, m) {
-  return ymd.y === y && ymd.m === m;
-}
-
-// Build the list of Monday {y,m,d} objects for the weeks visible in a calendar
-// month (year, month 1-indexed). Pure arithmetic — no Date objects.
+function weekKeyOf(ymd) { const mon = mondayOf(ymd); return ymdKey(mon.y, mon.m, mon.d); }
+function formatYmd(ymd) { return new Date(ymd.y, ymd.m - 1, ymd.d).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+function weekdayName(ymd) { return new Date(ymd.y, ymd.m - 1, ymd.d).toLocaleDateString("en-US", { weekday: "short" }); }
+function ymdBefore(a, b) { if (a.y !== b.y) return a.y < b.y; if (a.m !== b.m) return a.m < b.m; return a.d < b.d; }
+function isBeforeToday(ymd, todayYmd) { return ymdBefore(ymd, todayYmd); }
+function inMonth(ymd, y, m) { return ymd.y === y && ymd.m === m; }
 function getWeeksForMonth(year, month) {
   const firstDay = { y: year, m: month, d: 1 };
   const lastDay  = { y: year, m: month, d: daysInMonth(year, month) };
@@ -148,15 +120,11 @@ function getWeeksForMonth(year, month) {
   let monday = mondayOf(firstDay);
   for (let i = 0; i < 6; i++) {
     const wStart = addDaysYmd(monday, i * 7);
-    const wEnd   = addDaysYmd(wStart, 4); // Friday
-    // Include week if Friday >= firstDay AND Monday <= lastDay
-    const fridayAfterFirst = !ymdBefore(wEnd, firstDay);
-    const mondayBeforeLast = !ymdBefore(lastDay, wStart);
-    if (fridayAfterFirst && mondayBeforeLast) weeks.push(wStart);
+    const wEnd   = addDaysYmd(wStart, 4);
+    if (!ymdBefore(wEnd, firstDay) && !ymdBefore(lastDay, wStart)) weeks.push(wStart);
   }
   return weeks;
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -171,9 +139,9 @@ const lbl = {
 };
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
-function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) {
+function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd, siblingIndex }) {
   const [calYear,  setCalYear]  = useState(todayYmd.y);
-  const [calMonth, setCalMonth] = useState(todayYmd.m); // 1-indexed
+  const [calMonth, setCalMonth] = useState(todayYmd.m);
 
   const weeks = getWeeksForMonth(calYear, calMonth);
 
@@ -186,7 +154,6 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
       if (n.has(key)) {
         n.delete(key);
       } else {
-        // Count how many days in this week are already selected
         const count = Array.from(n).filter(dk => weekKeyOf(parseKey(dk)) === wk).length;
         if (count >= 5) return prev;
         n.add(key);
@@ -195,7 +162,6 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
     });
   };
 
-  // Build week groups from the selected days Set — pure integer math, no Date objects
   const weekGroups = {};
   Array.from(days).forEach(dk => {
     const ymd = parseKey(dk);
@@ -204,21 +170,17 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
     if (!weekGroups[wk]) weekGroups[wk] = { monday: mon, wk, days: [] };
     weekGroups[wk].days.push(dk);
   });
-  const weekEntries = Object.values(weekGroups).sort((a, b) =>
-    a.wk < b.wk ? -1 : a.wk > b.wk ? 1 : 0
-  );
-
-  const tuition  = weekEntries.reduce((s, wk) => s + weekPrice(wk.days.length), 0);
+  const weekEntries = Object.values(weekGroups).sort((a, b) => a.wk < b.wk ? -1 : a.wk > b.wk ? 1 : 0);
+  const validWeekEntries = weekEntries.filter(wk => weekValid(wk.days.length));
+  const totalWeeks = validWeekEntries.length;
+  const { baseTuition, volumeDiscount, tuitionAfterVolume, vRate } = calcChildTuition(weekEntries);
+  const sibDiscount = siblingIndex > 0 ? Math.round(tuitionAfterVolume * 0.10 * 100) / 100 : 0;
+  const tuitionFinal = tuitionAfterVolume - sibDiscount;
   const lunchCost = lunch ? Array.from(days).length * LUNCH_PER_DAY : 0;
+  const vLabel = volumeLabel(totalWeeks);
 
-  const prevMonth = () => {
-    if (calMonth === 1) { setCalYear(y => y - 1); setCalMonth(12); }
-    else setCalMonth(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (calMonth === 12) { setCalYear(y => y + 1); setCalMonth(1); }
-    else setCalMonth(m => m + 1);
-  };
+  const prevMonth = () => { if (calMonth === 1) { setCalYear(y => y - 1); setCalMonth(12); } else setCalMonth(m => m - 1); };
+  const nextMonth = () => { if (calMonth === 12) { setCalYear(y => y + 1); setCalMonth(1); } else setCalMonth(m => m + 1); };
 
   return (
     <div>
@@ -230,7 +192,7 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
         <div style={{ flex:1 }}>
           <p style={{ fontSize:"14px", color:lunch?"#fff":TEXT_DARK, margin:"0 0 2px" }}>Add Organic Snack & Lunch</p>
           <p style={{ fontSize:"12px", color:lunch?"rgba(255,255,255,0.75)":TEXT_LIGHT, margin:0, lineHeight:1.4 }}>
-            All organic, locally sourced, made with love. $10/day
+            All organic, locally sourced, made with love. $10/day (flat rate, always)
           </p>
         </div>
         <div style={{ width:"22px", height:"22px", borderRadius:"50%", border:`2px solid ${lunch?"#fff":CREAM_DARK}`,
@@ -239,9 +201,17 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
         </div>
       </div>
 
+      {/* Sibling notice */}
+      {siblingIndex > 0 && (
+        <div style={{ background:"#fff7f0", border:`1px solid #e8c4a0`, borderRadius:"8px", padding:"10px 14px", marginBottom:"16px" }}>
+          <p style={{ fontSize:"13px", color:ORANGE, margin:0 }}>
+            🌿 <strong>Sibling discount:</strong> 10% off tuition for this child
+          </p>
+        </div>
+      )}
+
       {/* Calendar */}
       <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"16px", marginBottom:"8px" }}>
-        {/* Month nav */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"14px" }}>
           <button onClick={prevMonth}
             style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>‹</button>
@@ -249,21 +219,15 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
           <button onClick={nextMonth}
             style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>›</button>
         </div>
-
-        {/* Weekday headers */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"8px", textAlign:"center" }}>
           {WEEKDAYS.map(d => <div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
         </div>
-
-        {/* Week rows */}
         {weeks.map(monday => {
           const wk = ymdKey(monday.y, monday.m, monday.d);
-          // Count selected days in this week using integer week keys
           const wkDays = Array.from(days).filter(dk => weekKeyOf(parseKey(dk)) === wk);
           const count = wkDays.length;
           const isValid = count === 0 || count >= 3;
           const isFull  = count >= 5;
-
           return (
             <div key={wk}>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"4px", marginBottom:"3px" }}>
@@ -274,7 +238,6 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
                   const isPast = isBeforeToday(dayYmd, todayYmd);
                   const inCurMonth = inMonth(dayYmd, calYear, calMonth);
                   const isBlocked  = !isSel && isFull;
-
                   return (
                     <div key={offset}
                       onClick={() => !isPast && !isBlocked && toggleDay(dayYmd)}
@@ -286,15 +249,12 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
                         cursor: isPast || isBlocked ? "not-allowed" : "pointer",
                         border: isSel ? `1.5px solid ${OLIVE_DARK}` : "1.5px solid transparent",
                       }}>
-                      <div style={{ fontSize:"9px", opacity:0.7, marginBottom:"1px" }}>
-                        {MONTHS[dayYmd.m - 1].slice(0, 3)}
-                      </div>
+                      <div style={{ fontSize:"9px", opacity:0.7, marginBottom:"1px" }}>{MONTHS[dayYmd.m - 1].slice(0, 3)}</div>
                       <div style={{ fontSize:"13px" }}>{dayYmd.d}</div>
                     </div>
                   );
                 })}
               </div>
-
               {count > 0 && (
                 <div style={{ textAlign:"right", marginBottom:"4px" }}>
                   <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"10px", color:"#fff",
@@ -307,11 +267,26 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
             </div>
           );
         })}
-
         <p style={{ fontSize:"11px", color:TEXT_LIGHT, margin:"10px 0 0", textAlign:"center" }}>
           Min 3 · max 5 days per week
         </p>
       </div>
+
+      {/* Discount badges */}
+      {totalWeeks > 0 && (vLabel || siblingIndex > 0) && (
+        <div style={{ display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"10px", marginBottom:"4px" }}>
+          {vLabel && (
+            <span style={{ fontSize:"11px", background: totalWeeks >= 18 ? NAVY : OLIVE, color:"#fff", padding:"4px 10px", borderRadius:"20px" }}>
+              {vLabel}
+            </span>
+          )}
+          {siblingIndex > 0 && (
+            <span style={{ fontSize:"11px", background:ORANGE, color:"#fff", padding:"4px 10px", borderRadius:"20px" }}>
+              Sibling −10%
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
       {weekEntries.length > 0 && (
@@ -322,37 +297,53 @@ function ChildCalendar({ childName, days, setDays, lunch, setLunch, todayYmd }) 
           {weekEntries.map(wkEntry => {
             const n   = wkEntry.days.length;
             const valid = weekValid(n);
-            const p   = weekPrice(n);
+            const p   = baseWeekPrice(n, totalWeeks);
             const lc  = lunch && valid ? n * LUNCH_PER_DAY : 0;
-            const dayNames = wkEntry.days
-              .map(dk => weekdayName(parseKey(dk)))
-              .sort()
-              .join(", ");
+            const dayNames = wkEntry.days.map(dk => weekdayName(parseKey(dk))).sort().join(", ");
             return (
               <div key={wkEntry.wk} style={{ padding:"8px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:valid?TEXT_DARK:"#c0392b" }}>
                   <span>Wk of {formatYmd(wkEntry.monday)}</span>
-                  <span style={{ flexShrink:0, marginLeft:"8px" }}>{valid ? `$${p + lc}` : "⚠ Need 3+"}</span>
+                  <span style={{ flexShrink:0, marginLeft:"8px" }}>{valid ? `$${p}` : "⚠ Need 3+"}</span>
                 </div>
                 {valid && (
                   <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"3px", display:"flex", gap:"6px", flexWrap:"wrap" }}>
                     <span>{dayNames}</span>
                     <span style={{ color:CREAM_DARK }}>·</span>
-                    <span style={{ color:OLIVE }}>${p}</span>
-                    {lunch && (
-                      <><span style={{ color:CREAM_DARK }}>·</span>
-                      <span style={{ color:GREEN }}>+ ${lc} lunch ({n}×$10)</span></>
-                    )}
+                    <span style={{ color:OLIVE }}>${p}/wk</span>
+                    {lunch && (<><span style={{ color:CREAM_DARK }}>·</span><span style={{ color:GREEN }}>+ ${lc} lunch ({n}×$10)</span></>)}
                   </div>
                 )}
               </div>
             );
           })}
-          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", paddingTop:"10px", color:TEXT_DARK }}>
-            <span>Subtotal</span>
-            <div style={{ textAlign:"right" }}>
-              {lunch && <div style={{ fontSize:"11px", color:TEXT_LIGHT }}>tuition ${tuition} + lunch ${lunchCost}</div>}
-              <span style={{ color:OLIVE }}>${tuition + lunchCost}</span>
+
+          {/* Discount breakdown */}
+          <div style={{ paddingTop:"10px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT_DARK, paddingBottom:"4px" }}>
+              <span>Base tuition</span><span>${baseTuition}</span>
+            </div>
+            {volumeDiscount > 0 && (
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:GREEN, paddingBottom:"4px" }}>
+                <span>Volume discount ({pct(vRate)})</span><span>−${volumeDiscount}</span>
+              </div>
+            )}
+            {totalWeeks >= 18 && (
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:NAVY, paddingBottom:"4px" }}>
+                <span>18+ week flat rate applied</span><span>✓</span>
+              </div>
+            )}
+            {sibDiscount > 0 && (
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:ORANGE, paddingBottom:"4px" }}>
+                <span>Sibling discount (10%)</span><span>−${sibDiscount}</span>
+              </div>
+            )}
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"14px", borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", color:TEXT_DARK }}>
+              <span>Tuition subtotal</span>
+              <div style={{ textAlign:"right" }}>
+                {lunch && <div style={{ fontSize:"11px", color:TEXT_LIGHT }}>+ ${lunchCost} lunch</div>}
+                <span style={{ color:OLIVE }}>${tuitionFinal + lunchCost}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -379,8 +370,7 @@ function StripePaymentForm({ onSuccess, busy, setBusy }) {
 
   const handlePay = async () => {
     if (!stripe || !elements) return;
-    setBusy(true);
-    setErr("");
+    setBusy(true); setErr("");
     const { error } = await stripe.confirmPayment({ elements, redirect:"if_required" });
     if (error) { setErr(error.message); setBusy(false); }
     else { onSuccess(); }
@@ -414,9 +404,36 @@ function buildWeekGroups(daysSet) {
   return Object.values(wg).sort((a, b) => a.wk < b.wk ? -1 : a.wk > b.wk ? 1 : 0);
 }
 
+// ── Generate referral code ────────────────────────────────────────────────────
+function generateReferralCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "WC-";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+// ── Compute totals for all children with all discounts ────────────────────────
+// referralRate: 0 or 0.05
+function computeAllTotals(children, referralRate = 0) {
+  return children.map((ch, i) => {
+    const weekGroups = buildWeekGroups(ch.days);
+    const { baseTuition, volumeDiscount, tuitionAfterVolume } = calcChildTuition(weekGroups);
+    const sibRate = i > 0 ? 0.10 : 0;
+    const sibDiscount = Math.round(tuitionAfterVolume * sibRate * 100) / 100;
+    const afterSib = tuitionAfterVolume - sibDiscount;
+    const refDiscount = Math.round(afterSib * referralRate * 100) / 100;
+    const tuitionFinal = afterSib - refDiscount;
+    const lunchCost = ch.lunch ? Array.from(ch.days).length * LUNCH_PER_DAY : 0;
+    return {
+      baseTuition, volumeDiscount, sibDiscount, refDiscount,
+      tuitionFinal, lunchCost, total: tuitionFinal + lunchCost,
+      weekGroups
+    };
+  });
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function WildChildRegistration() {
-  // Today as {y,m,d} — used for isPast checks throughout
   const now = new Date();
   const todayYmd = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
 
@@ -425,7 +442,6 @@ export default function WildChildRegistration() {
   const [profile,        setProfile]        = useState(null);
   const [savedChildren,  setSavedChildren]  = useState([]);
 
-  // Steps: 0=Children 1=Schedule 2=ParentInfo 3=Payment 4=Waiver 5=Confirmation
   const [step, setStep] = useState(0);
 
   const [children, setChildren] = useState([
@@ -440,13 +456,18 @@ export default function WildChildRegistration() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPw,   setConfirmPw]   = useState("");
 
+  // Referral code state
+  const [referralCodeInput, setReferralCodeInput] = useState("");
+  const [referralStatus,    setReferralStatus]    = useState(null); // null | "checking" | "valid" | "invalid"
+  const [referralProfile,   setReferralProfile]   = useState(null); // the referring parent's profile row
+
   const [clientSecret, setClientSecret] = useState("");
   const [w, setW] = useState({ liab:false, med:false, mediaY:false, mediaN:false, excY:false, excN:false });
   const [sig, setSig]   = useState("");
   const [busy, setBusy] = useState(false);
   const [err,  setErr]  = useState("");
 
-  // Load session + profile + saved children on mount
+  // Load session + profile + saved children
   useEffect(() => {
     async function load() {
       const { data:{ session: s } } = await supabase.auth.getSession();
@@ -478,6 +499,35 @@ export default function WildChildRegistration() {
     load();
   }, []);
 
+  // ── Referral code validation ─────────────────────────────────────────────────
+  const checkReferralCode = async (code) => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) { setReferralStatus(null); setReferralProfile(null); return; }
+    setReferralStatus("checking");
+    const { data } = await supabase
+      .from("parent_profiles")
+      .select("id, full_name, referral_code")
+      .eq("referral_code", trimmed)
+      .single();
+    if (data) {
+      // Make sure they're not referring themselves
+      if (session && data.id === session.user.id) {
+        setReferralStatus("invalid");
+        setReferralProfile(null);
+      } else {
+        setReferralStatus("valid");
+        setReferralProfile(data);
+      }
+    } else {
+      setReferralStatus("invalid");
+      setReferralProfile(null);
+    }
+  };
+
+  const referralRate = referralStatus === "valid" ? 0.05 : 0;
+  const childTotals  = computeAllTotals(children, referralRate);
+  const grandTotal   = Math.round(childTotals.reduce((s, ct) => s + ct.total, 0) * 100) / 100;
+
   // ── Child helpers ────────────────────────────────────────────────────────────
   const updateChild  = (i, field, val) =>
     setChildren(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: val } : c));
@@ -496,14 +546,6 @@ export default function WildChildRegistration() {
     setChildren(prev => prev.filter((_, idx) => idx !== i));
     if (activeChild >= i && activeChild > 0) setActiveChild(activeChild - 1);
   };
-
-  // ── Grand total ──────────────────────────────────────────────────────────────
-  const grandTotal = children.reduce((sum, ch) => {
-    const wkEntries = buildWeekGroups(ch.days);
-    const tuit = wkEntries.reduce((s, wk) => s + weekPrice(wk.days.length), 0);
-    const lnch = ch.lunch ? Array.from(ch.days).length * LUNCH_PER_DAY : 0;
-    return sum + tuit + lnch;
-  }, 0);
 
   // ── Step / waiver logic ──────────────────────────────────────────────────────
   const waiverAlreadySigned = !!profile?.waiver_signature;
@@ -538,7 +580,6 @@ export default function WildChildRegistration() {
   const handleNext = async () => {
     setErr("");
 
-    // Step 2 — optionally create account
     if (step === 2 && createAcct && !session) {
       if (newPassword !== confirmPw) { setErr("Passwords don't match."); return; }
       if (newPassword.length < 6)   { setErr("Password must be at least 6 characters."); return; }
@@ -549,7 +590,6 @@ export default function WildChildRegistration() {
       setBusy(false);
     }
 
-    // Moving to payment — create Payment Intent
     if (step === 2) {
       setBusy(true);
       try {
@@ -569,7 +609,6 @@ export default function WildChildRegistration() {
       setBusy(false);
     }
 
-    // Last step before confirmation — save registrations
     if (step === totalSteps - 2) {
       setBusy(true);
       await saveRegistrations();
@@ -586,28 +625,49 @@ export default function WildChildRegistration() {
   // ── saveRegistrations ────────────────────────────────────────────────────────
   const saveRegistrations = async () => {
     const uid = session?.user?.id || null;
+
+    // Generate referral code for new accounts
+    let myReferralCode = profile?.referral_code || null;
+    if (uid && !myReferralCode) {
+      myReferralCode = generateReferralCode();
+    }
+
     if (uid) {
       await supabase.from("parent_profiles").upsert({
         id: uid, full_name: parentName, phone: parentPhone, email: parentEmail,
+        referral_code: myReferralCode,
         waiver_signature: waiverAlreadySigned ? profile.waiver_signature : sig,
         waiver_signed_at: waiverAlreadySigned ? profile.waiver_signed_at : new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
       await saveChildrenToDB(uid);
     }
+
+    // Apply referral credit to referring parent
+    if (referralStatus === "valid" && referralProfile) {
+      await supabase.from("parent_profiles")
+        .update({ referral_credit_pending: true })
+        .eq("id", referralProfile.id);
+    }
+
     const savedRegs = [];
-    for (const ch of children) {
-      const wkEntries = buildWeekGroups(ch.days);
-      const tuit = wkEntries.reduce((s, wk) => s + weekPrice(wk.days.length), 0);
-      const lnch = ch.lunch ? Array.from(ch.days).length * LUNCH_PER_DAY : 0;
-      const sp   = PROGRAMS.find(p => p.id === ch.prog);
-      const reg  = {
+    for (let i = 0; i < children.length; i++) {
+      const ch = children[i];
+      const ct = childTotals[i];
+      const sp = PROGRAMS.find(p => p.id === ch.prog);
+      const reg = {
         program_id: ch.prog, program_name: sp?.name,
         child_first_name: ch.fn, child_last_name: ch.ln,
         child_dob: ch.dob, child_allergies: ch.allergies,
         parent_name: parentName, parent_email: parentEmail, parent_phone: parentPhone,
         selected_days: Array.from(ch.days), lunch: ch.lunch,
-        subtotal_tuition: tuit, subtotal_lunch: lnch, grand_total: tuit + lnch,
+        subtotal_tuition: ct.tuitionFinal,
+        subtotal_lunch: ct.lunchCost,
+        grand_total: ct.total,
+        discount_volume: ct.volumeDiscount,
+        discount_sibling: ct.sibDiscount,
+        discount_referral: ct.refDiscount,
+        referred_by_code: referralStatus === "valid" ? referralCodeInput.trim().toUpperCase() : null,
         waiver_liability: w.liab, waiver_medical: w.med,
         waiver_media:     w.mediaY ? "yes" : w.mediaN ? "no" : null,
         waiver_excursion: w.excY   ? "yes" : w.excN   ? "no" : null,
@@ -618,6 +678,7 @@ export default function WildChildRegistration() {
       await supabase.from("registrations").insert(reg);
       savedRegs.push(reg);
     }
+
     await supabase.functions.invoke("send-enrollment-notification", {
       body: { children: savedRegs, parentName, parentEmail, parentPhone, grandTotal }
     });
@@ -697,7 +758,14 @@ export default function WildChildRegistration() {
             {children.map((ch, i) => (
               <div key={i} style={{ background:"#fff", border:`1.5px solid ${i===0?CREAM_DARK:OLIVE}`, borderRadius:"12px", padding:"20px", marginBottom:"16px" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
-                  <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:i===0?TEXT_LIGHT:OLIVE, margin:0 }}>Child {i + 1}</p>
+                  <div>
+                    <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:i===0?TEXT_LIGHT:OLIVE, margin:0 }}>
+                      Child {i + 1}
+                    </p>
+                    {i > 0 && (
+                      <p style={{ fontSize:"11px", color:ORANGE, margin:"3px 0 0" }}>🌿 10% sibling discount applies</p>
+                    )}
+                  </div>
                   {i > 0 && (
                     <button onClick={() => removeChild(i)}
                       style={{ background:"none", border:"none", color:"#c0392b", cursor:"pointer", fontSize:"13px" }}>Remove</button>
@@ -739,16 +807,34 @@ export default function WildChildRegistration() {
           <div>
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Choose Your Rhythm</h2>
             <p style={{ fontSize:"14px", color:TEXT_MID, marginBottom:"20px", lineHeight:1.6 }}>
-              3 or 5 days per week, with an optional 4th day (+$85). Tap individual days to build each child's schedule.
+              Tap individual days to build each child's schedule. The more weeks you commit, the better the rate.
             </p>
 
-            <div className="price-cards" style={{ display:"flex", gap:"8px", marginBottom:"20px" }}>
-              {[{l:"3 Days/wk",p:`$${PRICE_3}`},{l:"4th Day",p:`+$${PRICE_4TH}`},{l:"5 Days/wk",p:`$${PRICE_5}`}].map(o => (
-                <div key={o.l} style={{ flex:1, background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"10px", textAlign:"center" }}>
-                  <p style={{ fontSize:"12px", color:TEXT_MID, margin:"0 0 3px" }}>{o.l}</p>
-                  <p style={{ fontSize:"15px", color:OLIVE, margin:0 }}>{o.p}<span style={{ fontSize:"10px", color:TEXT_LIGHT }}>/wk</span></p>
+            {/* Pricing tiers reference */}
+            <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"14px", marginBottom:"20px" }}>
+              <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>Weekly Rates</p>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:"6px", textAlign:"center" }}>
+                <div style={{ fontSize:"10px", color:TEXT_LIGHT, paddingBottom:"4px", borderBottom:`1px solid ${CREAM_DARK}` }}></div>
+                <div style={{ fontSize:"10px", color:TEXT_LIGHT, paddingBottom:"4px", borderBottom:`1px solid ${CREAM_DARK}` }}>3 days</div>
+                <div style={{ fontSize:"10px", color:TEXT_LIGHT, paddingBottom:"4px", borderBottom:`1px solid ${CREAM_DARK}` }}>4 days</div>
+                <div style={{ fontSize:"10px", color:TEXT_LIGHT, paddingBottom:"4px", borderBottom:`1px solid ${CREAM_DARK}` }}>5 days</div>
+                <div style={{ fontSize:"11px", color:TEXT_MID, padding:"5px 0" }}>Standard</div>
+                <div style={{ fontSize:"12px", color:OLIVE, padding:"5px 0" }}>$260</div>
+                <div style={{ fontSize:"12px", color:OLIVE, padding:"5px 0" }}>$345</div>
+                <div style={{ fontSize:"12px", color:OLIVE, padding:"5px 0" }}>$420</div>
+                <div style={{ fontSize:"11px", color:NAVY, padding:"5px 0" }}>18+ wks</div>
+                <div style={{ fontSize:"12px", color:NAVY, padding:"5px 0" }}>$180</div>
+                <div style={{ fontSize:"12px", color:NAVY, padding:"5px 0" }}>$230</div>
+                <div style={{ fontSize:"12px", color:NAVY, padding:"5px 0" }}>$275</div>
+              </div>
+              <div style={{ marginTop:"10px", paddingTop:"10px", borderTop:`1px solid ${CREAM_DARK}` }}>
+                <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
+                  <span style={{ fontSize:"11px", background:OLIVE_LIGHT, color:OLIVE_DARK, padding:"3px 8px", borderRadius:"12px" }}>4–11 wks: −5%</span>
+                  <span style={{ fontSize:"11px", background:OLIVE_LIGHT, color:OLIVE_DARK, padding:"3px 8px", borderRadius:"12px" }}>12–17 wks: −15%</span>
+                  <span style={{ fontSize:"11px", background:"#e8eaf6", color:NAVY, padding:"3px 8px", borderRadius:"12px" }}>18+ wks: flat rate</span>
+                  <span style={{ fontSize:"11px", background:"#fff3eb", color:ORANGE, padding:"3px 8px", borderRadius:"12px" }}>Sibling: −10% each</span>
                 </div>
-              ))}
+              </div>
             </div>
 
             {children.length > 1 && (
@@ -757,7 +843,7 @@ export default function WildChildRegistration() {
                   <button key={i} onClick={() => setActiveChild(i)}
                     style={{ flex:"0 0 auto", background:activeChild===i?OLIVE:"#fff", color:activeChild===i?"#fff":TEXT_MID,
                       border:`1.5px solid ${activeChild===i?OLIVE:CREAM_DARK}`, borderRadius:"8px", padding:"9px 16px", fontSize:"13px", cursor:"pointer" }}>
-                    {ch.fn || `Child ${i + 1}`}
+                    {ch.fn || `Child ${i + 1}`}{i > 0 ? " 🌿" : ""}
                   </button>
                 ))}
               </div>
@@ -767,6 +853,7 @@ export default function WildChildRegistration() {
               <p style={{ fontSize:"13px", color:OLIVE_DARK, margin:0 }}>
                 <strong>{children[activeChild]?.fn || `Child ${activeChild + 1}`}</strong>
                 {" · "}{PROGRAMS.find(p => p.id === children[activeChild]?.prog)?.name || "No program selected"}
+                {activeChild > 0 ? " · 🌿 Sibling discount" : ""}
               </p>
             </div>
 
@@ -778,6 +865,7 @@ export default function WildChildRegistration() {
               lunch={children[activeChild]?.lunch || false}
               setLunch={l => setChildLunch(activeChild, l)}
               todayYmd={todayYmd}
+              siblingIndex={activeChild}
             />
           </div>
         )}
@@ -797,6 +885,47 @@ export default function WildChildRegistration() {
               <span style={lbl}>Phone / WhatsApp</span>
               <input style={inp} value={parentPhone} onChange={e => setParentPhone(e.target.value)} placeholder="+1 555 000 0000"/>
             </div>
+
+            {/* Referral code */}
+            <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginTop:"16px" }}>
+              <p style={{ fontSize:"13px", color:TEXT_DARK, margin:"0 0 4px" }}>🌿 Have a referral code?</p>
+              <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"0 0 14px", lineHeight:1.5 }}>
+                Enter a friend's Wild Child code for 5% off your tuition.
+              </p>
+              <div style={{ display:"flex", gap:"8px" }}>
+                <input
+                  style={{ ...inp, marginBottom:0, flex:1, textTransform:"uppercase", letterSpacing:"2px" }}
+                  value={referralCodeInput}
+                  onChange={e => {
+                    setReferralCodeInput(e.target.value);
+                    setReferralStatus(null);
+                    setReferralProfile(null);
+                  }}
+                  placeholder="WC-XXXXXX"
+                />
+                <button
+                  onClick={() => checkReferralCode(referralCodeInput)}
+                  disabled={referralStatus === "checking" || !referralCodeInput.trim()}
+                  style={{ background:OLIVE, color:"#fff", border:"none", borderRadius:"8px", padding:"0 16px",
+                    fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", whiteSpace:"nowrap",
+                    opacity: !referralCodeInput.trim() ? 0.5 : 1 }}>
+                  {referralStatus === "checking" ? "..." : "Apply"}
+                </button>
+              </div>
+              {referralStatus === "valid" && (
+                <div style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"10px", padding:"10px 12px", background:"#f0f7ec", borderRadius:"8px", border:`1px solid ${SAGE}` }}>
+                  <span style={{ fontSize:"16px" }}>✅</span>
+                  <div>
+                    <p style={{ fontSize:"13px", color:GREEN, margin:"0 0 2px" }}>Code applied — 5% off your tuition!</p>
+                    <p style={{ fontSize:"11px", color:TEXT_LIGHT, margin:0 }}>Referred by {referralProfile?.full_name || "a Wild Child family"}</p>
+                  </div>
+                </div>
+              )}
+              {referralStatus === "invalid" && (
+                <p style={{ fontSize:"12px", color:"#c0392b", marginTop:"8px" }}>Code not found. Please check and try again.</p>
+              )}
+            </div>
+
             {!session && (
               <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginTop:"16px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"4px", cursor:"pointer" }} onClick={() => setCreateAcct(!createAcct)}>
@@ -804,7 +933,7 @@ export default function WildChildRegistration() {
                   <span style={{ fontSize:"14px", color:TEXT_DARK }}>Save my info for faster future enrollments</span>
                 </div>
                 <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"4px 0 0 28px", lineHeight:1.5 }}>
-                  Creates a free account. Next time, your children's info and waiver are already on file.
+                  Creates a free account. Next time, your children's info and waiver are already on file. You'll also get a referral code to share.
                 </p>
                 {createAcct && (
                   <div style={{ marginTop:"16px" }}>
@@ -829,42 +958,81 @@ export default function WildChildRegistration() {
             {/* Order summary */}
             <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"16px", marginBottom:"20px" }}>
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 10px" }}>Order Summary</p>
+
               {children.map((ch, i) => {
-                const wkEntries = buildWeekGroups(ch.days);
+                const ct = childTotals[i];
+                const wkEntries = ct.weekGroups;
                 if (wkEntries.length === 0) return null;
+                const validWks = wkEntries.filter(wk => weekValid(wk.days.length));
+                const totalWeeks = validWks.length;
                 return (
-                  <div key={i} style={{ marginBottom:"8px" }}>
+                  <div key={i} style={{ marginBottom:"12px", paddingBottom:"12px", borderBottom:`1px solid ${CREAM_DARK}` }}>
                     {children.length > 1 && (
-                      <p style={{ fontSize:"11px", color:OLIVE, margin:"8px 0 4px", textTransform:"uppercase", letterSpacing:"1px" }}>
-                        {ch.fn || `Child ${i + 1}`}
+                      <p style={{ fontSize:"11px", color:OLIVE, margin:"0 0 6px", textTransform:"uppercase", letterSpacing:"1px" }}>
+                        {ch.fn || `Child ${i + 1}`}{i > 0 ? " (sibling)" : ""}
                       </p>
                     )}
                     {wkEntries.map(wk => {
                       const n  = wk.days.length;
-                      const p  = weekPrice(n);
+                      const p  = baseWeekPrice(n, totalWeeks);
                       const lc = ch.lunch ? n * LUNCH_PER_DAY : 0;
                       const dayNames = wk.days.map(dk => weekdayName(parseKey(dk))).sort().join(", ");
                       return (
-                        <div key={wk.wk} style={{ padding:"6px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
+                        <div key={wk.wk} style={{ padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}` }}>
                           <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT_DARK }}>
                             <span>Wk of {formatYmd(wk.monday)}</span>
-                            <span>${p + lc}</span>
+                            <span>${p}{ch.lunch ? ` + $${lc}` : ""}</span>
                           </div>
                           <div style={{ fontSize:"12px", color:TEXT_LIGHT, marginTop:"2px" }}>
-                            {dayNames} · ${p}{ch.lunch ? ` + $${lc} lunch (${n}×$10)` : ""}
+                            {dayNames}{ch.lunch ? ` · $${lc} lunch (${n}×$10)` : ""}
                           </div>
                         </div>
                       );
                     })}
+
+                    {/* Per-child discount breakdown */}
+                    <div style={{ paddingTop:"8px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", color:TEXT_LIGHT, paddingBottom:"3px" }}>
+                        <span>Base tuition</span><span>${ct.baseTuition}</span>
+                      </div>
+                      {ct.volumeDiscount > 0 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", color:GREEN, paddingBottom:"3px" }}>
+                          <span>{volumeLabel(totalWeeks)}</span><span>−${ct.volumeDiscount}</span>
+                        </div>
+                      )}
+                      {totalWeeks >= 18 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", color:NAVY, paddingBottom:"3px" }}>
+                          <span>18+ week flat rate</span><span>✓</span>
+                        </div>
+                      )}
+                      {ct.sibDiscount > 0 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", color:ORANGE, paddingBottom:"3px" }}>
+                          <span>Sibling discount (−10%)</span><span>−${ct.sibDiscount}</span>
+                        </div>
+                      )}
+                      {ct.refDiscount > 0 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", color:GREEN, paddingBottom:"3px" }}>
+                          <span>Referral discount (−5%)</span><span>−${ct.refDiscount}</span>
+                        </div>
+                      )}
+                      {ct.lunchCost > 0 && (
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:"12px", color:GREEN, paddingBottom:"3px" }}>
+                          <span>Lunch ({Array.from(ch.days).length} days × $10)</span><span>${ct.lunchCost}</span>
+                        </div>
+                      )}
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:"13px", color:OLIVE, paddingTop:"4px", borderTop:`1px solid ${CREAM_DARK}`, fontWeight:500 }}>
+                        <span>Child subtotal</span><span>${ct.total}</span>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
+
               <div style={{ display:"flex", justifyContent:"space-between", fontSize:"17px", paddingTop:"10px", color:TEXT_DARK }}>
                 <span>Total Due</span><span style={{ color:OLIVE }}>${grandTotal}</span>
               </div>
             </div>
 
-            {/* Stripe Elements */}
             {clientSecret ? (
               <Elements stripe={stripePromise} options={{ clientSecret, appearance:{ theme:"flat", variables:{ colorPrimary:OLIVE, fontFamily:"Georgia, serif", borderRadius:"8px" } } }}>
                 <StripePaymentForm busy={busy} setBusy={setBusy}
@@ -885,7 +1053,7 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* ── STEP 4 — Waiver (only if not already signed) ── */}
+        {/* ── STEP 4 — Waiver ── */}
         {!waiverAlreadySigned && step === 4 && (
           <div>
             <h2 style={{ fontSize:"21px", fontWeight:400, marginBottom:"5px" }}>Waiver & Consent</h2>
@@ -957,13 +1125,23 @@ export default function WildChildRegistration() {
               <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 12px" }}>Enrollment Summary</p>
               {children.map((ch, i) => {
                 const sp = PROGRAMS.find(p => p.id === ch.prog);
-                const wkEntries = buildWeekGroups(ch.days);
+                const ct = childTotals[i];
+                const wkEntries = ct.weekGroups;
                 return (
                   <div key={i} style={{ marginBottom:"10px", paddingBottom:"10px", borderBottom:`1px solid ${CREAM_DARK}` }}>
                     <p style={{ fontSize:"13px", color:OLIVE, margin:"0 0 3px", fontWeight:500 }}>{ch.fn || `Child ${i+1}`} — {sp?.name || "—"}</p>
-                    <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
-                      {wkEntries.length} week{wkEntries.length !== 1 ? "s" : ""} · {Array.from(ch.days).length} days{ch.lunch ? " · Lunch" : ""}
+                    <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"0 0 2px" }}>
+                      {wkEntries.filter(wk => weekValid(wk.days.length)).length} week{wkEntries.length !== 1 ? "s" : ""} · {Array.from(ch.days).length} days{ch.lunch ? " · Lunch" : ""}
                     </p>
+                    {(ct.volumeDiscount > 0 || ct.sibDiscount > 0 || ct.refDiscount > 0) && (
+                      <p style={{ fontSize:"11px", color:GREEN, margin:0 }}>
+                        Discounts applied: {[
+                          ct.volumeDiscount > 0 ? `−$${ct.volumeDiscount} volume` : null,
+                          ct.sibDiscount    > 0 ? `−$${ct.sibDiscount} sibling`   : null,
+                          ct.refDiscount    > 0 ? `−$${ct.refDiscount} referral`  : null,
+                        ].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -980,10 +1158,10 @@ export default function WildChildRegistration() {
             </div>
 
             {session
-              ? <a href="/portal" style={{ display:"inline-block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", marginBottom:"16px" }}>View My Portal</a>
+              ? <a href="/portal" style={{ display:"inline-block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"13px 28px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", marginBottom:"16px" }}>View My Portal →</a>
               : <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"18px", maxWidth:"420px", margin:"0 auto 20px", width:"100%" }}>
                   <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 6px" }}>Track your enrollments anytime</p>
-                  <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"0 0 14px", lineHeight:1.5 }}>Create a free account to see your schedule, history, and easily enroll in more weeks.</p>
+                  <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"0 0 14px", lineHeight:1.5 }}>Create a free account to see your schedule, history, and easily enroll in more weeks. You'll also get a referral code to share with friends.</p>
                   <a href="/login" style={{ display:"block", background:NAVY, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"12px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", textAlign:"center" }}>Create Account / Sign In</a>
                 </div>
             }
@@ -1006,7 +1184,6 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* Back button on payment step */}
         {step === 3 && (
           <div style={{ marginTop:"16px" }}>
             <button onClick={() => setStep(2)} style={{ background:"transparent", color:TEXT_MID, border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px 22px", fontSize:"13px", letterSpacing:"1px", cursor:"pointer", textTransform:"uppercase" }}>← Back</button>
