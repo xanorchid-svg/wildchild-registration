@@ -3,7 +3,7 @@
 // May (schedule A) | Jun / Jul / Aug (schedule B, same)
 
 import { useState } from "react";
-import logo from "./assets/logo_new.png";
+import logo from "./assets/logo1.svg";
 import { supabase } from "./supabase";
 
 // ── Brand colours ─────────────────────────────────────────────────────────────
@@ -446,8 +446,8 @@ export default function ScheduleView() {
         <a href="/portal" style={{ position:"relative", zIndex:2, textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"#fff", fontSize:"12px", fontFamily:"Georgia,serif", letterSpacing:"0.5px", whiteSpace:"nowrap" }}>
           ← Portal
         </a>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"70px", width:"70px", objectFit:"cover", borderRadius:"50%", border:"2px solid rgba(255,255,255,0.3)" }}/>
+        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
         </div>
         <button onClick={signOut} style={{ position:"relative", zIndex:2, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"#fff", fontSize:"12px", fontFamily:"Georgia,serif", cursor:"pointer" }}>
           Sign Out
