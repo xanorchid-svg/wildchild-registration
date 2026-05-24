@@ -248,7 +248,7 @@ export default function ParentPortal() {
       const { data:{ session } } = await supabase.auth.getSession();
       if (!session) { window.location.href="/login"; return; }
       setUser(session.user);
-      const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",session.user.id).single();
+      const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",session.user.id).maybeSingle();
       if (p) { setProfile({...p,email:session.user.email}); setEditProfile({...p,email:session.user.email}); }
       else { setProfile(prev=>({...prev,email:session.user.email})); setEditProfile({full_name:"",phone:"",email:session.user.email}); }
       const { data:ch } = await supabase.from("children").select("*").eq("parent_id",session.user.id).order("created_at");
