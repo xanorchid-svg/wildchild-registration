@@ -379,9 +379,6 @@ export default function ParentPortal() {
             </span>
           )}
         </p>
-        <button onClick={()=>routerNavigate('/register')} style={{ background:ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap", cursor:"pointer" }}>
-          + Enroll More Weeks
-        </button>
       </div>
 
       {/* Mobile menu overlay */}
