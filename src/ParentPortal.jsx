@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate as useRouterNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
@@ -229,7 +230,7 @@ function EnrollmentCalendar({ enrolledDays, hasLunch }) {
 }
 
 export default function ParentPortal() {
-  const [user, setUser]           = useState(null);
+  const routerNavigate = useRouterNavigate();
   const [profile, setProfile]     = useState({ full_name:"", phone:"", email:"" });
   const [children, setChildren]   = useState([]);
   const [registrations, setRegs]  = useState([]);
@@ -440,7 +441,7 @@ export default function ParentPortal() {
                         <p style={{ fontSize:"13px", color:TEXT_LIGHT, margin:0 }}>{prog}</p>
                       </div>
                       <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
-                        <a href="/" style={{ background:OLIVE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"8px 14px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>Enroll More Weeks</a>
+                        <button onClick={()=>routerNavigate(`/register?prefill=true&childId=${ch.id}`)} style={{ background:OLIVE, color:"#fff", border:"none", borderRadius:"8px", padding:"8px 14px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap", cursor:"pointer" }}>Enroll More Weeks</button>
                         <button onClick={()=>removeChild(ch)}
                           style={{ background:"transparent", border:`1px solid #f5c6c6`, borderRadius:"8px", padding:"8px 14px", fontSize:"12px", color:"#c0392b", cursor:"pointer", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>Remove</button>
                       </div>
