@@ -164,7 +164,7 @@ export default function WildChildRegistration() {
   const comingFromPortal = searchParams.get('prefill') === 'true';
   const portalChildId    = searchParams.get('childId'); // Supabase children.id
 
-  const [step, setStep]                     = useState(comingFromPortal ? 1 : 0);
+  const [step, setStep]                     = useState(0);
   const [children, setChildren]             = useState([blankChild()]);
   const [selectedDays, setSelectedDays]     = useState({});
   const [activeChildTab, setActiveChildTab] = useState(0);
