@@ -153,16 +153,19 @@ function blankChild() {
   return { firstName: '', lastName: '', dob: '', allergies: '', program: '', prevWeeks: 0 };
 }
 
-const STEPS = ['Children', 'Schedule', 'Your Info', 'Payment', 'Waiver', 'Confirmation'];
+// ─── Step definitions ─────────────────────────────────────────────────────────
+// Normal flow:    0=Children, 1=Schedule, 2=YourInfo, 3=Payment, 4=Waiver, 5=Confirmation
+// Portal flow:    0=Schedule+Program, 1=Payment, 2=Waiver, 3=Confirmation
+const STEPS_NORMAL = ['Children', 'Schedule', 'Your Info', 'Payment', 'Waiver', 'Confirmation'];
+const STEPS_PORTAL = ['Schedule', 'Payment', 'Waiver', 'Confirmation'];
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function WildChildRegistration() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // ?prefill=true&childId=UUID means coming from "Enroll More Weeks" in portal
   const comingFromPortal = searchParams.get('prefill') === 'true';
-  const portalChildId    = searchParams.get('childId'); // Supabase children.id
+  const portalChildId    = searchParams.get('childId');
 
   const [step, setStep]                     = useState(0);
   const [children, setChildren]             = useState([blankChild()]);
@@ -190,16 +193,22 @@ export default function WildChildRegistration() {
   const [calMonth, setCalMonth] = useState(today.m);
   const [calYear,  setCalYear]  = useState(today.y);
 
-  // On mount: if coming from portal, load that child's data + parent info
-  // Otherwise: load nothing (blank form)
+  const STEPS = comingFromPortal ? STEPS_PORTAL : STEPS_NORMAL;
+
+  // ── Portal flow step mapping ───────────────────────────────────────────────
+  // Portal: step 0 = Schedule+Program, step 1 = Payment, step 2 = Waiver, step 3 = Confirmation
+  // Normal: step 0 = Children, step 1 = Schedule, step 2 = YourInfo, step 3 = Payment, step 4 = Waiver, step 5 = Confirmation
+  const CONFIRM_STEP = comingFromPortal ? 3 : 5;
+  const WAIVER_STEP  = comingFromPortal ? 2 : 4;
+  const PAYMENT_STEP = comingFromPortal ? 1 : 3;
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return;
       setUser(session.user);
 
-      // Always load parent info for logged-in user
       const { data: profile } = await supabase
-        .from('parent_profiles').select('*').eq('id', session.user.id).single();
+        .from('parent_profiles').select('*').eq('id', session.user.id).maybeSingle();
       if (profile) {
         setParentInfo({ name: profile.full_name || '', email: profile.email || '', phone: profile.phone || '' });
         if (profile.waiver_signed_at) {
@@ -209,10 +218,8 @@ export default function WildChildRegistration() {
         }
       }
 
-      // Only prefill children if explicitly coming from portal via "Enroll More Weeks"
       if (comingFromPortal) {
         if (portalChildId) {
-          // Load the specific child the parent clicked on
           const { data: child } = await supabase
             .from('children').select('*').eq('id', portalChildId).single();
           if (child) {
@@ -226,7 +233,6 @@ export default function WildChildRegistration() {
             }]);
           }
         } else {
-          // Load all children for this parent
           const { data: dbChildren } = await supabase
             .from('children').select('*').eq('parent_id', session.user.id);
           if (dbChildren && dbChildren.length > 0) {
@@ -240,10 +246,8 @@ export default function WildChildRegistration() {
             })));
           }
         }
-        // Start on schedule step since children are already filled
-        setStep(1);
+        setStep(0);
       }
-      // If NOT comingFromPortal: leave form blank, start on step 0
     });
   }, []);
 
@@ -345,7 +349,7 @@ export default function WildChildRegistration() {
           }
         }
       }
-      if (userId && createAccount) {
+      if (userId && (createAccount || user)) {
         await supabase.from('parent_profiles').update({
           waiver_signature: signature, waiver_signed_at: new Date().toISOString(),
         }).eq('id', userId);
@@ -364,7 +368,7 @@ export default function WildChildRegistration() {
         });
       } catch (emailErr) { console.warn('Email notification failed:', emailErr); }
       setRegistrationId(savedIds[0]);
-      setStep(5);
+      setStep(CONFIRM_STEP);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     }
@@ -373,15 +377,15 @@ export default function WildChildRegistration() {
 
   // ── Navigation ────────────────────────────────────────────────────────────
   function nextStep() {
-    if (step === 3) {
+    if (step === PAYMENT_STEP) {
       if (waiverAlreadySigned) { submitRegistration(null); return; }
-      setStep(4); return;
+      setStep(WAIVER_STEP); return;
     }
     setStep(s => s + 1);
   }
   function prevStep() {
-    // If came from portal and on step 1, back goes to portal not step 0
-    if (step === 1 && comingFromPortal) { navigate('/portal'); return; }
+    if (step === 0 && comingFromPortal) { navigate('/portal'); return; }
+    if (step === 0) return;
     setStep(s => Math.max(0, s - 1));
   }
 
@@ -433,6 +437,16 @@ export default function WildChildRegistration() {
     });
   }
 
+  // ── Schedule step valid check ─────────────────────────────────────────────
+  const scheduleValid = !children.some((ch, i) => {
+    if (!ch.program) return true;
+    const days = selectedDays[i] || [];
+    if (days.length === 0) return true;
+    const weekMap = {};
+    days.forEach(k => { weekMap[localDateKey(getMonday(parseLocalKey(k)))] = (weekMap[localDateKey(getMonday(parseLocalKey(k)))]||0)+1; });
+    return Object.values(weekMap).some(cnt => cnt < 3);
+  });
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: CREAM, margin: 0, padding: 0 }}>
@@ -472,8 +486,8 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* ── STEP 0: Children ─────────────────────────────────────────────── */}
-        {step === 0 && (
+        {/* ── STEP 0 (normal): Children ─────────────────────────────────────── */}
+        {!comingFromPortal && step === 0 && (
           <div>
             <h2 style={{ color: OLIVE_DARK, marginBottom: 8 }}>Children</h2>
             <p style={{ color: '#666', marginBottom: 24, fontSize: 14 }}>
@@ -565,34 +579,15 @@ export default function WildChildRegistration() {
               }}>+ Add another child</button>
             )}
 
-            <div style={{ marginTop: 24, padding: 16, background: '#fff',
-              border: `1px solid ${CREAM_DARK}`, borderRadius: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                <input type="checkbox" checked={lunch} onChange={e => setLunch(e.target.checked)}
-                  style={{ width: 18, height: 18, accentColor: GREEN }} />
-                <div>
-                  <div style={{ fontWeight: 600, color: OLIVE_DARK }}>Add organic snack & lunch — $10/day</div>
-                  <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>Fresh, locally sourced meals prepared daily by our chef.</div>
-                </div>
-              </label>
-            </div>
-
-            <NavButtons onNext={nextStep}
+            <NavButtons onNext={() => setStep(1)}
               nextDisabled={children.some(ch => !ch.firstName || !ch.lastName || !ch.dob || !ch.program)} />
           </div>
         )}
 
-        {/* ── STEP 1: Schedule ──────────────────────────────────────────────── */}
-        {step === 1 && (
+        {/* ── STEP 1 (normal): Schedule ─────────────────────────────────────── */}
+        {!comingFromPortal && step === 1 && (
           <div>
             <h2 style={{ color: OLIVE_DARK, marginBottom: 8 }}>Schedule</h2>
-            {comingFromPortal && (
-              <div style={{ background: '#f0f4e8', border: `1px solid ${SAGE}`, borderRadius: 8,
-                padding: '10px 14px', marginBottom: 16, fontSize: 14, color: OLIVE_DARK }}>
-                Enrolling more weeks for <strong>{children.map(c => c.firstName).join(', ')}</strong>.
-                Select new days below.
-              </div>
-            )}
             <p style={{ color: '#666', marginBottom: 16, fontSize: 14 }}>
               Select school days. Minimum 3 days per week, maximum 5 (Monday–Friday only).
             </p>
@@ -619,44 +614,14 @@ export default function WildChildRegistration() {
                 today={today} />
             ))}
 
-            <div style={{ marginTop: 24, background: '#fff', border: `1px solid ${CREAM_DARK}`,
-              borderRadius: 8, padding: 16 }}>
-              <div style={{ fontWeight: 700, color: OLIVE_DARK, marginBottom: 10, fontSize: 15 }}>Pricing reference</div>
-              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#888' }}>
-                    <th style={{ textAlign:'left', paddingBottom: 6, fontWeight:600 }}>Programme</th>
-                    <th style={{ textAlign:'right', paddingBottom: 6, fontWeight:600 }}>3 days</th>
-                    <th style={{ textAlign:'right', paddingBottom: 6, fontWeight:600 }}>4 days</th>
-                    <th style={{ textAlign:'right', paddingBottom: 6, fontWeight:600 }}>5 days</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ALL_PROGRAMS.map(p => (
-                    <tr key={p.id} style={{ borderTop: `1px solid ${CREAM_DARK}` }}>
-                      <td style={{ padding:'6px 0', color: OLIVE_DARK, fontWeight:500 }}>{p.name}</td>
-                      <td style={{ textAlign:'right', padding:'6px 0' }}>${p.rateStd[3]}</td>
-                      <td style={{ textAlign:'right', padding:'6px 0' }}>${p.rateStd[4]}</td>
-                      <td style={{ textAlign:'right', padding:'6px 0' }}>${p.rateStd[5]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <LunchToggle lunch={lunch} setLunch={setLunch} />
 
-            <NavButtons onBack={prevStep} onNext={() => setStep(2)}
-              nextDisabled={children.some((_, i) => {
-                const days = selectedDays[i] || [];
-                if (days.length === 0) return true;
-                const weekMap = {};
-                days.forEach(k => { weekMap[localDateKey(getMonday(parseLocalKey(k)))] = (weekMap[localDateKey(getMonday(parseLocalKey(k)))]||0)+1; });
-                return Object.values(weekMap).some(cnt => cnt < 3);
-              })} />
+            <NavButtons onBack={prevStep} onNext={() => setStep(2)} nextDisabled={!scheduleValid} />
           </div>
         )}
 
-        {/* ── STEP 2: Your Info ─────────────────────────────────────────────── */}
-        {step === 2 && (
+        {/* ── STEP 2 (normal): Your Info ────────────────────────────────────── */}
+        {!comingFromPortal && step === 2 && (
           <div>
             <h2 style={{ color: OLIVE_DARK, marginBottom: 8 }}>Your Information</h2>
             <Field label="Full name">
@@ -670,32 +635,6 @@ export default function WildChildRegistration() {
             <Field label="Phone number">
               <input type="tel" value={parentInfo.phone} onChange={e => setParentInfo(p=>({...p,phone:e.target.value}))}
                 style={inputStyle} placeholder="+506 …" />
-            </Field>
-
-            <Field label="Local discount code (optional)">
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={localCode} onChange={e => { setLocalCode(e.target.value); setLocalCodeValid(null); }}
-                  style={{ ...inputStyle, flex: 1 }} placeholder="e.g. nosaralocals" />
-                <button onClick={validateLocalCode} style={{
-                  background: OLIVE, color: CREAM, border: 'none', borderRadius: 6,
-                  padding: '0 16px', fontWeight: 600, cursor: 'pointer', fontSize: 14,
-                }}>Apply</button>
-              </div>
-              {localCodeValid === true  && <p style={{ color: GREEN,  fontSize: 13, marginTop: 4 }}>✓ Code applied — {localCodePct}% base discount</p>}
-              {localCodeValid === false && <p style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>Code not recognised or inactive</p>}
-            </Field>
-
-            <Field label="Referral code (optional)">
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={referralCode} onChange={e => { setReferralCode(e.target.value); setReferralValid(null); }}
-                  style={{ ...inputStyle, flex: 1 }} placeholder="WC-XXXXXX" />
-                <button onClick={validateReferralCode} style={{
-                  background: OLIVE, color: CREAM, border: 'none', borderRadius: 6,
-                  padding: '0 16px', fontWeight: 600, cursor: 'pointer', fontSize: 14,
-                }}>Apply</button>
-              </div>
-              {referralValid === true  && <p style={{ color: GREEN,  fontSize: 13, marginTop: 4 }}>✓ Referral applied — 5% off</p>}
-              {referralValid === false && <p style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>Referral code not found</p>}
             </Field>
 
             {!user && (
@@ -723,8 +662,69 @@ export default function WildChildRegistration() {
           </div>
         )}
 
-        {/* ── STEP 3: Payment ───────────────────────────────────────────────── */}
-        {step === 3 && (
+        {/* ── STEP 0 (portal): Programme + Schedule ────────────────────────── */}
+        {comingFromPortal && step === 0 && (
+          <div>
+            <div style={{ background: '#f0f4e8', border: `1px solid ${SAGE}`, borderRadius: 8,
+              padding: '10px 14px', marginBottom: 20, fontSize: 14, color: OLIVE_DARK }}>
+              Enrolling more weeks for <strong>{children.map(c => c.firstName).join(', ')}</strong>.
+            </div>
+
+            {children.map((ch, i) => i !== activeChildTab ? null : (
+              <div key={i}>
+                {/* Programme selector */}
+                <div style={{ marginBottom: 24 }}>
+                  <label style={labelStyle}>Programme</label>
+                  {ch.dob ? (() => {
+                    const eligible = eligiblePrograms(ch.dob);
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
+                        {eligible.map(prog => (
+                          <ProgramCard key={prog.id} prog={prog}
+                            selected={ch.program === prog.id}
+                            onSelect={() => updateChild(i, 'program', prog.id)} />
+                        ))}
+                      </div>
+                    );
+                  })() : (
+                    <div style={{ padding: '12px 16px', background: CREAM_DARK, borderRadius: 8, color: '#777', fontSize: 14 }}>
+                      No date of birth on file — please contact Wild Child to update your child's profile.
+                    </div>
+                  )}
+                </div>
+
+                {/* Calendar — only show once program is selected */}
+                {ch.program && (
+                  <>
+                    <h3 style={{ color: OLIVE_DARK, marginBottom: 8, fontSize: 17 }}>Select days</h3>
+                    <p style={{ color: '#666', marginBottom: 16, fontSize: 14 }}>
+                      Minimum 3 days per week, maximum 5 (Monday–Friday only).
+                    </p>
+                    <ChildCalendar child={ch} childIdx={i}
+                      selectedDays={selectedDays[i] || []}
+                      onToggle={key => toggleDay(i, key)}
+                      calMonth={calMonth} calYear={calYear}
+                      onPrevMonth={() => { if (calMonth===1){setCalMonth(12);setCalYear(y=>y-1);}else setCalMonth(m=>m-1); }}
+                      onNextMonth={() => { if (calMonth===12){setCalMonth(1);setCalYear(y=>y+1);}else setCalMonth(m=>m+1); }}
+                      today={today} />
+                  </>
+                )}
+              </div>
+            ))}
+
+            {/* Lunch */}
+            {children[activeChildTab]?.program && <LunchToggle lunch={lunch} setLunch={setLunch} />}
+
+            <NavButtons
+              onBack={prevStep}
+              onNext={() => setStep(1)}
+              nextDisabled={!scheduleValid}
+            />
+          </div>
+        )}
+
+        {/* ── PAYMENT STEP (both flows) ─────────────────────────────────────── */}
+        {step === PAYMENT_STEP && (
           <Elements stripe={stripePromise}>
             <PaymentStep
               childTotals={childTotals} children={children} selectedDays={selectedDays}
@@ -733,14 +733,19 @@ export default function WildChildRegistration() {
               paymentPlan={paymentPlan} setPaymentPlan={setPaymentPlan}
               installmentAmt={installmentAmt()}
               hasLocalCode={hasLocalCode} localCodePct={localCodePct} referralPct={referralPct}
+              localCode={localCode} setLocalCode={setLocalCode}
+              localCodeValid={localCodeValid} setLocalCodeValid={setLocalCodeValid}
+              referralCode={referralCode} setReferralCode={setReferralCode}
+              referralValid={referralValid} setReferralValid={setReferralValid}
+              validateLocalCode={validateLocalCode} validateReferralCode={validateReferralCode}
               onBack={prevStep} onSuccess={submitRegistration}
               loading={loading} error={error}
             />
           </Elements>
         )}
 
-        {/* ── STEP 4: Waiver ────────────────────────────────────────────────── */}
-        {step === 4 && (
+        {/* ── WAIVER STEP ───────────────────────────────────────────────────── */}
+        {step === WAIVER_STEP && (
           <div>
             <h2 style={{ color: OLIVE_DARK, marginBottom: 8 }}>Waiver & Consent</h2>
             <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Please read and agree to each section before signing.</p>
@@ -770,14 +775,14 @@ export default function WildChildRegistration() {
               <input value={signature} onChange={e => setSignature(e.target.value)}
                 style={inputStyle} placeholder="Your full legal name" />
             </Field>
-            <NavButtons onBack={() => setStep(3)} onNext={() => setStep(5)}
+            <NavButtons onBack={() => setStep(PAYMENT_STEP)} onNext={() => submitRegistration(null)}
               nextLabel="Complete Enrolment"
               nextDisabled={!Object.values(waivers).every(Boolean) || !signature.trim()} />
           </div>
         )}
 
-        {/* ── STEP 5: Confirmation ──────────────────────────────────────────── */}
-        {step === 5 && (
+        {/* ── CONFIRMATION STEP ─────────────────────────────────────────────── */}
+        {step === CONFIRM_STEP && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>🌿</div>
             <h2 style={{ color: OLIVE_DARK, marginBottom: 12 }}>Enrolment complete!</h2>
@@ -801,6 +806,23 @@ export default function WildChildRegistration() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Lunch toggle ─────────────────────────────────────────────────────────────
+function LunchToggle({ lunch, setLunch }) {
+  return (
+    <div style={{ marginTop: 24, padding: 16, background: '#fff',
+      border: `1px solid ${CREAM_DARK}`, borderRadius: 8 }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+        <input type="checkbox" checked={lunch} onChange={e => setLunch(e.target.checked)}
+          style={{ width: 18, height: 18, accentColor: GREEN }} />
+        <div>
+          <div style={{ fontWeight: 600, color: OLIVE_DARK }}>Add organic snack & lunch — $10/day</div>
+          <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>Fresh, locally sourced meals prepared daily by our chef.</div>
+        </div>
+      </label>
     </div>
   );
 }
@@ -891,7 +913,7 @@ function ChildCalendar({ child, selectedDays, onToggle, calMonth, calYear, onPre
           Week of {MONTH_NAMES[parseLocalKey(mon).m-1]} {parseLocalKey(mon).d}: {cnt} day{cnt!==1?'s':''} selected — minimum 3 required.
         </p>
       ))}
-      {sortedWeeks.length > 0 && (
+      {sortedWeeks.length > 0 && child.program && (
         <div style={{ marginTop:16, padding:14, background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, fontSize:13 }}>
           <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:8 }}>{child.firstName}'s schedule summary</div>
           {sortedWeeks.map(mon => {
@@ -918,6 +940,9 @@ function ChildCalendar({ child, selectedDays, onToggle, calMonth, calYear, onPre
 function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
   tuitionTotal, grandTotal, totalWeeksAll, paymentPlan, setPaymentPlan,
   installmentAmt, hasLocalCode, localCodePct, referralPct,
+  localCode, setLocalCode, localCodeValid, setLocalCodeValid,
+  referralCode, setReferralCode, referralValid, setReferralValid,
+  validateLocalCode, validateReferralCode,
   onBack, onSuccess, loading, error }) {
   const stripe   = useStripe();
   const elements = useElements();
@@ -946,6 +971,8 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
   return (
     <div>
       <h2 style={{ color: OLIVE_DARK, marginBottom: 16 }}>Payment</h2>
+
+      {/* Order summary */}
       <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:16, marginBottom:20 }}>
         <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:12 }}>Order summary</div>
         {childTotals.map((tot, i) => {
@@ -977,6 +1004,38 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
         </div>
       </div>
 
+      {/* Discount & referral codes */}
+      <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:16, marginBottom:20 }}>
+        <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:12 }}>Discount & referral codes</div>
+        <div style={{ marginBottom:12 }}>
+          <label style={labelStyle}>Local discount code (optional)</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={localCode} onChange={e => { setLocalCode(e.target.value); setLocalCodeValid(null); }}
+              style={{ ...inputStyle, flex: 1, marginBottom: 0 }} placeholder="e.g. nosaralocals" />
+            <button onClick={validateLocalCode} style={{
+              background: OLIVE, color: CREAM, border: 'none', borderRadius: 6,
+              padding: '0 16px', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+            }}>Apply</button>
+          </div>
+          {localCodeValid === true  && <p style={{ color: GREEN,  fontSize: 13, marginTop: 4 }}>✓ Code applied — {localCodePct}% base discount</p>}
+          {localCodeValid === false && <p style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>Code not recognised or inactive</p>}
+        </div>
+        <div>
+          <label style={labelStyle}>Referral code (optional)</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={referralCode} onChange={e => { setReferralCode(e.target.value); setReferralValid(null); }}
+              style={{ ...inputStyle, flex: 1, marginBottom: 0 }} placeholder="WC-XXXXXX" />
+            <button onClick={validateReferralCode} style={{
+              background: OLIVE, color: CREAM, border: 'none', borderRadius: 6,
+              padding: '0 16px', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+            }}>Apply</button>
+          </div>
+          {referralValid === true  && <p style={{ color: GREEN,  fontSize: 13, marginTop: 4 }}>✓ Referral applied — 5% off</p>}
+          {referralValid === false && <p style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>Referral code not found</p>}
+        </div>
+      </div>
+
+      {/* Payment plan */}
       {totalWeeksAll >= 4 && (
         <div style={{ marginBottom:20 }}>
           <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:10 }}>Payment plan</div>
@@ -1000,6 +1059,7 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
         </div>
       )}
 
+      {/* Card details */}
       <div style={{ marginBottom:20 }}>
         <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:10 }}>Card details</div>
         <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:14 }}>
