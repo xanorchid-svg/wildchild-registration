@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
-import logoSvg from './assets/logo1.svg';
 import logoNew from './assets/logo_new.png';
 
 const OLIVE_DARK = '#4d5a2c';
@@ -23,100 +22,85 @@ export default function WelcomePage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: TEAL, display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      minHeight: '100vh',
+      background: TEAL,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '48px 24px 64px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
 
-      {/* ── Header — centered large logo, matching login page style ── */}
-      <header style={{
-        background: OLIVE_DARK,
-        padding: '0 24px',
-        height: 80,
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <img src={logoSvg} alt="Wild Child Nosara" style={{ height: 52 }} />
-      </header>
-
-      {/* ── Hero ── */}
+      {/* Subtle depth */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px 64px',
-        position: 'relative',
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(circle at 20% 85%, rgba(0,0,0,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 15%, rgba(255,255,255,0.06) 0%, transparent 50%)',
+      }} />
+
+      {/* Logo artwork — circular, full hero */}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        width: 300, height: 300,
+        borderRadius: '50%',
         overflow: 'hidden',
+        marginBottom: 32,
+        flexShrink: 0,
+        boxShadow: '0 12px 56px rgba(0,0,0,0.28), 0 2px 12px rgba(0,0,0,0.16)',
+        border: '5px solid rgba(255,255,255,0.22)',
       }}>
-
-        {/* Subtle depth */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(circle at 20% 85%, rgba(0,0,0,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 15%, rgba(255,255,255,0.06) 0%, transparent 50%)',
-        }} />
-
-        {/* Logo artwork — circular, large */}
-        <div style={{
-          position: 'relative', zIndex: 1,
-          width: 300, height: 300,
-          borderRadius: '50%',
-          overflow: 'hidden',
-          marginBottom: 32,
-          flexShrink: 0,
-          boxShadow: '0 12px 56px rgba(0,0,0,0.28), 0 2px 12px rgba(0,0,0,0.16)',
-          border: '5px solid rgba(255,255,255,0.22)',
-        }}>
-          <img
-            src={logoNew}
-            alt="Wild Child Nosara"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        </div>
-
-        {/* Tagline */}
-        <p style={{
-          position: 'relative', zIndex: 1,
-          margin: '0 0 44px',
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          fontStyle: 'italic',
-          fontSize: 14,
-          color: 'rgba(255,255,255,0.90)',
-          whiteSpace: 'nowrap',
-          letterSpacing: '0.02em',
-        }}>
-          A nature-rooted place for children to grow, play, and belong.
-        </p>
-
-        {/* Buttons */}
-        <div style={{
-          position: 'relative', zIndex: 1,
-          display: 'flex', flexDirection: 'column', gap: 14,
-          width: '100%', maxWidth: 300,
-        }}>
-          <HoverButton
-            onClick={() => navigate('/register')}
-            bg={OLIVE_DARK} hoverBg={CREAM} color={CREAM} hoverColor={OLIVE_DARK}
-          >
-            Enroll Now
-          </HoverButton>
-          <HoverButton
-            onClick={() => navigate('/login')}
-            bg={NAVY} hoverBg={CREAM} color={CREAM} hoverColor={NAVY}
-          >
-            Log In
-          </HoverButton>
-        </div>
-
-        <p style={{
-          position: 'relative', zIndex: 1,
-          marginTop: 44, fontSize: 12,
-          color: 'rgba(255,255,255,0.40)',
-          letterSpacing: '0.04em', textAlign: 'center',
-        }}>
-          Nosara, Costa Rica &nbsp;·&nbsp; Wild Child Nosara
-        </p>
+        <img
+          src={logoNew}
+          alt="Wild Child Nosara"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
       </div>
+
+      {/* Tagline */}
+      <p style={{
+        position: 'relative', zIndex: 1,
+        margin: '0 0 44px',
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontStyle: 'italic',
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.90)',
+        whiteSpace: 'nowrap',
+        letterSpacing: '0.02em',
+        textAlign: 'center',
+      }}>
+        A nature-rooted place for children to grow, play, and belong.
+      </p>
+
+      {/* Buttons */}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        display: 'flex', flexDirection: 'column', gap: 14,
+        width: '100%', maxWidth: 300,
+      }}>
+        <HoverButton
+          onClick={() => navigate('/register')}
+          bg={OLIVE_DARK} hoverBg={CREAM} color={CREAM} hoverColor={OLIVE_DARK}
+        >
+          Enroll Now
+        </HoverButton>
+        <HoverButton
+          onClick={() => navigate('/login')}
+          bg={NAVY} hoverBg={CREAM} color={CREAM} hoverColor={NAVY}
+        >
+          Log In
+        </HoverButton>
+      </div>
+
+      <p style={{
+        position: 'relative', zIndex: 1,
+        marginTop: 44, fontSize: 12,
+        color: 'rgba(255,255,255,0.40)',
+        letterSpacing: '0.04em', textAlign: 'center',
+      }}>
+        Nosara, Costa Rica &nbsp;·&nbsp; Wild Child Nosara
+      </p>
     </div>
   );
 }
