@@ -460,9 +460,6 @@ export default function ScheduleView() {
           <p style={{ color:"#fff", fontSize:"15px", margin:"0 0 1px", fontWeight:400 }}>Weekly Schedule</p>
           <p style={{ color:"rgba(255,255,255,0.55)", fontSize:"11px", margin:0 }}>Ages 5–9 · Wild Explorers</p>
         </div>
-        <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"7px 14px", fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>
-          + Enroll
-        </a>
       </div>
 
       <div style={{ maxWidth:"860px", margin:"0 auto", padding:"14px 12px 80px", width:"100%" }}>
