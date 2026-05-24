@@ -2,16 +2,15 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 import logoNew from './assets/logo_new.png';
+import groundsPhoto from '../public/grounds.jpg';
 
 const OLIVE_DARK = '#4d5a2c';
 const NAVY       = '#0f1f5c';
 const CREAM      = '#f5f0e8';
-const TEAL       = '#427889';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
 
-  // Redirect already-logged-in users
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return;
@@ -24,32 +23,46 @@ export default function WelcomePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: TEAL,
+      position: 'relative',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '48px 24px 64px',
-      position: 'relative',
       overflow: 'hidden',
     }}>
 
-      {/* Subtle depth */}
+      {/* Full bleed background photo */}
       <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(circle at 20% 85%, rgba(0,0,0,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 15%, rgba(255,255,255,0.06) 0%, transparent 50%)',
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: `url(${groundsPhoto})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 30%',
+        backgroundRepeat: 'no-repeat',
+        zIndex: 0,
       }} />
 
-      {/* Logo artwork — circular, full hero */}
+      {/* Dark teal gradient overlay */}
       <div style={{
-        position: 'relative', zIndex: 1,
-        width: 300, height: 300,
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(to bottom, rgba(33,74,86,0.65) 0%, rgba(22,55,65,0.75) 60%, rgba(15,40,50,0.88) 100%)',
+        zIndex: 1,
+      }} />
+
+      {/* Logo artwork circle */}
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        width: 300,
+        height: 300,
         borderRadius: '50%',
         overflow: 'hidden',
-        marginBottom: 32,
+        marginBottom: 28,
         flexShrink: 0,
-        boxShadow: '0 12px 56px rgba(0,0,0,0.28), 0 2px 12px rgba(0,0,0,0.16)',
-        border: '5px solid rgba(255,255,255,0.22)',
+        boxShadow: '0 16px 64px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.25)',
+        border: '5px solid rgba(255,255,255,0.20)',
       }}>
         <img
           src={logoNew}
@@ -60,24 +73,30 @@ export default function WelcomePage() {
 
       {/* Tagline */}
       <p style={{
-        position: 'relative', zIndex: 1,
+        position: 'relative',
+        zIndex: 2,
         margin: '0 0 44px',
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontStyle: 'italic',
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.90)',
+        fontSize: 15,
+        color: 'rgba(255,255,255,0.92)',
         whiteSpace: 'nowrap',
         letterSpacing: '0.02em',
         textAlign: 'center',
+        textShadow: '0 1px 8px rgba(0,0,0,0.35)',
       }}>
         A nature-rooted place for children to grow, play, and belong.
       </p>
 
       {/* Buttons */}
       <div style={{
-        position: 'relative', zIndex: 1,
-        display: 'flex', flexDirection: 'column', gap: 14,
-        width: '100%', maxWidth: 300,
+        position: 'relative',
+        zIndex: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        width: '100%',
+        maxWidth: 300,
       }}>
         <HoverButton
           onClick={() => navigate('/register')}
@@ -94,10 +113,13 @@ export default function WelcomePage() {
       </div>
 
       <p style={{
-        position: 'relative', zIndex: 1,
-        marginTop: 44, fontSize: 12,
-        color: 'rgba(255,255,255,0.40)',
-        letterSpacing: '0.04em', textAlign: 'center',
+        position: 'relative',
+        zIndex: 2,
+        marginTop: 48,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.38)',
+        letterSpacing: '0.05em',
+        textAlign: 'center',
       }}>
         Nosara, Costa Rica &nbsp;·&nbsp; Wild Child Nosara
       </p>
@@ -110,12 +132,19 @@ function HoverButton({ onClick, bg, hoverBg, color, hoverColor, children }) {
     <button
       onClick={onClick}
       style={{
-        background: bg, color, border: `2px solid ${bg}`,
-        borderRadius: 6, padding: '17px 24px',
-        fontFamily: 'inherit', fontSize: 15, fontWeight: 700,
-        letterSpacing: '0.09em', textTransform: 'uppercase',
-        cursor: 'pointer', width: '100%',
-        boxShadow: '0 4px 18px rgba(0,0,0,0.22)',
+        background: bg,
+        color,
+        border: `2px solid ${bg}`,
+        borderRadius: 6,
+        padding: '17px 24px',
+        fontFamily: 'inherit',
+        fontSize: 15,
+        fontWeight: 700,
+        letterSpacing: '0.09em',
+        textTransform: 'uppercase',
+        cursor: 'pointer',
+        width: '100%',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.30)',
         transition: 'background 0.18s, color 0.18s, transform 0.12s',
       }}
       onMouseEnter={e => {
