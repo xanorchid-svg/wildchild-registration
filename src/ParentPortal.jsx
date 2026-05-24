@@ -59,7 +59,6 @@ function getWeeksForMonth(year, month) {
   return weeks;
 }
 
-// Generate referral code (same logic as registration form)
 function generateReferralCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "WC-";
@@ -91,7 +90,6 @@ function InfoRow({ label, value }) {
   );
 }
 
-// ── Referral Code Card ────────────────────────────────────────────────────────
 function ReferralCard({ profile, userId, onCodeGenerated }) {
   const [copied, setCopied]   = useState(false);
   const [generating, setGen]  = useState(false);
@@ -169,7 +167,6 @@ function ReferralCard({ profile, userId, onCodeGenerated }) {
   );
 }
 
-// ── Enrollment Calendar ───────────────────────────────────────────────────────
 function EnrollmentCalendar({ enrolledDays, hasLunch }) {
   const today = new Date(); today.setHours(0,0,0,0);
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -231,6 +228,7 @@ function EnrollmentCalendar({ enrolledDays, hasLunch }) {
 
 export default function ParentPortal() {
   const routerNavigate = useRouterNavigate();
+  const [user, setUser]           = useState(null);  // ← FIXED: was missing
   const [profile, setProfile]     = useState({ full_name:"", phone:"", email:"" });
   const [children, setChildren]   = useState([]);
   const [registrations, setRegs]  = useState([]);
@@ -245,17 +243,22 @@ export default function ParentPortal() {
 
   useEffect(() => {
     async function load() {
-      const { data:{ session } } = await supabase.auth.getSession();
-      if (!session) { window.location.href="/login"; return; }
-      setUser(session.user);
-      const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",session.user.id).maybeSingle();
-      if (p) { setProfile({...p,email:session.user.email}); setEditProfile({...p,email:session.user.email}); }
-      else { setProfile(prev=>({...prev,email:session.user.email})); setEditProfile({full_name:"",phone:"",email:session.user.email}); }
-      const { data:ch } = await supabase.from("children").select("*").eq("parent_id",session.user.id).order("created_at");
-      setChildren(ch||[]);
-      const { data:regs } = await supabase.from("registrations").select("*").eq("parent_email",session.user.email).order("created_at",{ascending:false});
-      setRegs(regs||[]);
-      setLoading(false);
+      try {
+        const { data:{ session } } = await supabase.auth.getSession();
+        if (!session) { window.location.href="/login"; return; }
+        setUser(session.user);
+        const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",session.user.id).maybeSingle();
+        if (p) { setProfile({...p,email:session.user.email}); setEditProfile({...p,email:session.user.email}); }
+        else { setProfile(prev=>({...prev,email:session.user.email})); setEditProfile({full_name:"",phone:"",email:session.user.email}); }
+        const { data:ch } = await supabase.from("children").select("*").eq("parent_id",session.user.id).order("created_at");
+        setChildren(ch||[]);
+        const { data:regs } = await supabase.from("registrations").select("*").eq("parent_email",session.user.email).order("created_at",{ascending:false});
+        setRegs(regs||[]);
+      } catch(e) {
+        console.error("Portal load error:", e);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -313,7 +316,7 @@ export default function ParentPortal() {
             </button>
           ))
         }
-        <a href="/" onClick={()=>setMenuOpen(false)} style={{ display:"block", padding:"8px 20px", fontSize:"12px", color:ORANGE, textDecoration:"none" }}>+ Enroll a child</a>
+        <button onClick={()=>routerNavigate('/register')} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", padding:"8px 20px", fontSize:"12px", color:ORANGE, cursor:"pointer", fontFamily:"Georgia,serif" }}>+ Enroll a child</button>
       </div>
       <div style={{ height:"1px", background:CREAM_DARK, margin:"10px 0" }}/>
       {[{id:"general",label:"My Information"},{id:"payments",label:"Payments"}].map(item=>(
@@ -376,9 +379,9 @@ export default function ParentPortal() {
             </span>
           )}
         </p>
-        <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap" }}>
+        <button onClick={()=>routerNavigate('/register')} style={{ background:ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap", cursor:"pointer" }}>
           + Enroll More Weeks
-        </a>
+        </button>
       </div>
 
       {/* Mobile menu overlay */}
@@ -424,7 +427,7 @@ export default function ParentPortal() {
             children.length===0
               ? <div style={{ textAlign:"center", padding:"60px 20px", color:TEXT_LIGHT }}>
                   <p style={{ fontSize:"15px", marginBottom:"16px" }}>No children added yet.</p>
-                  <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase" }}>Enroll Your First Child</a>
+                  <button onClick={()=>routerNavigate('/register')} style={{ background:ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", cursor:"pointer" }}>Enroll Your First Child</button>
                 </div>
               : (() => {
                 const ch=children[activeChildIdx];
@@ -472,7 +475,7 @@ export default function ParentPortal() {
                         {upcomingRegs.length===0&&pastRegs.length===0&&(
                           <div style={{ textAlign:"center", padding:"40px 20px", color:TEXT_LIGHT }}>
                             <p style={{ fontSize:"15px", marginBottom:"16px" }}>No enrollments yet for {ch.first_name}.</p>
-                            <a href="/" style={{ background:ORANGE, color:"#fff", textDecoration:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase" }}>Enroll Now</a>
+                            <button onClick={()=>routerNavigate('/register')} style={{ background:ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"10px 24px", fontSize:"13px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", cursor:"pointer" }}>Enroll Now</button>
                           </div>
                         )}
                         {[...upcomingRegs,...pastRegs].length>0&&(()=>{
@@ -506,7 +509,6 @@ export default function ParentPortal() {
                                           </div>
                                         );
                                       })}
-                                      {/* Discount breakdown if stored */}
                                       {(reg.discount_volume > 0 || reg.discount_sibling > 0 || reg.discount_referral > 0) && (
                                         <div style={{ background:OLIVE_LIGHT, borderRadius:"6px", padding:"8px 10px", marginBottom:"8px" }}>
                                           <p style={{ fontSize:"11px", color:OLIVE_DARK, margin:"0 0 4px" }}>Discounts applied</p>
@@ -561,7 +563,6 @@ export default function ParentPortal() {
                   style={{ background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"8px 16px", fontSize:"12px", color:TEXT_MID, cursor:"pointer", letterSpacing:"0.5px", textTransform:"uppercase", fontFamily:"Georgia,serif" }}>Edit</button>}
               </div>
 
-              {/* Referral code card — always visible in My Information */}
               <ReferralCard
                 profile={profile}
                 userId={user?.id}
@@ -593,7 +594,7 @@ export default function ParentPortal() {
 
               <SectionCard title="Children on Account">
                 {children.length===0
-                  ? <p style={{ fontSize:"13px", color:TEXT_LIGHT }}>No children yet. <a href="/" style={{ color:ORANGE }}>Enroll →</a></p>
+                  ? <p style={{ fontSize:"13px", color:TEXT_LIGHT }}>No children yet. <button onClick={()=>routerNavigate('/register')} style={{ background:"none", border:"none", color:ORANGE, cursor:"pointer", fontFamily:"Georgia,serif", fontSize:"13px", padding:0 }}>Enroll →</button></p>
                   : children.map((ch,i)=>(
                     <div key={ch.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:i<children.length-1?`1px solid ${CREAM_DARK}`:"none", fontSize:"14px" }}>
                       <div>
