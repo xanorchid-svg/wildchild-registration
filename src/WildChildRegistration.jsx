@@ -456,7 +456,7 @@ export default function WildChildRegistration() {
         background: OLIVE_DARK, padding: '0 24px', height: 64, flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <img src={logoSvg} alt="Wild Child" style={{ height: 38 }} />
+        <img src={logoSvg} alt="Wild Child" style={{ height: 120, marginTop: 16 }} />
         <button onClick={() => navigate(comingFromPortal ? '/portal' : '/')} style={{
           background: 'transparent', border: '1.5px solid rgba(245,240,232,0.5)',
           borderRadius: 4, color: CREAM, fontSize: 13, fontWeight: 600,
