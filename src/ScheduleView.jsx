@@ -218,7 +218,7 @@ const EL_D = {
   TUE: [
     { time:"9:00 – 10:00 am",   name:"Capoeira",                    nameEs:"Capoeira",                         teacher:"Jenne",    type:"activity" },
     SNACK_EL,
-    { time:"10:15 – 11:15 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
+    INDEP,
     LEADERSHIP_LAB,
     LUNCH_EL,
     { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
@@ -255,13 +255,14 @@ const SCHEDULES = {
   "wr-jun": { label:"June 2026",   data: WR_B },
   "wr-jul": { label:"July 2026",   data: WR_B },
   "wr-aug": { label:"August 2026", data: WR_B },
-  "el-jun": { label:"June 2026",   data: EL_C },
-  "el-jul": { label:"July 2026",   data: EL_D },
-  "el-aug": { label:"August 2026", data: EL_D },
+  "el-jun": { label:"June 2026",      data: EL_C },
+  "el-jul": { label:"July 2026",      data: EL_D },
+  "el-aug": { label:"August 2026",    data: EL_D },
+  "el-sep": { label:"September 2026", data: EL_D },
 };
 
 const MONTHS_WR = ["wr-may","wr-jun","wr-jul","wr-aug"];
-const MONTHS_EL = ["el-jun","el-jul","el-aug"];
+const MONTHS_EL = ["el-jun","el-jul","el-aug","el-sep"];
 
 const DAYS      = ["MON","TUE","WED","THU","FRI"];
 const DAY_FULL  = { MON:"Monday",TUE:"Tuesday",WED:"Wednesday",THU:"Thursday",FRI:"Friday" };
