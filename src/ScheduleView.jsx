@@ -157,8 +157,8 @@ const WR_B = {
 const SNACK_EL  = { time:"10:00 – 10:15 am", name:"Snack & Hand-washing",           nameEs:"Merienda y ritual de lavado de manos", type:"snack"    };
 const LUNCH_EL  = { time:"12:00 – 12:30 pm", name:"Lunch & Outdoor Play",           nameEs:"Almuerzo saludable y juego exterior",  type:"lunch"    };
 
-const BOXING    = { time:"10:15 – 11:15 am", name:"Boxing",                         nameEs:"Boxeo",                                type:"activity" };
-const INDEP     = { time:"10:15 – 11:15 am", name:"Independent Work",               nameEs:"Trabajo independiente",                teacher:"Dunnia", type:"independent" };
+const BOXING    = { time:"10:15 – 11:15 am", name:"Boxing",                         nameEs:"Boxeo",                                teacher:"Carina", type:"activity" };
+const INDEP     = { time:"10:15 – 11:15 am", name:"Independent Work Session",       nameEs:"Sesión de trabajo independiente",       teacher:"Dunnia", type:"independent" };
 const LEADERSHIP_LAB = { time:"11:15 am – 12:00 pm", name:"Leadership Lab",         nameEs:"Laboratorio de Liderazgo",             teacher:"Carina", type:"activity" };
 
 // Earth Leaders June (C)
@@ -174,7 +174,7 @@ const EL_C = {
   TUE: [
     { time:"9:00 – 10:00 am",   name:"Capoeira",                    nameEs:"Capoeira",                         teacher:"Jenne",    type:"activity" },
     SNACK_EL,
-    { time:"10:15 – 11:15 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
+    { time:"10:15 – 11:15 am",  name:"Independent Work Session",    nameEs:"Sesión de trabajo independiente",   teacher:"Victoria", type:"activity" },
     LEADERSHIP_LAB,
     LUNCH_EL,
     { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
@@ -205,12 +205,12 @@ const EL_C = {
   ],
 };
 
-// Earth Leaders Jul/Aug (D) — same as C but Boxing → Independent Work (blue, supervised by Dunnia)
+// Earth Leaders Jul/Aug/Sep (D) — Mon/Wed/Thu/Fri keep Boxing, Tue = Independent Work (Dunnia, blue)
 const EL_D = {
   MON: [
     { time:"9:00 – 10:00 am",   name:"Permaculture",                nameEs:"Permacultura",                     teacher:"Jenne",    type:"activity" },
     SNACK_EL,
-    INDEP,
+    BOXING,
     LEADERSHIP_LAB,
     LUNCH_EL,
     { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
@@ -226,7 +226,7 @@ const EL_D = {
   WED: [
     { time:"9:00 – 10:00 am",   name:"Nature Walk",                 nameEs:"Caminata por la naturaleza",       teacher:"Dunnia",   type:"activity" },
     SNACK_EL,
-    INDEP,
+    BOXING,
     LEADERSHIP_LAB,
     LUNCH_EL,
     { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
@@ -234,7 +234,7 @@ const EL_D = {
   THU: [
     { time:"9:00 – 10:00 am",   name:"Baking & Nutrition",          nameEs:"Horneado y nutrición",             teacher:"Jenne",    type:"activity" },
     SNACK_EL,
-    INDEP,
+    BOXING,
     LEADERSHIP_LAB,
     LUNCH_EL,
     { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
@@ -242,7 +242,7 @@ const EL_D = {
   FRI: [
     { time:"9:00 – 10:00 am",   name:"Drumming",                    nameEs:"Percusión",                        teacher:"Ruben",    type:"activity" },
     SNACK_EL,
-    INDEP,
+    BOXING,
     LEADERSHIP_LAB,
     LUNCH_EL,
     { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
@@ -423,7 +423,8 @@ function Legend({ program }) {
   ];
   const elItems = [
     ...baseItems,
-    { label:"Independent Work (Dunnia)", c:C.blue },
+    { label:"Boxing (Carina)",                      c:C.carina   },
+    { label:"Independent Work Session (Dunnia)",    c:C.blue     },
   ];
   const items = program === "el" ? elItems : baseItems;
   return (
