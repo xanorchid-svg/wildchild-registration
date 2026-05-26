@@ -452,19 +452,64 @@ function MoonClubBanner() {
   );
 }
 
+// ── Smart calendar helpers ────────────────────────────────────────────────────
+// Map month keys to their year/month for comparison
+const MONTH_KEY_DATE = {
+  "wr-may": { y:2026, m:5  },
+  "wr-jun": { y:2026, m:6  },
+  "wr-jul": { y:2026, m:7  },
+  "wr-aug": { y:2026, m:8  },
+  "el-jun": { y:2026, m:6  },
+  "el-jul": { y:2026, m:7  },
+  "el-aug": { y:2026, m:8  },
+  "el-sep": { y:2026, m:9  },
+};
+
+function isMonthAvailable(key) {
+  const now = new Date();
+  const { y, m } = MONTH_KEY_DATE[key];
+  // Hide only if the month has fully passed (last day is before today)
+  const lastDay = new Date(y, m, 0); // day 0 of next month = last day of this month
+  return lastDay >= now;
+}
+
+function todayDayKey() {
+  const dow = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
+  const map = { 1:"MON", 2:"TUE", 3:"WED", 4:"THU", 5:"FRI" };
+  return map[dow] || "MON"; // weekend defaults to Monday
+}
+
+function currentMonthKey(programKeys) {
+  const now = new Date();
+  const nowY = now.getFullYear();
+  const nowM = now.getMonth() + 1;
+  // Find the first available month that matches or follows today
+  const available = programKeys.filter(isMonthAvailable);
+  if (available.length === 0) return programKeys[programKeys.length - 1];
+  // Prefer current month if available
+  const current = available.find(k => {
+    const { y, m } = MONTH_KEY_DATE[k];
+    return y === nowY && m === nowM;
+  });
+  return current || available[0];
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function ScheduleView() {
-  const [program,     setProgram]     = useState("wr"); // "wr" | "el"
-  const [month,       setMonth]       = useState("wr-may");
+  const [program,     setProgram]     = useState("wr");
   const [viewMode,    setViewMode]    = useState("day");
-  const [selectedDay, setSelectedDay] = useState("MON");
+  const [selectedDay, setSelectedDay] = useState(todayDayKey);
 
-  const monthKeys = program === "wr" ? MONTHS_WR : MONTHS_EL;
+  const wrAvailable = MONTHS_WR.filter(isMonthAvailable);
+  const elAvailable = MONTHS_EL.filter(isMonthAvailable);
 
-  // When switching program, reset to first available month
+  const [month, setMonth] = useState(() => currentMonthKey(MONTHS_WR));
+
+  const monthKeys = program === "wr" ? wrAvailable : elAvailable;
+
   function switchProgram(p) {
     setProgram(p);
-    setMonth(p === "wr" ? "wr-may" : "el-jun");
+    setMonth(currentMonthKey(p === "wr" ? MONTHS_WR : MONTHS_EL));
   }
 
   const schedule = SCHEDULES[month].data;
