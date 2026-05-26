@@ -16,17 +16,14 @@ const TEXT_MID    = "#3d3d5c";
 const TEXT_LIGHT  = "#7a7a9a";
 const GREEN       = "#5a7a3a";
 
-// aliases
-const TEAL      = OLIVE;
-const TEAL_DARK = OLIVE_DARK;
+const TEAL       = OLIVE;
+const TEAL_DARK  = OLIVE_DARK;
 const TEAL_LIGHT = OLIVE_LIGHT;
-const SAND      = ORANGE;
+const SAND       = ORANGE;
 
 function formatDate(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric"
-  });
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 function parseLocalKey(key) {
   const [y, m, d] = key.split("-").map(Number);
@@ -34,15 +31,14 @@ function parseLocalKey(key) {
 }
 function localDateKey(date) {
   const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); d.setHours(0,0,0,0); return d; }
 function dayKey(date) { return localDateKey(date); }
-const MONTHS_ADM=["January","February","March","April","May","June","July","August","September","October","November","December"];
-const WD_SHORT=["Mon","Tue","Wed","Thu","Fri"];
+
+const MONTHS_ADM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const WD_SHORT   = ["Mon","Tue","Wed","Thu","Fri"];
+
 function getWeeksForMonthAdm(year, month) {
   const weeks = [];
   const firstDay = new Date(year, month, 1);
@@ -71,6 +67,10 @@ function weekLabel(mondayDate) {
   return `Week of ${mon.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${fri.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 }
 
+function getCurrentWeekKey() {
+  return localDateKey(getMonday(new Date()));
+}
+
 function groupByWeek(registrations) {
   const groups = {};
   registrations.forEach(reg => {
@@ -81,7 +81,6 @@ function groupByWeek(registrations) {
       groups[key].registrations.push(reg);
       return;
     }
-    // Find all unique weeks this registration covers
     const weekKeys = new Set(days.map(dk => {
       const mon = getMonday(parseLocalKey(dk));
       return localDateKey(mon);
@@ -102,6 +101,7 @@ function groupByWeek(registrations) {
     .map(([key, val]) => ({ key, ...val }));
 }
 
+// ── Detail Modal ──────────────────────────────────────────────────────────────
 function DetailModal({ reg, onClose }) {
   const days = reg.selected_days || [];
   const dayNames = days.map(dk =>
@@ -111,8 +111,6 @@ function DetailModal({ reg, onClose }) {
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:"20px" }}>
       <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:"14px", padding:"28px", maxWidth:"520px", width:"100%", maxHeight:"85vh", overflowY:"auto", fontFamily:"Georgia,serif" }}>
-
-        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"20px" }}>
           <div>
             <p style={{ fontSize:"11px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:"4px" }}>{reg.program_name}</p>
@@ -121,24 +119,17 @@ function DetailModal({ reg, onClose }) {
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", fontSize:"22px", cursor:"pointer", color:TEXT_LIGHT, lineHeight:1, padding:"0 0 0 12px" }}>✕</button>
         </div>
-
         <div style={{ height:"1px", background:CREAM_DARK, marginBottom:"20px" }}/>
-
-        {/* Child info */}
         <Section title="Child">
           <Row label="Full Name" value={`${reg.child_first_name} ${reg.child_last_name}`} />
           <Row label="Date of Birth" value={reg.child_dob || "—"} />
           <Row label="Allergies / Notes" value={reg.child_allergies || "None"} />
         </Section>
-
-        {/* Parent info */}
         <Section title="Parent / Guardian">
           <Row label="Name" value={reg.parent_name || "—"} />
           <Row label="Email" value={reg.parent_email || "—"} />
           <Row label="Phone" value={reg.parent_phone || "—"} />
         </Section>
-
-        {/* Schedule */}
         <Section title="Schedule">
           <Row label="Program" value={reg.program_name || "—"} />
           <Row label="Lunch" value={reg.lunch ? "Yes — Organic Snack & Lunch" : "No"} />
@@ -151,8 +142,6 @@ function DetailModal({ reg, onClose }) {
             </div>
           </div>
         </Section>
-
-        {/* Payment */}
         <Section title="Payment">
           <Row label="Tuition" value={`$${reg.subtotal_tuition ?? "—"}`} />
           <Row label="Lunch" value={reg.lunch ? `$${reg.subtotal_lunch ?? 0}` : "—"} />
@@ -163,17 +152,14 @@ function DetailModal({ reg, onClose }) {
             </span>
           } />
         </Section>
-
-        {/* Waiver */}
         <Section title="Waiver">
-          <Row label="Liability" value={reg.waiver_liability ? "✓ Agreed" : "Not signed"} />
-          <Row label="Medical" value={reg.waiver_medical ? "✓ Agreed" : "Not signed"} />
-          <Row label="Media" value={reg.waiver_media === "yes" ? "✓ Permission granted" : reg.waiver_media === "no" ? "✗ No permission" : "—"} />
-          <Row label="Excursions" value={reg.waiver_excursion === "yes" ? "✓ Permission granted" : reg.waiver_excursion === "no" ? "✗ No permission" : "—"} />
-          <Row label="Signature" value={reg.waiver_signature || "—"} />
-          <Row label="Signed" value={formatDate(reg.waiver_date)} />
+          <Row label="Liability"   value={reg.waiver_liability ? "✓ Agreed" : "Not signed"} />
+          <Row label="Medical"     value={reg.waiver_medical   ? "✓ Agreed" : "Not signed"} />
+          <Row label="Media"       value={reg.waiver_media === "yes" ? "✓ Permission granted" : reg.waiver_media === "no" ? "✗ No permission" : "—"} />
+          <Row label="Excursions"  value={reg.waiver_excursion === "yes" ? "✓ Permission granted" : reg.waiver_excursion === "no" ? "✗ No permission" : "—"} />
+          <Row label="Signature"   value={reg.waiver_signature || "—"} />
+          <Row label="Signed"      value={formatDate(reg.waiver_date)} />
         </Section>
-
         <p style={{ fontSize:"11px", color:TEXT_LIGHT, marginTop:"16px", textAlign:"right" }}>
           Registered {formatDate(reg.created_at)}
         </p>
@@ -190,7 +176,6 @@ function Section({ title, children }) {
     </div>
   );
 }
-
 function Row({ label, value, bold }) {
   return (
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:`1px solid ${CREAM_DARK}`, fontSize:"13px" }}>
@@ -200,12 +185,81 @@ function Row({ label, value, bold }) {
   );
 }
 
+// ── Week row ──────────────────────────────────────────────────────────────────
+function WeekRow({ week, isExpanded, isCurrent, isPast, onToggle, onSelectReg, localDateKey, getMonday, parseLocalKey }) {
+  return (
+    <div style={{ marginBottom:"12px" }}>
+      <div onClick={onToggle}
+        style={{
+          background: isCurrent ? OLIVE_DARK : isPast ? "#8a8a9a" : NAVY,
+          borderRadius: isExpanded ? "10px 10px 0 0" : "10px",
+          padding:"14px 20px", cursor:"pointer",
+          display:"flex", justifyContent:"space-between", alignItems:"center",
+        }}>
+        <div>
+          {isCurrent && (
+            <span style={{ fontSize:"9px", letterSpacing:"1px", textTransform:"uppercase", background:"rgba(255,255,255,0.2)", color:"#fff", padding:"2px 8px", borderRadius:"10px", marginBottom:"5px", display:"inline-block" }}>
+              This Week
+            </span>
+          )}
+          <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.75)", margin: isCurrent ? "4px 0 2px" : "0 0 2px" }}>{week.label}</p>
+          <p style={{ fontSize:"16px", color:"#fff", margin:0 }}>
+            {week.registrations.length} child{week.registrations.length !== 1 ? "ren" : ""}
+          </p>
+        </div>
+        <span style={{ color:"rgba(255,255,255,0.8)", fontSize:"18px" }}>{isExpanded ? "▲" : "▼"}</span>
+      </div>
+
+      {isExpanded && (
+        <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderTop:"none", borderRadius:"0 0 10px 10px", overflow:"hidden" }}>
+          {week.registrations.map((reg, i) => (
+            <div key={reg.id} onClick={() => onSelectReg(reg)}
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px",
+                borderBottom: i < week.registrations.length - 1 ? `1px solid ${CREAM_DARK}` : "none", cursor:"pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = CREAM}
+              onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+              <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
+                <div style={{ width:"38px", height:"38px", borderRadius:"50%", background:OLIVE_LIGHT, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", color:OLIVE_DARK, fontWeight:500, flexShrink:0 }}>
+                  {(reg.child_first_name?.[0] || "?")}{(reg.child_last_name?.[0] || "")}
+                </div>
+                <div>
+                  <p style={{ fontSize:"15px", color:TEXT_DARK, margin:"0 0 2px" }}>{reg.child_first_name || "—"} {reg.child_last_name || ""}</p>
+                  <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
+                    {reg.program_name || "—"} · {(reg.selected_days || []).filter(dk => localDateKey(getMonday(parseLocalKey(dk))) === week.key).length} days
+                    {reg.lunch ? " · 🥗 Lunch" : ""}
+                  </p>
+                </div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <p style={{ fontSize:"14px", color:OLIVE, margin:"0 0 2px" }}>${reg.grand_total ?? ""}</p>
+                <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"20px", color:"#fff", background: reg.payment_status === "paid" ? GREEN : ORANGE }}>
+                  {reg.payment_status || "pending"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function Admin() {
   const [registrations, setRegistrations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selected, setSelected] = useState(null);
-  const [expandedWeeks, setExpandedWeeks] = useState(new Set());
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
+  const [selected,      setSelected]      = useState(null);
+  const [showHistory,   setShowHistory]   = useState(false);
+  const [adminView,     setAdminView]     = useState("weeks");
+  const [calYear,       setCalYear]       = useState(new Date().getFullYear());
+  const [calMonth,      setCalMonth]      = useState(new Date().getMonth());
+  const [selectedDay,   setSelectedDay]   = useState(null);
+
+  const currentWeekKey = getCurrentWeekKey();
+
+  // Auto-expand current week only
+  const [expandedWeeks, setExpandedWeeks] = useState(new Set([currentWeekKey]));
 
   useEffect(() => {
     async function load() {
@@ -228,12 +282,11 @@ export default function Admin() {
     });
   };
 
-  const [adminView, setAdminView] = useState("weeks"); // weeks | calendar
-  const [calYear, setCalYear] = useState(new Date().getFullYear());
-  const [calMonth, setCalMonth] = useState(new Date().getMonth());
-  const [selectedDay, setSelectedDay] = useState(null); // ISO date string
-
   const weeks = groupByWeek(registrations);
+
+  // Split into current/future and past
+  const currentAndFuture = weeks.filter(w => w.key === "unscheduled" || w.key >= currentWeekKey);
+  const pastWeeks        = weeks.filter(w => w.key !== "unscheduled" && w.key < currentWeekKey);
 
   return (
     <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
@@ -246,26 +299,25 @@ export default function Admin() {
         <div style={{ width:"80px" }}/>
         <div style={{ position:"relative", zIndex:1, display:"flex", gap:"10px", alignItems:"center" }}>
           <a href="/" style={{ fontSize:"12px", color:"rgba(255,255,255,0.7)", textDecoration:"none", letterSpacing:"0.5px" }}>← Enrollment</a>
-          <button onClick={async () => { const { supabase } = await import('./supabase'); await supabase.auth.signOut(); window.location.href = '/login'; }}
+          <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login'; }}
             style={{ background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"rgba(255,255,255,0.9)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", fontFamily:"Georgia,serif" }}>
             Sign Out
           </button>
         </div>
       </div>
 
-      {/* Admin label bar + view tabs */}
+      {/* Nav bar */}
       <div style={{ background:NAVY, padding:"0 20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <p style={{ color:"rgba(255,255,255,0.7)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", margin:0, padding:"10px 0" }}>Admin · Registrations</p>
         <div style={{ display:"flex", gap:"4px" }}>
-          {["weeks","calendar"].map(v=>(
-            <button key={v} onClick={()=>setAdminView(v)}
+          {["weeks","calendar"].map(v => (
+            <button key={v} onClick={() => setAdminView(v)}
               style={{ background:adminView===v?"rgba(255,255,255,0.15)":"transparent", border:"none", borderRadius:"6px", padding:"6px 14px", color:adminView===v?"#fff":"rgba(255,255,255,0.5)", fontSize:"12px", cursor:"pointer", fontFamily:"Georgia,serif", textTransform:"capitalize", letterSpacing:"0.5px" }}>
-              {v==="weeks"?"By Week":"Calendar"}
+              {v === "weeks" ? "By Week" : "Calendar"}
             </button>
           ))}
         </div>
-        <a href="/schedule"
-          style={{ color:"rgba(255,255,255,0.65)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", textDecoration:"none", fontFamily:"Georgia,serif", padding:"10px 0 10px 20px", whiteSpace:"nowrap" }}>
+        <a href="/schedule" style={{ color:"rgba(255,255,255,0.65)", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", textDecoration:"none", fontFamily:"Georgia,serif", padding:"10px 0 10px 20px", whiteSpace:"nowrap" }}>
           📅 Schedule
         </a>
       </div>
@@ -273,102 +325,112 @@ export default function Admin() {
       <div style={{ maxWidth:"700px", margin:"0 auto", padding:"32px 16px 60px" }}>
 
         {loading && <div style={{ textAlign:"center", padding:"60px 0", color:TEXT_LIGHT, fontSize:"14px" }}>Loading registrations...</div>}
-        {error && <div style={{ background:"#fdecea", border:"1px solid #f5c6c6", borderRadius:"10px", padding:"16px", color:"#a32d2d", fontSize:"14px" }}>Error: {error}</div>}
-        {!loading && !error && registrations.length===0 && (
+        {error   && <div style={{ background:"#fdecea", border:"1px solid #f5c6c6", borderRadius:"10px", padding:"16px", color:"#a32d2d", fontSize:"14px" }}>Error: {error}</div>}
+        {!loading && !error && registrations.length === 0 && (
           <div style={{ textAlign:"center", padding:"60px 0", color:TEXT_LIGHT }}>
             <p style={{ fontSize:"15px" }}>No registrations yet.</p>
           </div>
         )}
 
         {/* ── BY WEEK VIEW ── */}
-        {!loading && adminView==="weeks" && weeks.map(week => (
-          <div key={week.key} style={{ marginBottom:"16px" }}>
-            <div onClick={() => toggleWeek(week.key)}
-              style={{ background:NAVY, borderRadius: expandedWeeks.has(week.key) ? "10px 10px 0 0" : "10px", padding:"14px 20px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div>
-                <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.75)", margin:"0 0 2px" }}>{week.label}</p>
-                <p style={{ fontSize:"16px", color:"#fff", margin:0 }}>{week.registrations.length} child{week.registrations.length!==1?"ren":""}</p>
-              </div>
-              <span style={{ color:"rgba(255,255,255,0.8)", fontSize:"18px" }}>{expandedWeeks.has(week.key)?"▲":"▼"}</span>
-            </div>
-            {expandedWeeks.has(week.key)&&(
-              <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderTop:"none", borderRadius:"0 0 10px 10px", overflow:"hidden" }}>
-                {week.registrations.map((reg,i)=>(
-                  <div key={reg.id} onClick={()=>setSelected(reg)}
-                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px",
-                      borderBottom:i<week.registrations.length-1?`1px solid ${CREAM_DARK}`:"none", cursor:"pointer" }}
-                    onMouseEnter={e=>e.currentTarget.style.background=CREAM}
-                    onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
-                    <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
-                      <div style={{ width:"38px", height:"38px", borderRadius:"50%", background:OLIVE_LIGHT, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"13px", color:OLIVE_DARK, fontWeight:500, flexShrink:0 }}>
-                        {(reg.child_first_name?.[0]||"?")}{(reg.child_last_name?.[0]||"")}
-                      </div>
-                      <div>
-                        <p style={{ fontSize:"15px", color:TEXT_DARK, margin:"0 0 2px" }}>{reg.child_first_name||"—"} {reg.child_last_name||""}</p>
-                        <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
-                          {reg.program_name||"—"} · {(reg.selected_days||[]).filter(dk=>localDateKey(getMonday(parseLocalKey(dk)))===week.key).length} days
-                          {reg.lunch?" · 🥗 Lunch":""}
-                        </p>
-                      </div>
-                    </div>
-                    <div style={{ textAlign:"right" }}>
-                      <p style={{ fontSize:"14px", color:OLIVE, margin:"0 0 2px" }}>${reg.grand_total??""}</p>
-                      <span style={{ fontSize:"10px", padding:"2px 8px", borderRadius:"20px", color:"#fff", background:reg.payment_status==="paid"?GREEN:ORANGE }}>{reg.payment_status||"pending"}</span>
-                    </div>
+        {!loading && adminView === "weeks" && (
+          <div>
+            {/* Current week + future */}
+            {currentAndFuture.map(week => (
+              <WeekRow
+                key={week.key}
+                week={week}
+                isExpanded={expandedWeeks.has(week.key)}
+                isCurrent={week.key === currentWeekKey}
+                isPast={false}
+                onToggle={() => toggleWeek(week.key)}
+                onSelectReg={setSelected}
+                localDateKey={localDateKey}
+                getMonday={getMonday}
+                parseLocalKey={parseLocalKey}
+              />
+            ))}
+
+            {/* History toggle */}
+            {pastWeeks.length > 0 && (
+              <div style={{ marginTop:"8px" }}>
+                <button onClick={() => setShowHistory(h => !h)}
+                  style={{ width:"100%", background:"#fff", border:`1.5px solid ${CREAM_DARK}`, borderRadius:"10px", padding:"12px 20px", cursor:"pointer", fontFamily:"Georgia,serif", fontSize:"13px", color:TEXT_MID, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span>
+                    {showHistory ? "Hide" : "Show"} registration history
+                    <span style={{ marginLeft:"8px", fontSize:"11px", color:TEXT_LIGHT }}>({pastWeeks.length} past week{pastWeeks.length !== 1 ? "s" : ""})</span>
+                  </span>
+                  <span style={{ fontSize:"16px", color:TEXT_LIGHT }}>{showHistory ? "▲" : "▼"}</span>
+                </button>
+
+                {showHistory && (
+                  <div style={{ marginTop:"12px" }}>
+                    {[...pastWeeks].reverse().map(week => (
+                      <WeekRow
+                        key={week.key}
+                        week={week}
+                        isExpanded={expandedWeeks.has(week.key)}
+                        isCurrent={false}
+                        isPast={true}
+                        onToggle={() => toggleWeek(week.key)}
+                        onSelectReg={setSelected}
+                        localDateKey={localDateKey}
+                        getMonday={getMonday}
+                        parseLocalKey={parseLocalKey}
+                      />
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
-        ))}
+        )}
 
         {/* ── CALENDAR VIEW ── */}
-        {!loading && adminView==="calendar" && (()=>{
-          // Build a map of dayKey → registrations enrolled that day
-          const dayMap={};
-          registrations.forEach(reg=>{
-            (reg.selected_days||[]).forEach(dk=>{
-              if(!dayMap[dk]) dayMap[dk]=[];
+        {!loading && adminView === "calendar" && (() => {
+          const dayMap = {};
+          registrations.forEach(reg => {
+            (reg.selected_days || []).forEach(dk => {
+              if (!dayMap[dk]) dayMap[dk] = [];
               dayMap[dk].push(reg);
             });
           });
 
-          const calWeeks=getWeeksForMonthAdm(calYear,calMonth);
-          const dayRegs=selectedDay?dayMap[selectedDay]||[]:[];
+          const calWeeks = getWeeksForMonthAdm(calYear, calMonth);
+          const dayRegs  = selectedDay ? dayMap[selectedDay] || [] : [];
 
           return (
             <div>
-              {/* Calendar */}
               <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px", marginBottom:"16px" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"16px" }}>
-                  <button onClick={()=>{if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1);}}
+                  <button onClick={() => { if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1); }}
                     style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>‹</button>
                   <p style={{ fontSize:"16px", color:TEXT_DARK, margin:0, fontWeight:400 }}>{MONTHS_ADM[calMonth]} {calYear}</p>
-                  <button onClick={()=>{if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1);}}
+                  <button onClick={() => { if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1); }}
                     style={{ background:"none", border:"none", cursor:"pointer", fontSize:"20px", color:TEXT_MID, padding:"2px 10px", lineHeight:1 }}>›</button>
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"5px", marginBottom:"8px", textAlign:"center" }}>
-                  {WD_SHORT.map(d=><div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
+                  {WD_SHORT.map(d => <div key={d} style={{ fontSize:"11px", color:TEXT_LIGHT }}>{d}</div>)}
                 </div>
-                {calWeeks.map(monday=>(
+                {calWeeks.map(monday => (
                   <div key={monday.toISOString()} style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"5px", marginBottom:"5px" }}>
-                    {[0,1,2,3,4].map(offset=>{
-                      const d=addDays(monday,offset);
-                      const key=dayKey(d);
-                      const count=(dayMap[key]||[]).length;
-                      const isSelected=selectedDay===key;
-                      const inMonth=d.getMonth()===calMonth;
-                      const isToday=key===dayKey(new Date());
+                    {[0,1,2,3,4].map(offset => {
+                      const d       = addDays(monday, offset);
+                      const key     = dayKey(d);
+                      const count   = (dayMap[key] || []).length;
+                      const isSel   = selectedDay === key;
+                      const inMonth = d.getMonth() === calMonth;
+                      const isToday = key === dayKey(new Date());
                       return (
-                        <div key={offset} onClick={()=>setSelectedDay(isSelected?null:key)}
+                        <div key={offset} onClick={() => setSelectedDay(isSel ? null : key)}
                           style={{ textAlign:"center", padding:"8px 4px", borderRadius:"8px", cursor:"pointer", transition:"all .15s",
-                            background:isSelected?NAVY:(count>0?(inMonth?OLIVE_LIGHT:CREAM_DARK):(inMonth?CREAM:CREAM_DARK)),
-                            border:isSelected?`2px solid ${NAVY}`:isToday?`2px solid ${ORANGE}`:"2px solid transparent",
-                            color:isSelected?"#fff":(inMonth?TEXT_DARK:TEXT_LIGHT),
-                            opacity:inMonth?1:0.5 }}>
+                            background: isSel ? NAVY : (count > 0 ? (inMonth ? OLIVE_LIGHT : CREAM_DARK) : (inMonth ? CREAM : CREAM_DARK)),
+                            border: isSel ? `2px solid ${NAVY}` : isToday ? `2px solid ${ORANGE}` : "2px solid transparent",
+                            color: isSel ? "#fff" : (inMonth ? TEXT_DARK : TEXT_LIGHT),
+                            opacity: inMonth ? 1 : 0.5 }}>
                           <div style={{ fontSize:"9px", opacity:0.7, marginBottom:"1px" }}>{d.toLocaleDateString("en-US",{month:"short"})}</div>
                           <div style={{ fontSize:"14px", fontWeight:count>0?"500":"400" }}>{d.getDate()}</div>
-                          {count>0&&<div style={{ fontSize:"10px", marginTop:"2px", color:isSelected?"rgba(255,255,255,0.85)":OLIVE, fontWeight:500 }}>{count}</div>}
+                          {count > 0 && <div style={{ fontSize:"10px", marginTop:"2px", color:isSel?"rgba(255,255,255,0.85)":OLIVE, fontWeight:500 }}>{count}</div>}
                         </div>
                       );
                     })}
@@ -379,22 +441,20 @@ export default function Admin() {
                 </p>
               </div>
 
-              {/* Day detail panel */}
-              {selectedDay&&(
+              {selectedDay && (
                 <div style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"12px", padding:"20px" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
                     <h3 style={{ fontSize:"16px", fontWeight:400, color:TEXT_DARK, margin:0 }}>
-                      {new Date(selectedDay).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
+                      {parseLocalKey(selectedDay).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
                     </h3>
-                    <button onClick={()=>setSelectedDay(null)} style={{ background:"none", border:"none", fontSize:"18px", cursor:"pointer", color:TEXT_LIGHT }}>✕</button>
+                    <button onClick={() => setSelectedDay(null)} style={{ background:"none", border:"none", fontSize:"18px", cursor:"pointer", color:TEXT_LIGHT }}>✕</button>
                   </div>
-
-                  {dayRegs.length===0
+                  {dayRegs.length === 0
                     ? <p style={{ fontSize:"14px", color:TEXT_LIGHT, textAlign:"center", padding:"20px 0" }}>No children enrolled this day.</p>
                     : <>
                         <p style={{ fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", color:TEXT_LIGHT, margin:"0 0 12px" }}>{dayRegs.length} child{dayRegs.length!==1?"ren":""} enrolled</p>
-                        {dayRegs.map((reg,i)=>(
-                          <div key={reg.id} onClick={()=>setSelected(reg)}
+                        {dayRegs.map((reg, i) => (
+                          <div key={reg.id} onClick={() => setSelected(reg)}
                             style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px",
                               background:i%2===0?CREAM:"#fff", borderRadius:"8px", cursor:"pointer", marginBottom:"4px" }}>
                             <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
@@ -405,7 +465,7 @@ export default function Admin() {
                                 <p style={{ fontSize:"14px", color:TEXT_DARK, margin:"0 0 2px" }}>{reg.child_first_name} {reg.child_last_name}</p>
                                 <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>
                                   {reg.program_name||"—"}
-                                  {reg.lunch&&<span style={{ color:GREEN, marginLeft:"6px" }}>🥗 Lunch</span>}
+                                  {reg.lunch && <span style={{ color:GREEN, marginLeft:"6px" }}>🥗 Lunch</span>}
                                 </p>
                               </div>
                             </div>
@@ -421,7 +481,6 @@ export default function Admin() {
         })()}
       </div>
 
-      {/* Detail modal */}
       {selected && <DetailModal reg={selected} onClose={() => setSelected(null)} />}
     </div>
   );
