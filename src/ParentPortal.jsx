@@ -379,6 +379,9 @@ export default function ParentPortal() {
             </span>
           )}
         </p>
+        <button onClick={()=>routerNavigate('/register')} style={{ background:ORANGE, color:"#fff", border:"none", borderRadius:"8px", padding:"8px 16px", fontSize:"12px", letterSpacing:"1px", textTransform:"uppercase", fontFamily:"Georgia,serif", whiteSpace:"nowrap", cursor:"pointer" }}>
+          + Enroll More Weeks
+        </button>
       </div>
 
       {/* Mobile menu overlay */}
@@ -394,8 +397,12 @@ export default function ParentPortal() {
             </div>
             <div style={{ paddingTop:"12px" }}><SidebarContent/></div>
             <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"12px 0 0", padding:"12px 20px" }}>
+              <a href="https://wildchildnosara.com" target="_blank" rel="noopener noreferrer"
+                style={{ display:"block", padding:"9px 0", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+                Our Website ↗
+              </a>
               <button onClick={signOut}
-                style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left" }}>
+                style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left", marginTop:"8px" }}>
                 Sign Out
               </button>
             </div>
@@ -409,6 +416,10 @@ export default function ParentPortal() {
         <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)" }}>
           <SidebarContent/>
           <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"16px 0 0", padding:"12px 0" }}>
+            <a href="https://wildchildnosara.com" target="_blank" rel="noopener noreferrer"
+              style={{ display:"block", padding:"9px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+              Our Website ↗
+            </a>
             <button onClick={signOut}
               style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
               Sign Out
@@ -604,10 +615,29 @@ export default function ParentPortal() {
                   ))
                 }
               </SectionCard>
+
+              {/* Leave a Review */}
+              <div style={{ background:"linear-gradient(135deg, #0f1f5c 0%, #2a3a7a 100%)", borderRadius:"14px", padding:"22px", marginBottom:"16px", color:"#fff" }}>
+                <div style={{ display:"flex", alignItems:"flex-start", gap:"14px", marginBottom:"16px" }}>
+                  <span style={{ fontSize:"28px", lineHeight:1 }}>⭐</span>
+                  <div>
+                    <p style={{ fontSize:"15px", fontWeight:500, margin:"0 0 4px", color:"#fff" }}>Enjoying Wild Child?</p>
+                    <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.78)", margin:0, lineHeight:1.5 }}>
+                      Your review helps other families find us. It only takes a minute and means the world to our community.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display:"inline-block", background:"rgba(255,255,255,0.18)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:"8px", padding:"11px 20px", color:"#fff", fontSize:"13px", textDecoration:"none", fontFamily:"Georgia,serif" }}>
+                  Leave a Review ↗
+                </a>
+              </div>
+
             </div>
           )}
-
-          {/* ── Payments ── */}
           {activeSection==="payments"&&(
             <div>
               <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"20px" }}>Payments</h2>

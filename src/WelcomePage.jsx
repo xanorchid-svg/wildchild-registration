@@ -112,10 +112,12 @@ export default function WelcomePage() {
         </HoverButton>
       </div>
 
+      {/* Footer links */}
       <p style={{
         position: 'relative',
         zIndex: 2,
         marginTop: 48,
+        marginBottom: 6,
         fontSize: 12,
         color: 'rgba(255,255,255,0.38)',
         letterSpacing: '0.05em',
@@ -123,6 +125,23 @@ export default function WelcomePage() {
       }}>
         Nosara, Costa Rica &nbsp;·&nbsp; Wild Child Nosara
       </p>
+      <a
+        href="https://wildchildnosara.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          fontSize: 14,
+          color: 'rgba(255,255,255,0.65)',
+          letterSpacing: '0.04em',
+          textAlign: 'center',
+          textDecoration: 'underline',
+          display: 'block',
+        }}
+      >
+        Our Website ↗
+      </a>
     </div>
   );
 }
