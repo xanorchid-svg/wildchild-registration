@@ -293,8 +293,8 @@ export default function Admin() {
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%, -40%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }} />
+        <div style={{ position:"relative", zIndex:1 }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:"48px", objectFit:"contain" }} />
         </div>
         <div style={{ width:"80px" }}/>
         <div style={{ position:"relative", zIndex:1, display:"flex", gap:"10px", alignItems:"center" }}>
