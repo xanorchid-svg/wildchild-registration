@@ -80,7 +80,7 @@ export default function WelcomePage() {
         fontStyle: 'italic',
         fontSize: 15,
         color: 'rgba(255,255,255,0.92)',
-        whiteSpace: 'nowrap',
+        maxWidth: '320px',
         letterSpacing: '0.02em',
         textAlign: 'center',
         textShadow: '0 1px 8px rgba(0,0,0,0.35)',
