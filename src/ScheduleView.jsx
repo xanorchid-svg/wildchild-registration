@@ -514,6 +514,15 @@ export default function ScheduleView() {
 
   const schedule = SCHEDULES[month].data;
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const { data: staff } = await supabase.from("staff").select("id").eq("id", session.user.id).single();
+      if (staff) setIsAdmin(true);
+    });
+  }, []);
+
   const signOut = async () => { await supabase.auth.signOut(); window.location.href = "/login"; };
 
   return (
@@ -527,8 +536,8 @@ export default function ScheduleView() {
 
       {/* Header */}
       <div style={{ background:OLIVE_DARK, height:"90px", overflow:"hidden", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px" }}>
-        <a href="/portal" style={{ position:"relative", zIndex:2, textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"#fff", fontSize:"12px", fontFamily:"Georgia,serif", letterSpacing:"0.5px", whiteSpace:"nowrap" }}>
-          ← Portal
+        <a href={isAdmin ? "/admin" : "/portal"} style={{ position:"relative", zIndex:2, textDecoration:"none", background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:"8px", padding:"8px 14px", color:"#fff", fontSize:"12px", fontFamily:"Georgia,serif", letterSpacing:"0.5px", whiteSpace:"nowrap" }}>
+          {isAdmin ? "← Admin" : "← Portal"}
         </a>
         <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-40%)" }}>
           <img src={logo} alt="Wild Child Nosara" style={{ height:"180px", objectFit:"contain" }}/>
