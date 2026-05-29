@@ -25,3 +25,8 @@ createRoot(document.getElementById("root")).render(
     </BrowserRouter>
   </StrictMode>
 );
+
+// Global reset
+const style = document.createElement('style');
+style.textContent = '* { margin: 0; padding: 0; box-sizing: border-box; } html, body, #root { margin: 0; padding: 0; }';
+document.head.appendChild(style);
