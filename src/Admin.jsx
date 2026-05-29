@@ -266,7 +266,7 @@ export default function Admin() {
       <div style={S.header}>
         <button style={S.headerBtn} onClick={() => navigate("/schedule")}>📅 Schedule</button>
         <div style={{ position:"absolute", left:"50%", transform:"translateX(-50%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height:60, objectFit:"contain" }} />
+          <img src={logo} alt="Wild Child Nosara" style={{ height:160, objectFit:"contain" }} />
         </div>
         <button style={S.headerBtn} onClick={signOut}>Sign Out</button>
       </div>
