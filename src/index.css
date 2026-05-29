@@ -73,4 +73,4 @@ input, select, textarea {
   background: var(--sage);
   border-radius: 3px;
 }
-html, body, #root { margin: 0; padding: 0; background: #4d5a2c; }
+html, body, #root { margin: 0; padding: 0; }
