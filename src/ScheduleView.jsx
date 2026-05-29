@@ -403,6 +403,17 @@ function DayView({ schedule, selectedDay, onSelectDay }) {
           </div>
         </div>
       </div>
+      {/* Harmony Co-Op Saturday */}
+      <div style={{ margin:"12px 20px 0", borderRadius:"12px", overflow:"hidden", border:"1px solid #b0c8d0", background:"linear-gradient(135deg, #e8f4f8 0%, #d4eaf0 100%)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"14px", padding:"14px 18px" }}>
+          <span style={{ fontSize:"22px", flexShrink:0 }}>🌿</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:"bold", fontSize:"14px", color:"#427889" }}>Wild Child at Harmony Co-Op</div>
+            <div style={{ fontSize:"12px", color:"#5a8a99", marginTop:"2px" }}>Every Saturday · 8:00 – 11:00 am · Harmony Co-Op Playground</div>
+          </div>
+          <a href="/harmony" style={{ background:"#427889", color:"#fff", borderRadius:"8px", padding:"7px 14px", fontSize:"12px", textDecoration:"none", fontFamily:"Georgia,serif", whiteSpace:"nowrap", flexShrink:0 }}>Book →</a>
+        </div>
+      </div>
       <p style={{ fontSize:"10px", color:TEXT_LIGHT, textAlign:"center", marginTop:"10px", fontStyle:"italic" }}>
         *Schedule may flow and adjust based on the group's energy and natural rhythm
       </p>
