@@ -90,7 +90,8 @@ function InfoRow({ label, value }) {
   );
 }
 
-function ReferralCard({ profile, userId, onCodeGenerated }) {
+// ── Referral Card — receives accountCredit as prop ────────────────────────────
+function ReferralCard({ profile, userId, accountCredit, onCodeGenerated }) {
   const [copied, setCopied]   = useState(false);
   const [generating, setGen]  = useState(false);
   const code = profile?.referral_code;
@@ -113,66 +114,70 @@ function ReferralCard({ profile, userId, onCodeGenerated }) {
   };
 
   return (
-    <div style={{ background:"linear-gradient(135deg, #4d5a2c 0%, #6b7a3f 100%)", borderRadius:"14px", padding:"22px", marginBottom:"16px", color:"#fff" }}>
-      <div style={{ display:"flex", alignItems:"flex-start", gap:"14px", marginBottom:"16px" }}>
-        <span style={{ fontSize:"28px", lineHeight:1 }}>🌿</span>
-        <div>
-          <p style={{ fontSize:"15px", fontWeight:500, margin:"0 0 4px", color:"#fff" }}>Bring a Friend to Wild Child</p>
-          <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.78)", margin:0, lineHeight:1.5 }}>
-            {accountCredit > 0 && (
-              <div style={{ background:"#f0f7f0", border:"1px solid #b8d4b8", borderRadius:10, padding:"14px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                <div>
-                  <p style={{ fontSize:11, letterSpacing:"1px", textTransform:"uppercase", color:"#5a7a3a", margin:"0 0 4px" }}>Account Credit</p>
-                  <p style={{ fontSize:22, fontWeight:"bold", color:"#5a7a3a", margin:0, fontFamily:"Georgia,serif" }}>${accountCredit.toFixed(2)}</p>
-                </div>
-                <div style={{ fontSize:12, color:"#7a9a7a", maxWidth:160, textAlign:"right", lineHeight:1.5 }}>Applied automatically at your next enrollment checkout</div>
-              </div>
-            )}
-            Share your code with a family — they get 5% off their first enrollment, and you'll earn a 5% credit on your next one.
-          </p>
-        </div>
-      </div>
-
-      {hasCreditPending && (
-        <div style={{ background:"rgba(255,255,255,0.15)", borderRadius:"8px", padding:"10px 14px", marginBottom:"14px", display:"flex", alignItems:"center", gap:"8px" }}>
-          <span style={{ fontSize:"16px" }}>🎉</span>
-          <p style={{ fontSize:"13px", color:"#fff", margin:0 }}>
-            <strong>You have a referral credit waiting!</strong> 5% off your next enrollment — applied automatically at checkout.
-          </p>
+    <>
+      {/* Account Credit — shown above referral card if credit > 0 */}
+      {accountCredit > 0 && (
+        <div style={{ background:"#f0f7f0", border:"1px solid #b8d4b8", borderRadius:10, padding:"14px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <p style={{ fontSize:11, letterSpacing:"1px", textTransform:"uppercase", color:GREEN, margin:"0 0 4px" }}>Account Credit</p>
+            <p style={{ fontSize:22, fontWeight:"bold", color:GREEN, margin:0, fontFamily:"Georgia,serif" }}>${accountCredit.toFixed(2)}</p>
+          </div>
+          <div style={{ fontSize:12, color:"#7a9a7a", maxWidth:160, textAlign:"right", lineHeight:1.5 }}>Applied automatically at your next enrollment checkout</div>
         </div>
       )}
 
-      {code ? (
-        <div>
-          <p style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:"rgba(255,255,255,0.6)", margin:"0 0 8px" }}>Your referral code</p>
-          <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>
-            <div style={{ flex:1, background:"rgba(255,255,255,0.15)", borderRadius:"8px", padding:"12px 16px", letterSpacing:"3px", fontSize:"18px", fontFamily:"monospace", color:"#fff", border:"1px solid rgba(255,255,255,0.25)" }}>
-              {code}
+      <div style={{ background:"linear-gradient(135deg, #4d5a2c 0%, #6b7a3f 100%)", borderRadius:"14px", padding:"22px", marginBottom:"16px", color:"#fff" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", gap:"14px", marginBottom:"16px" }}>
+          <span style={{ fontSize:"28px", lineHeight:1 }}>🌿</span>
+          <div>
+            <p style={{ fontSize:"15px", fontWeight:500, margin:"0 0 4px", color:"#fff" }}>Bring a Friend to Wild Child</p>
+            <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.78)", margin:0, lineHeight:1.5 }}>
+              Share your code with a family — they get 5% off their first enrollment, and you'll earn a 5% credit on your next one.
+            </p>
+          </div>
+        </div>
+
+        {hasCreditPending && (
+          <div style={{ background:"rgba(255,255,255,0.15)", borderRadius:"8px", padding:"10px 14px", marginBottom:"14px", display:"flex", alignItems:"center", gap:"8px" }}>
+            <span style={{ fontSize:"16px" }}>🎉</span>
+            <p style={{ fontSize:"13px", color:"#fff", margin:0 }}>
+              <strong>You have a referral credit waiting!</strong> 5% off your next enrollment — applied automatically at checkout.
+            </p>
+          </div>
+        )}
+
+        {code ? (
+          <div>
+            <p style={{ fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase", color:"rgba(255,255,255,0.6)", margin:"0 0 8px" }}>Your referral code</p>
+            <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>
+              <div style={{ flex:1, background:"rgba(255,255,255,0.15)", borderRadius:"8px", padding:"12px 16px", letterSpacing:"3px", fontSize:"18px", fontFamily:"monospace", color:"#fff", border:"1px solid rgba(255,255,255,0.25)" }}>
+                {code}
+              </div>
+              <button
+                onClick={handleCopy}
+                style={{ background:copied?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.18)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:"8px", padding:"12px 16px", color:"#fff", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", whiteSpace:"nowrap", transition:"all .2s" }}>
+                {copied ? "Copied ✓" : "Copy"}
+              </button>
             </div>
+            <p style={{ fontSize:"12px", color:"rgba(255,255,255,0.6)", margin:"12px 0 0", lineHeight:1.5 }}>
+              Share via WhatsApp, text, or email. Your friend enters this code at Step 3 of enrollment.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.8)", margin:"0 0 12px" }}>
+              Generate your personal referral code to start sharing.
+            </p>
             <button
-              onClick={handleCopy}
-              style={{ background:copied?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.18)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:"8px", padding:"12px 16px", color:"#fff", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", whiteSpace:"nowrap", transition:"all .2s" }}>
-              {copied ? "Copied ✓" : "Copy"}
+              onClick={handleGenerate}
+              disabled={generating}
+              style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:"8px", padding:"11px 20px", color:"#fff", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", transition:"all .2s" }}>
+              {generating ? "Generating..." : "Get My Referral Code"}
             </button>
           </div>
-          <p style={{ fontSize:"12px", color:"rgba(255,255,255,0.6)", margin:"12px 0 0", lineHeight:1.5 }}>
-            Share via WhatsApp, text, or email. Your friend enters this code at Step 3 of enrollment.
-          </p>
-        </div>
-      ) : (
-        <div>
-          <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.8)", margin:"0 0 12px" }}>
-            Generate your personal referral code to start sharing.
-          </p>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:"8px", padding:"11px 20px", color:"#fff", fontSize:"13px", cursor:"pointer", fontFamily:"Georgia,serif", transition:"all .2s" }}>
-            {generating ? "Generating..." : "Get My Referral Code"}
-          </button>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -235,17 +240,8 @@ function EnrollmentCalendar({ enrolledDays, hasLunch }) {
   );
 }
 
-
 // ── Change Request Modal ──────────────────────────────────────────────────────
 function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
-  const OLIVE_DARK = "#4d5a2c";
-  const OLIVE = "#6b7a3f";
-  const ORANGE = "#c4682a";
-  const CREAM = "#f5f0e8";
-  const CREAM_DARK = "#e0d8c8";
-  const GREEN = "#5a7a3a";
-  const TEXT_LIGHT = "#7a7a9a";
-
   function getMonday(date) {
     const d = new Date(date);
     const daysFromMonday = (d.getDay() + 6) % 7;
@@ -258,11 +254,9 @@ function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
     return new Date(y, m - 1, d);
   }
 
-  // Group days into weeks
   const today = new Date(); today.setHours(0,0,0,0);
   const futureDays = (reg.selected_days || []).filter(dk => parseLocalKey(dk) >= today);
 
-  // Group future days by week
   const weekMap = {};
   futureDays.forEach(dk => {
     const mon = getMonday(parseLocalKey(dk));
@@ -281,9 +275,8 @@ function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
     setSelectedWeeks(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   }
 
-  // Calculate credit value
-  const weeksPerReg = Math.ceil((reg.selected_days || []).length / (reg.selected_days?.length > 0 ? [...new Set((reg.selected_days||[]).map(dk => getMonday(parseLocalKey(dk)).toISOString()))].length : 1));
-  const weeklyRate = reg.subtotal_tuition / Math.max(1, [...new Set((reg.selected_days||[]).map(dk => getMonday(parseLocalKey(dk)).toISOString()))].length);
+  const uniqueWeeks = [...new Set((reg.selected_days||[]).map(dk => getMonday(parseLocalKey(dk)).toISOString()))].length;
+  const weeklyRate = reg.subtotal_tuition / Math.max(1, uniqueWeeks);
   const creditValue = selectedWeeks.length * weeklyRate;
 
   async function handleSubmit() {
@@ -338,7 +331,6 @@ function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
         {weeks.map(w => {
           const key = w.monday.toISOString();
           const selected = selectedWeeks.includes(key);
-          const wkCredit = weeklyRate;
           return (
             <div key={key} onClick={() => toggleWeek(key)}
               style={{ border:`2px solid ${selected ? OLIVE : CREAM_DARK}`, borderRadius:10, padding:"12px 16px", marginBottom:8, cursor:"pointer", background: selected ? `${OLIVE}10` : "#fff", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -349,7 +341,7 @@ function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
                 <div style={{ fontSize:12, color:"#888", marginTop:2 }}>{w.days.length} day{w.days.length !== 1 ? "s" : ""}</div>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                <span style={{ fontSize:13, color:OLIVE, fontWeight:"bold" }}>${Math.round(wkCredit)}</span>
+                <span style={{ fontSize:13, color:OLIVE, fontWeight:"bold" }}>${Math.round(weeklyRate)}</span>
                 <div style={{ width:20, height:20, borderRadius:"50%", border:`2px solid ${selected ? OLIVE : CREAM_DARK}`, background: selected ? OLIVE : "transparent", display:"flex", alignItems:"center", justifyContent:"center" }}>
                   {selected && <span style={{ color:"#fff", fontSize:11 }}>✓</span>}
                 </div>
@@ -384,37 +376,46 @@ function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
 
 export default function ParentPortal() {
   const routerNavigate = useRouterNavigate();
-  const [user, setUser]           = useState(null);  // ← FIXED: was missing
-  const [profile, setProfile]     = useState({ full_name:"", phone:"", email:"" });
-  const [children, setChildren]   = useState([]);
-  const [registrations, setRegs]  = useState([]);
+  const [user, setUser]                   = useState(null);
+  const [session, setSession]             = useState(null);
+  const [profile, setProfile]             = useState({ full_name:"", phone:"", email:"" });
+  const [children, setChildren]           = useState([]);
+  const [registrations, setRegs]          = useState([]);
   const [accountCredit, setAccountCredit] = useState(0);
   const [changeRequests, setChangeRequests] = useState([]);
-  const [showChangeModal, setShowChangeModal] = useState(null); // reg object
-  const [loading, setLoading]     = useState(true);
-  const [activeSection, setSection] = useState("children");
-  const [activeChildIdx, setChildIdx] = useState(0);
-  const [childView, setChildView] = useState("info");
+  const [showChangeModal, setShowChangeModal] = useState(null);
+  const [loading, setLoading]             = useState(true);
+  const [activeSection, setSection]       = useState("children");
+  const [activeChildIdx, setChildIdx]     = useState(0);
+  const [childView, setChildView]         = useState("info");
   const [editingProfile, setEditingProfile] = useState(false);
-  const [editProfile, setEditProfile] = useState({});
+  const [editProfile, setEditProfile]     = useState({});
   const [savingProfile, setSavingProfile] = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
+  const [menuOpen, setMenuOpen]           = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const { data:{ session } } = await supabase.auth.getSession();
-        if (!session) { window.location.href="/login"; return; }
-        setUser(session.user);
-        const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",session.user.id).maybeSingle();
-        if (p) { setProfile({...p,email:session.user.email}); setEditProfile({...p,email:session.user.email}); }
-        else { setProfile(prev=>({...prev,email:session.user.email})); setEditProfile({full_name:"",phone:"",email:session.user.email}); }
-        const { data:ch } = await supabase.from("children").select("*").eq("parent_id",session.user.id).order("created_at");
+        const { data:{ session: sess } } = await supabase.auth.getSession();
+        if (!sess) { window.location.href="/login"; return; }
+        setUser(sess.user);
+        setSession(sess);
+        const { data:p } = await supabase.from("parent_profiles").select("*").eq("id",sess.user.id).maybeSingle();
+        if (p) {
+          setProfile({...p, email:sess.user.email});
+          setEditProfile({...p, email:sess.user.email});
+          setAccountCredit(p.account_credit || 0);
+        } else {
+          setProfile(prev=>({...prev, email:sess.user.email}));
+          setEditProfile({ full_name:"", phone:"", email:sess.user.email });
+          setAccountCredit(0);
+        }
+        const { data:ch } = await supabase.from("children").select("*").eq("parent_id",sess.user.id).order("created_at");
         setChildren(ch||[]);
-        const { data:regs } = await supabase.from("registrations").select("*").eq("parent_email",session.user.email).order("created_at",{ascending:false});
-        const { data:crData } = await supabase.from("enrollment_change_requests").select("*").eq("parent_user_id",session.user.id).order("created_at",{ascending:false});
-        if (crData) setChangeRequests(crData);
+        const { data:regs } = await supabase.from("registrations").select("*").eq("parent_email",sess.user.email).order("created_at",{ascending:false});
         setRegs(regs||[]);
+        const { data:crData } = await supabase.from("enrollment_change_requests").select("*").eq("parent_user_id",sess.user.id).order("created_at",{ascending:false});
+        if (crData) setChangeRequests(crData);
       } catch(e) {
         console.error("Portal load error:", e);
       } finally {
@@ -425,11 +426,21 @@ export default function ParentPortal() {
   }, []);
 
   const signOut = async () => { await supabase.auth.signOut(); window.location.href="/login"; };
+
   const saveProfile = async () => {
     setSavingProfile(true);
-    await supabase.from("parent_profiles").upsert({ id:user.id, full_name:editProfile.full_name, phone:editProfile.phone, email:editProfile.email, updated_at:new Date().toISOString() });
-    setProfile(editProfile); setEditingProfile(false); setSavingProfile(false);
+    await supabase.from("parent_profiles").upsert({
+      id: user.id,
+      full_name: editProfile.full_name,
+      phone: editProfile.phone,
+      email: editProfile.email,
+      updated_at: new Date().toISOString()
+    });
+    setProfile(editProfile);
+    setEditingProfile(false);
+    setSavingProfile(false);
   };
+
   const removeChild = async (ch) => {
     if (!window.confirm(`Remove ${ch.first_name} from your account? Existing enrollments won't be affected.`)) return;
     await supabase.from("children").delete().eq("id",ch.id);
@@ -460,6 +471,22 @@ export default function ParentPortal() {
     </div>
   );
 
+  // ── Contact links (reused in sidebar + mobile + footer) ───────────────────
+  const ContactLinks = ({ style = {} }) => (
+    <div style={style}>
+      <a href="mailto:info@dandelionwildschooling.com"
+        style={{ display:"flex", alignItems:"center", gap:"8px", padding:"8px 20px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+        <span style={{ fontSize:"15px" }}>✉️</span>
+        <span>info@dandelionwildschooling.com</span>
+      </a>
+      <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer"
+        style={{ display:"flex", alignItems:"center", gap:"8px", padding:"8px 20px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+        <span style={{ fontSize:"15px" }}>💬</span>
+        <span>WhatsApp us</span>
+      </a>
+    </div>
+  );
+
   const SidebarContent = () => (
     <>
       <div style={{ marginBottom:"8px" }}>
@@ -479,7 +506,9 @@ export default function ParentPortal() {
         }
         <button onClick={()=>routerNavigate('/register')} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", padding:"8px 20px", fontSize:"12px", color:ORANGE, cursor:"pointer", fontFamily:"Georgia,serif" }}>+ Enroll a child</button>
       </div>
+
       <div style={{ height:"1px", background:CREAM_DARK, margin:"10px 0" }}/>
+
       {[{id:"general",label:"My Information"},{id:"payments",label:"Payments"}].map(item=>(
         <button key={item.id} onClick={()=>navigate(item.id)}
           style={{ width:"100%", textAlign:"left", background:activeSection===item.id?"rgba(107,122,63,0.1)":"transparent",
@@ -490,17 +519,24 @@ export default function ParentPortal() {
           {item.label}
         </button>
       ))}
+
       <div style={{ height:"1px", background:CREAM_DARK, margin:"10px 0" }}/>
+
       <a href="/schedule" onClick={()=>setMenuOpen(false)}
         style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 20px", fontSize:"14px",
           color:TEXT_DARK, textDecoration:"none", fontFamily:"Georgia,serif", borderLeft:"3px solid transparent" }}>
         📅 Schedule
       </a>
+      <a href="/harmony" onClick={()=>setMenuOpen(false)}
+        style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 20px", fontSize:"14px",
+          color:TEXT_DARK, textDecoration:"none", fontFamily:"Georgia,serif", borderLeft:"3px solid transparent" }}>
+        🌿 Saturday Co-Op
+      </a>
     </>
   );
 
   return (
-    <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK }}>
+    <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK, display:"flex", flexDirection:"column" }}>
       <style>{`
         html, body, #root { margin:0; padding:0; width:100%; }
         * { box-sizing: border-box; }
@@ -509,6 +545,7 @@ export default function ParentPortal() {
           .portal-sidebar { display: none !important; }
           .portal-main { padding: 16px 14px !important; }
           .info-row { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
+          .portal-footer { display: none !important; }
         }
         @media (min-width:701px) {
           .hamburger-btn { display: none !important; }
@@ -557,17 +594,14 @@ export default function ParentPortal() {
                 style={{ background:"none", border:"none", fontSize:"20px", cursor:"pointer", color:TEXT_LIGHT, lineHeight:1 }}>✕</button>
             </div>
             <div style={{ paddingTop:"12px" }}><SidebarContent/></div>
-            <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"12px 0 0", padding:"12px 20px" }}>
+            <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"12px 0 0", padding:"12px 0" }}>
               <a href="https://wildchildnosara.com" target="_blank" rel="noopener noreferrer"
-                style={{ display:"block", padding:"9px 0", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+                style={{ display:"block", padding:"9px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
                 Our Website ↗
               </a>
-              <a href="mailto:info@dandelionwildschooling.com" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"14px", fontFamily:"Georgia,serif" }}>✉️ info@dandelionwildschooling.com</a>
-              <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"14px", fontFamily:"Georgia,serif" }}>💬 WhatsApp us</a>
-                            <a href="mailto:info@dandelionwildschooling.com" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"13px", fontFamily:"Georgia,serif" }}>✉️ info@dandelionwildschooling.com</a>
-            <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"13px", fontFamily:"Georgia,serif" }}>💬 WhatsApp us</a>
-                        <button onClick={signOut}
-                style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left", marginTop:"8px" }}>
+              <ContactLinks/>
+              <button onClick={signOut}
+                style={{ width:"100%", background:"transparent", border:"none", borderTop:`1px solid ${CREAM_DARK}`, padding:"12px 20px", color:TEXT_LIGHT, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left", marginTop:"8px" }}>
                 Sign Out
               </button>
             </div>
@@ -575,24 +609,28 @@ export default function ParentPortal() {
         </div>
       )}
 
-      <div style={{ display:"flex", minHeight:"calc(100vh - 130px)" }}>
+      {/* Body: sidebar + main */}
+      <div style={{ display:"flex", flex:1 }}>
 
         {/* Desktop sidebar */}
-        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)" }}>
-          <SidebarContent/>
-          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, margin:"16px 0 0", padding:"12px 0" }}>
+        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+          <div>
+            <SidebarContent/>
+          </div>
+          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"12px", paddingBottom:"16px" }}>
             <a href="https://wildchildnosara.com" target="_blank" rel="noopener noreferrer"
               style={{ display:"block", padding:"9px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
               Our Website ↗
             </a>
+            <ContactLinks/>
             <button onClick={signOut}
-              style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
+              style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", borderTop:`1px solid ${CREAM_DARK}`, padding:"12px 20px", marginTop:"8px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
               Sign Out
             </button>
           </div>
         </div>
 
-        {/* Main */}
+        {/* Main content */}
         <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px" }}>
 
           {/* ── Children ── */}
@@ -682,16 +720,16 @@ export default function ParentPortal() {
                                           </div>
                                         );
                                       })}
-                                      {(reg.discount_volume > 0 || reg.discount_sibling > 0 || reg.discount_referral > 0) && (
-                                        <div style={{ background:OLIVE_LIGHT, borderRadius:"6px", padding:"8px 10px", marginBottom:"8px" }}>
-                                          <p style={{ fontSize:"11px", color:OLIVE_DARK, margin:"0 0 4px" }}>Discounts applied</p>
-                                          {reg.discount_volume > 0 && <p style={{ fontSize:"11px", color:GREEN, margin:"1px 0" }}>Volume: −${reg.discount_volume}</p>}
-                                          {reg.discount_sibling > 0 && <p style={{ fontSize:"11px", color:ORANGE, margin:"1px 0" }}>Sibling: −${reg.discount_sibling}</p>}
-                                          {reg.discount_referral > 0 && <p style={{ fontSize:"11px", color:GREEN, margin:"1px 0" }}>Referral: −${reg.discount_referral}</p>}
-                                        </div>
-                                      )}
                                       <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                                        <StatusBadge status={reg.payment_status}/>
+                                        <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+                                          <StatusBadge status={reg.payment_status}/>
+                                          {(reg.selected_days||[]).some(dk=>parseLocalKey(dk)>=today) && (
+                                            <button onClick={()=>setShowChangeModal(reg)}
+                                              style={{ background:"none", border:`1px solid ${CREAM_DARK}`, borderRadius:6, padding:"4px 10px", fontSize:11, color:TEXT_LIGHT, cursor:"pointer", fontFamily:"Georgia,serif" }}>
+                                              Request a change
+                                            </button>
+                                          )}
+                                        </div>
                                         <span style={{ fontSize:"15px", color:OLIVE }}>${reg.grand_total} total</span>
                                       </div>
                                     </div>
@@ -708,11 +746,6 @@ export default function ParentPortal() {
                                           {(reg.selected_days||[]).map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ")}
                                         </p>
                                         <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days{reg.lunch?" · Lunch":""}</p>
-                                        {(reg.selected_days||[]).some(dk=>parseLocalKey(dk)>=today) && (
-                                          <button onClick={()=>setShowChangeModal(reg)} style={{ marginTop:8, background:"none", border:`1px solid ${CREAM_DARK}`, borderRadius:6, padding:"5px 12px", fontSize:11, color:TEXT_LIGHT, cursor:"pointer", fontFamily:"Georgia,serif", letterSpacing:"0.05em" }}>
-                                            Request a change
-                                          </button>
-                                        )}
                                       </div>
                                       <div style={{ textAlign:"right" }}>
                                         <p style={{ fontSize:"14px", color:TEXT_MID, margin:"0 0 4px" }}>${reg.grand_total}</p>
@@ -741,9 +774,11 @@ export default function ParentPortal() {
                   style={{ background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"8px 16px", fontSize:"12px", color:TEXT_MID, cursor:"pointer", letterSpacing:"0.5px", textTransform:"uppercase", fontFamily:"Georgia,serif" }}>Edit</button>}
               </div>
 
+              {/* Pass accountCredit as prop — fixes the white-screen bug */}
               <ReferralCard
                 profile={profile}
                 userId={user?.id}
+                accountCredit={accountCredit}
                 onCodeGenerated={handleCodeGenerated}
               />
 
@@ -805,9 +840,10 @@ export default function ParentPortal() {
                   Leave a Review ↗
                 </a>
               </div>
-
             </div>
           )}
+
+          {/* ── Payments ── */}
           {activeSection==="payments"&&(
             <div>
               <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"20px" }}>Payments</h2>
@@ -835,13 +871,6 @@ export default function ParentPortal() {
                           <StatusBadge status={reg.payment_status}/>
                         </div>
                       </div>
-                      {(reg.discount_volume > 0 || reg.discount_sibling > 0 || reg.discount_referral > 0) && (
-                        <div style={{ marginTop:"6px", display:"flex", gap:"8px", flexWrap:"wrap" }}>
-                          {reg.discount_volume  > 0 && <span style={{ fontSize:"10px", background:OLIVE_LIGHT, color:OLIVE_DARK, padding:"2px 7px", borderRadius:"10px" }}>Volume −${reg.discount_volume}</span>}
-                          {reg.discount_sibling > 0 && <span style={{ fontSize:"10px", background:"#fff3eb", color:ORANGE, padding:"2px 7px", borderRadius:"10px" }}>Sibling −${reg.discount_sibling}</span>}
-                          {reg.discount_referral> 0 && <span style={{ fontSize:"10px", background:"#f0f7ec", color:GREEN, padding:"2px 7px", borderRadius:"10px" }}>Referral −${reg.discount_referral}</span>}
-                        </div>
-                      )}
                     </div>
                   ))
                 }
@@ -851,6 +880,29 @@ export default function ParentPortal() {
 
         </div>
       </div>
+
+      {/* ── Footer with contact links (desktop only, bottom-left) ── */}
+      <div className="portal-footer" style={{ borderTop:`1px solid ${CREAM_DARK}`, background:"#fff", padding:"16px 20px", display:"flex", alignItems:"center", gap:"24px" }}>
+        <span style={{ fontSize:"12px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>Wild Child Nosara · Nosara, Costa Rica</span>
+        <a href="mailto:info@dandelionwildschooling.com"
+          style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+          <span>✉️</span> info@dandelionwildschooling.com
+        </a>
+        <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer"
+          style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+          <span>💬</span> WhatsApp us
+        </a>
+      </div>
+
+      {/* Change request modal */}
+      {showChangeModal && session && (
+        <ChangeRequestModal
+          reg={showChangeModal}
+          session={session}
+          onClose={()=>setShowChangeModal(null)}
+          onSubmitted={()=>{}}
+        />
+      )}
     </div>
   );
 }

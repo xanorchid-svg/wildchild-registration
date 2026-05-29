@@ -29,9 +29,8 @@ const lbl = {
   color:TEXT_LIGHT, marginBottom:"6px", fontFamily:"Georgia,serif"
 };
 
-function blankChild() { return ""; }
-
 export default function AdminLogin() {
+  // mode: "login" | "signup" | "forgot"
   const [mode, setMode]         = useState("login");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +40,10 @@ export default function AdminLogin() {
   const [firstName, setFirstName]   = useState("");
   const [lastName, setLastName]     = useState("");
   const [phone, setPhone]           = useState("");
-  const [childNames, setChildNames] = useState([""]); // array of child name strings
+  const [childNames, setChildNames] = useState([""]);
+
+  // Forgot password field
+  const [resetEmail, setResetEmail] = useState("");
 
   const [error, setError]     = useState(null);
   const [success, setSuccess] = useState(null);
@@ -68,14 +70,12 @@ export default function AdminLogin() {
 
     setLoading(true);
 
-    // 1. Create auth user
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
     if (signUpErr) { setError(signUpErr.message); setLoading(false); return; }
 
     const userId = signUpData.user?.id;
 
     if (userId) {
-      // 2. Save parent profile
       await supabase.from("parent_profiles").upsert({
         id: userId,
         full_name: `${firstName.trim()} ${lastName.trim()}`,
@@ -85,7 +85,6 @@ export default function AdminLogin() {
         updated_at: new Date().toISOString(),
       });
 
-      // 3. Save children (filter out blank entries)
       const validChildren = childNames.filter(n => n.trim().length > 0);
       for (const name of validChildren) {
         const parts = name.trim().split(" ");
@@ -101,10 +100,25 @@ export default function AdminLogin() {
     }
 
     setLoading(false);
-    setSuccess("Account created! Check your email to confirm, then sign in.");
+    setSuccess("Account created! You can now sign in.");
     setMode("login");
     setPassword(""); setConfirm("");
     setFirstName(""); setLastName(""); setPhone(""); setChildNames([""]);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true); setError(null); setSuccess(null);
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    setLoading(false);
+    if (resetErr) {
+      setError(resetErr.message || "Something went wrong. Please try again.");
+    } else {
+      setSuccess("Check your email — we've sent a password reset link. It may take a minute to arrive.");
+      setResetEmail("");
+    }
   };
 
   const addChild = () => {
@@ -115,6 +129,12 @@ export default function AdminLogin() {
   };
   const removeChild = (i) => {
     setChildNames(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setError(null);
+    setSuccess(null);
   };
 
   return (
@@ -130,12 +150,14 @@ export default function AdminLogin() {
 
           <div style={{ textAlign:"center", marginBottom:"28px" }}>
             <h1 style={{ fontSize:"22px", fontWeight:400, color:TEXT_DARK, marginBottom:"6px" }}>
-              {mode === "login" ? "Welcome back" : "Create a parent account"}
+              {mode === "login" ? "Welcome back" : mode === "signup" ? "Create a parent account" : "Reset your password"}
             </h1>
             <p style={{ fontSize:"13px", color:TEXT_LIGHT, lineHeight:1.6 }}>
               {mode === "login"
                 ? "Sign in to access your portal."
-                : "Set up your account to track enrollments and manage your children's schedule."}
+                : mode === "signup"
+                ? "Set up your account to track enrollments and manage your children's schedule."
+                : "Enter your email and we'll send you a reset link."}
             </p>
           </div>
 
@@ -152,20 +174,44 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {mode === "login" ? (
+            {/* ── Login ── */}
+            {mode === "login" && (
               <form onSubmit={handleLogin}>
                 <label style={lbl}>Email</label>
                 <input style={inp} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" required />
                 <label style={lbl}>Password</label>
                 <input style={inp} type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required />
+
+                {/* Forgot password link — sits below password field */}
+                <div style={{ textAlign:"right", marginTop:"-10px", marginBottom:"18px" }}>
+                  <button type="button" onClick={() => { setResetEmail(email); switchMode("forgot"); }}
+                    style={{ background:"none", border:"none", color:TEXT_LIGHT, fontSize:"12px", cursor:"pointer", fontFamily:"Georgia,serif", padding:0, textDecoration:"underline" }}>
+                    Forgot password?
+                  </button>
+                </div>
+
                 <button type="submit" disabled={loading}
-                  style={{ width:"100%", background:loading?"#aaa":NAVY, color:"#fff", border:"none", borderRadius:"8px", padding:"14px", fontSize:"14px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:loading?"not-allowed":"pointer", textTransform:"uppercase", marginTop:"4px" }}>
+                  style={{ width:"100%", background:loading?"#aaa":NAVY, color:"#fff", border:"none", borderRadius:"8px", padding:"14px", fontSize:"14px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:loading?"not-allowed":"pointer", textTransform:"uppercase" }}>
                   {loading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
-            ) : (
+            )}
+
+            {/* ── Forgot Password ── */}
+            {mode === "forgot" && (
+              <form onSubmit={handleForgotPassword}>
+                <label style={lbl}>Email address</label>
+                <input style={inp} type="email" value={resetEmail} onChange={e=>setResetEmail(e.target.value)} placeholder="your@email.com" required />
+                <button type="submit" disabled={loading}
+                  style={{ width:"100%", background:loading?"#aaa":OLIVE_DARK, color:"#fff", border:"none", borderRadius:"8px", padding:"14px", fontSize:"14px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:loading?"not-allowed":"pointer", textTransform:"uppercase" }}>
+                  {loading ? "Sending..." : "Send Reset Link"}
+                </button>
+              </form>
+            )}
+
+            {/* ── Signup ── */}
+            {mode === "signup" && (
               <form onSubmit={handleSignup}>
-                {/* Parent name */}
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
                   <div>
                     <label style={lbl}>First Name</label>
@@ -189,7 +235,6 @@ export default function AdminLogin() {
                 <label style={lbl}>Confirm Password</label>
                 <input style={inp} type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="••••••••" required />
 
-                {/* Children */}
                 <div style={{ marginBottom:"16px" }}>
                   <label style={lbl}>Children's Names</label>
                   <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:"0 0 10px", lineHeight:1.5 }}>
@@ -228,23 +273,33 @@ export default function AdminLogin() {
 
             <div style={{ height:"1px", background:CREAM_DARK, margin:"22px 0" }}/>
 
-            <p style={{ textAlign:"center", fontSize:"13px", color:TEXT_LIGHT }}>
-              {mode === "login" ? (
+            {/* ── Mode switcher links ── */}
+            <div style={{ textAlign:"center", fontSize:"13px", color:TEXT_LIGHT }}>
+              {mode === "login" && (
                 <>No account yet?{" "}
-                  <button onClick={() => { setMode("signup"); setError(null); setSuccess(null); }}
+                  <button onClick={() => switchMode("signup")}
                     style={{ background:"none", border:"none", color:ORANGE, cursor:"pointer", fontSize:"13px", fontFamily:"Georgia,serif", padding:0 }}>
                     Create a parent account
                   </button>
                 </>
-              ) : (
+              )}
+              {mode === "signup" && (
                 <>Already have an account?{" "}
-                  <button onClick={() => { setMode("login"); setError(null); }}
+                  <button onClick={() => switchMode("login")}
                     style={{ background:"none", border:"none", color:ORANGE, cursor:"pointer", fontSize:"13px", fontFamily:"Georgia,serif", padding:0 }}>
                     Sign in
                   </button>
                 </>
               )}
-            </p>
+              {mode === "forgot" && (
+                <>Remember it?{" "}
+                  <button onClick={() => switchMode("login")}
+                    style={{ background:"none", border:"none", color:ORANGE, cursor:"pointer", fontSize:"13px", fontFamily:"Georgia,serif", padding:0 }}>
+                    Back to sign in
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <p style={{ textAlign:"center", marginTop:"20px", fontSize:"12px", color:TEXT_LIGHT }}>
