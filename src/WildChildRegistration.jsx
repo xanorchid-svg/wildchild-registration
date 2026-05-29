@@ -211,7 +211,10 @@ export default function WildChildRegistration() {
         .from('parent_profiles').select('*').eq('id', session.user.id).maybeSingle();
       if (profile) {
         setParentInfo({ name: profile.full_name || '', email: profile.email || '', phone: profile.phone || '' });
-        if (profile.waiver_signed_at) {
+        // Only skip waiver if parent has already signed AND this is an existing child re-enrollment
+        // For new children, always show waiver regardless of parent's waiver_signed_at
+        const isNewChild = !portalChildId;
+        if (profile.waiver_signed_at && !isNewChild) {
           setWaiverAlreadySigned(true);
           setWaivers({ liability: true, medical: true, media: true, excursion: true });
           setSignature(profile.waiver_signature || '');
