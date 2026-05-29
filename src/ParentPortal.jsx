@@ -619,7 +619,7 @@ export default function ParentPortal() {
       <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
 
         {/* Desktop sidebar */}
-        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, background:"#fff", position:"sticky", top:0, height:"calc(100vh - 130px)", display:"flex", flexDirection:"column" }}>
+        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, background:"#fff", position:"sticky", top:0, height:"calc(100vh - 184px)", display:"flex", flexDirection:"column" }}>
           <div style={{ flex:1, overflowY:"auto", paddingTop:"24px" }}>
             <SidebarContent/>
           </div>
