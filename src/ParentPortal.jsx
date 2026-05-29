@@ -545,7 +545,6 @@ export default function ParentPortal() {
           .portal-sidebar { display: none !important; }
           .portal-main { padding: 16px 14px !important; }
           .info-row { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
-          .portal-footer { display: none !important; }
         }
         @media (min-width:701px) {
           .hamburger-btn { display: none !important; }
@@ -599,7 +598,14 @@ export default function ParentPortal() {
                 style={{ display:"block", padding:"9px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
                 Our Website ↗
               </a>
-              <ContactLinks/>
+              <a href="mailto:info@dandelionwildschooling.com"
+                style={{ display:"flex", alignItems:"center", gap:"8px", padding:"8px 20px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+                <span>✉️</span><span>info@dandelionwildschooling.com</span>
+              </a>
+              <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer"
+                style={{ display:"flex", alignItems:"center", gap:"8px", padding:"8px 20px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+                <span>💬</span><span>WhatsApp us</span>
+              </a>
               <button onClick={signOut}
                 style={{ width:"100%", background:"transparent", border:"none", borderTop:`1px solid ${CREAM_DARK}`, padding:"12px 20px", color:TEXT_LIGHT, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left", marginTop:"8px" }}>
                 Sign Out
@@ -617,14 +623,13 @@ export default function ParentPortal() {
           <div>
             <SidebarContent/>
           </div>
-          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"12px", paddingBottom:"16px" }}>
+          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", paddingBottom:"12px" }}>
             <a href="https://wildchildnosara.com" target="_blank" rel="noopener noreferrer"
-              style={{ display:"block", padding:"9px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
+              style={{ display:"block", padding:"8px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
               Our Website ↗
             </a>
-            <ContactLinks/>
             <button onClick={signOut}
-              style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", borderTop:`1px solid ${CREAM_DARK}`, padding:"12px 20px", marginTop:"8px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
+              style={{ width:"100%", textAlign:"left", background:"transparent", border:"none", padding:"8px 20px", cursor:"pointer", fontSize:"14px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>
               Sign Out
             </button>
           </div>
