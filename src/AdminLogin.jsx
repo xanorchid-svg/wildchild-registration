@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import logo from "./assets/logo1.svg";
 
@@ -30,7 +30,7 @@ const lbl = {
 };
 
 export default function AdminLogin() {
-  // mode: "login" | "signup" | "forgot"
+  // mode: "login" | "signup" | "forgot" | "reset"
   const [mode, setMode]         = useState("login");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -45,9 +45,22 @@ export default function AdminLogin() {
   // Forgot password field
   const [resetEmail, setResetEmail] = useState("");
 
+  // New password fields (recovery mode)
+  const [newPassword, setNewPassword]     = useState("");
+  const [newConfirm, setNewConfirm]       = useState("");
+
   const [error, setError]     = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Detect Supabase password recovery token in URL hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery") || hash.includes("type=email_change")) {
+      // Supabase has already parsed the token into the session automatically
+      setMode("reset");
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -121,6 +134,24 @@ export default function AdminLogin() {
     }
   };
 
+  const handleSetNewPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (newPassword.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (newPassword !== newConfirm) { setError("Passwords don't match."); return; }
+    setLoading(true);
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (updateErr) {
+      setError(updateErr.message || "Could not update password. The reset link may have expired — please request a new one.");
+    } else {
+      setSuccess("Password updated! Signing you in…");
+      // Clear the hash from the URL so it doesn't re-trigger recovery mode
+      window.history.replaceState(null, "", window.location.pathname);
+      setTimeout(() => { window.location.href = "/portal"; }, 1500);
+    }
+  };
+
   const addChild = () => {
     if (childNames.length < 5) setChildNames(prev => [...prev, ""]);
   };
@@ -150,14 +181,19 @@ export default function AdminLogin() {
 
           <div style={{ textAlign:"center", marginBottom:"28px" }}>
             <h1 style={{ fontSize:"22px", fontWeight:400, color:TEXT_DARK, marginBottom:"6px" }}>
-              {mode === "login" ? "Welcome back" : mode === "signup" ? "Create a parent account" : "Reset your password"}
+              {mode === "login" ? "Welcome back"
+                : mode === "signup" ? "Create a parent account"
+                : mode === "forgot" ? "Reset your password"
+                : "Choose a new password"}
             </h1>
             <p style={{ fontSize:"13px", color:TEXT_LIGHT, lineHeight:1.6 }}>
               {mode === "login"
                 ? "Sign in to access your portal."
                 : mode === "signup"
                 ? "Set up your account to track enrollments and manage your children's schedule."
-                : "Enter your email and we'll send you a reset link."}
+                : mode === "forgot"
+                ? "Enter your email and we'll send you a reset link."
+                : "Enter a new password for your account."}
             </p>
           </div>
 
@@ -205,6 +241,20 @@ export default function AdminLogin() {
                 <button type="submit" disabled={loading}
                   style={{ width:"100%", background:loading?"#aaa":OLIVE_DARK, color:"#fff", border:"none", borderRadius:"8px", padding:"14px", fontSize:"14px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:loading?"not-allowed":"pointer", textTransform:"uppercase" }}>
                   {loading ? "Sending..." : "Send Reset Link"}
+                </button>
+              </form>
+            )}
+
+            {/* ── Set New Password (recovery mode) ── */}
+            {mode === "reset" && (
+              <form onSubmit={handleSetNewPassword}>
+                <label style={lbl}>New Password</label>
+                <input style={inp} type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Min 6 characters" required />
+                <label style={lbl}>Confirm New Password</label>
+                <input style={inp} type="password" value={newConfirm} onChange={e=>setNewConfirm(e.target.value)} placeholder="••••••••" required />
+                <button type="submit" disabled={loading}
+                  style={{ width:"100%", background:loading?"#aaa":OLIVE_DARK, color:"#fff", border:"none", borderRadius:"8px", padding:"14px", fontSize:"14px", letterSpacing:"1px", fontFamily:"Georgia,serif", cursor:loading?"not-allowed":"pointer", textTransform:"uppercase" }}>
+                  {loading ? "Updating..." : "Set New Password"}
                 </button>
               </form>
             )}
@@ -298,6 +348,11 @@ export default function AdminLogin() {
                     Back to sign in
                   </button>
                 </>
+              )}
+              {mode === "reset" && (
+                <span style={{ color:TEXT_LIGHT, fontSize:"12px" }}>
+                  Enter your new password above and click Set New Password.
+                </span>
               )}
             </div>
           </div>
