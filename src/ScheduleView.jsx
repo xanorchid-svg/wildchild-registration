@@ -512,7 +512,7 @@ export default function ScheduleView() {
     setMonth(currentMonthKey(p === "wr" ? MONTHS_WR : MONTHS_EL));
   }
 
-  const schedule = SCHEDULES[month].data;
+  const schedule = SCHEDULES[month]?.data ?? SCHEDULES["wr-may"].data;
 
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
