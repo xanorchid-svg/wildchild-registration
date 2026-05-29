@@ -1,42 +1,31 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import App from "./App.jsx";
+import PathDeep from "./PathDeep.jsx";
+import CreationDeep from "./CreationDeep.jsx";
+import LivingNetworkDeep from "./LivingNetworkDeep.jsx";
+import SeekerPage from "./SeekerPage.jsx";
+import FacilitatorPage from "./FacilitatorPage.jsx";
+import ContainerPage from "./ContainerPage.jsx";
+import ContainerApply from "./ContainerApply.jsx";
+import FacilitatorApply from "./FacilitatorApply.jsx";
+import "./index.css";
 
-import WelcomePage              from './WelcomePage.jsx';
-import WildChildRegistration    from './WildChildRegistration.jsx';
-import AdminLogin               from './AdminLogin.jsx';
-import Admin                    from './Admin.jsx';
-import ParentPortal             from './ParentPortal.jsx';
-import ScheduleView             from './ScheduleView.jsx';
-import ProtectedRoute           from './ProtectedRoute.jsx';
-
-import './index.css';
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* Welcome / landing page */}
-        <Route path="/"          element={<WelcomePage />} />
-
-        {/* Registration form (was /) */}
-        <Route path="/register"  element={<WildChildRegistration />} />
-
-        {/* Auth */}
-        <Route path="/login"     element={<AdminLogin />} />
-
-        {/* Protected admin */}
-        <Route path="/admin"     element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-
-        {/* Parent portal */}
-        <Route path="/portal"    element={<ParentPortal />} />
-
-        {/* Schedule */}
-        <Route path="/schedule"  element={<ScheduleView />} />
-
-        {/* Catch-all → welcome */}
-        <Route path="*"          element={<Navigate to="/" replace />} />
+        <Route path="/" element={<App />} />
+        <Route path="/path" element={<PathDeep />} />
+        <Route path="/creation" element={<CreationDeep />} />
+        <Route path="/living-network" element={<LivingNetworkDeep />} />
+        <Route path="/seeker" element={<SeekerPage />} />
+        <Route path="/facilitator" element={<FacilitatorPage />} />
+        <Route path="/container" element={<ContainerPage />} />
+        <Route path="/apply/container" element={<ContainerApply />} />
+        <Route path="/apply/facilitator" element={<FacilitatorApply />} />
       </Routes>
     </BrowserRouter>
-  </StrictMode>
+  </React.StrictMode>
 );
