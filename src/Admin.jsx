@@ -6,15 +6,14 @@ import { useNavigate } from "react-router-dom";
 import logo from "./assets/logo1.svg";
 import { supabase } from "./supabase";
 
-const OLIVE      = "#6b7a3f";
 const OLIVE_DARK = "#4d5a2c";
+const OLIVE      = "#6b7a3f";
 const NAVY       = "#0f1f5c";
 const ORANGE     = "#c4682a";
 const CREAM      = "#f5f0e8";
 const CREAM_DARK = "#e0d8c8";
 const GREEN      = "#5a7a3a";
 const TEAL       = "#427889";
-const SAGE       = "#8fa88a";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getMonday(date) {
@@ -77,15 +76,139 @@ function getFirstDayOfMonth(year, month) {
 }
 
 const TIER_LABELS = {
-  harmony: { label: "Harmony Member", color: GREEN },
+  harmony:   { label: "Harmony Member",    color: GREEN },
   wildchild: { label: "Wild Child Family", color: OLIVE },
-  general: { label: "Open to All", color: NAVY },
+  general:   { label: "Open to All",       color: NAVY  },
 };
+
+const S = {
+  page: { minHeight: "100vh", background: CREAM, fontFamily: "'Georgia', serif" },
+  header: { background: OLIVE_DARK, height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", position: "sticky", top: 0, zIndex: 100 },
+  headerBtn: { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "8px 14px", color: "#fff", fontSize: 12, fontFamily: "'Georgia', serif", cursor: "pointer" },
+  tabBar: { background: NAVY, display: "flex", padding: "0 20px", gap: 4 },
+  tab: (active) => ({ padding: "12px 20px", color: active ? "#fff" : "rgba(255,255,255,0.55)", background: active ? "rgba(255,255,255,0.12)" : "transparent", border: "none", borderBottom: active ? `2px solid ${ORANGE}` : "2px solid transparent", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 14, letterSpacing: "0.04em" }),
+  card: { background: "#fff", borderRadius: 12, border: `1px solid ${CREAM_DARK}`, marginBottom: 12, overflow: "hidden" },
+  weekHeader: (isCurrent, isPast) => ({ background: isCurrent ? OLIVE : isPast ? "#888" : NAVY, borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", marginBottom: 8 }),
+  regRow: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: `1px solid ${CREAM_DARK}`, cursor: "pointer" },
+  badge: (color) => ({ background: color, color: "#fff", borderRadius: 20, padding: "2px 10px", fontSize: 11 }),
+  modal: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 },
+  modalCard: { background: "#fff", borderRadius: 16, padding: 28, maxWidth: 500, width: "100%", maxHeight: "85vh", overflowY: "auto" },
+  modalLabel: { fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: OLIVE, marginBottom: 4 },
+  modalValue: { fontSize: 15, marginBottom: 16, color: "#2a2a2a" },
+  satCard: (isUpcoming) => ({ background: "#fff", borderRadius: 12, border: `2px solid ${isUpcoming ? TEAL : CREAM_DARK}`, marginBottom: 16, overflow: "hidden" }),
+  satHeader: (isUpcoming) => ({ background: isUpcoming ? `${TEAL}15` : "#f8f8f8", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isUpcoming ? TEAL + "30" : CREAM_DARK}` }),
+};
+
+// ── Week row component (hooks-safe) ───────────────────────────────────────────
+function WeekRow({ week, onSelectReg }) {
+  const isCurrent = isThisWeek(week.monday);
+  const isPast = isPastWeek(week.monday);
+  const [open, setOpen] = useState(isCurrent);
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={S.weekHeader(isCurrent, isPast)} onClick={() => setOpen(!open)}>
+        <div>
+          <span style={{ color: "#fff", fontSize: 15 }}>Week of {formatWeekLabel(week.monday)}</span>
+          {isCurrent && <span style={{ marginLeft: 10, background: ORANGE, color: "#fff", borderRadius: 10, padding: "2px 8px", fontSize: 11 }}>This Week</span>}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>{week.registrations.length} enrolled</span>
+          <span style={{ color: "#fff", fontSize: 12 }}>{open ? "▲" : "▼"}</span>
+        </div>
+      </div>
+      {open && (
+        <div style={S.card}>
+          {week.registrations.map((reg) => (
+            <div key={reg.id} style={S.regRow} onClick={() => onSelectReg(reg)}>
+              <div>
+                <div style={{ fontWeight: "bold", fontSize: 14 }}>{reg.child_first_name} {reg.child_last_name}</div>
+                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{reg.program_name} · {reg.parent_name}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {reg.lunch && <span style={S.badge(GREEN)}>Lunch</span>}
+                <span style={S.badge(reg.payment_status === "paid" ? GREEN : ORANGE)}>{reg.payment_status || "pending"}</span>
+                <span style={{ color: "#ccc" }}>›</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Reg modal ─────────────────────────────────────────────────────────────────
+function RegModal({ reg, onClose }) {
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ margin: 0, color: OLIVE_DARK, fontSize: 18 }}>Enrollment Details</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>×</button>
+        </div>
+        <div style={S.modalLabel}>Child</div>
+        <div style={S.modalValue}>{reg.child_first_name} {reg.child_last_name}</div>
+        <div style={S.modalLabel}>Program</div>
+        <div style={S.modalValue}>{reg.program_name}</div>
+        <div style={S.modalLabel}>Parent</div>
+        <div style={S.modalValue}>{reg.parent_name}<br /><span style={{ fontSize: 13, color: "#888" }}>{reg.parent_email} · {reg.parent_phone}</span></div>
+        <div style={S.modalLabel}>Selected Days</div>
+        <div style={S.modalValue}>{(reg.selected_days || []).map(formatDate).join(", ")}</div>
+        <div style={S.modalLabel}>Lunch</div>
+        <div style={S.modalValue}>{reg.lunch ? "Yes" : "No"}</div>
+        <div style={S.modalLabel}>Total</div>
+        <div style={S.modalValue}>${reg.grand_total}</div>
+        <div style={S.modalLabel}>Payment</div>
+        <div style={{ marginBottom: 16 }}>
+          <span style={{ ...S.badge(reg.payment_status === "paid" ? GREEN : ORANGE), fontSize: 13 }}>{reg.payment_status || "pending"}</span>
+        </div>
+        {reg.discount_code && <><div style={S.modalLabel}>Discount</div><div style={S.modalValue}>{reg.discount_code} ({reg.discount_pct}% off)</div></>}
+        {reg.payment_plan && reg.payment_plan !== "full" && <><div style={S.modalLabel}>Payment Plan</div><div style={S.modalValue}>{reg.payment_plan}</div></>}
+        <div style={S.modalLabel}>Registered</div>
+        <div style={S.modalValue}>{new Date(reg.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Harmony modal ─────────────────────────────────────────────────────────────
+function HarmonyModal({ booking, onClose }) {
+  const tierInfo = TIER_LABELS[booking.tier] || { label: booking.tier, color: NAVY };
+  const kids = Array.isArray(booking.children) ? booking.children : [];
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ margin: 0, color: TEAL, fontSize: 18 }}>🌿 Saturday Booking</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>×</button>
+        </div>
+        <div style={S.modalLabel}>Date</div>
+        <div style={S.modalValue}>{formatSaturdayDate(booking.session_date)} · 8–11am</div>
+        <div style={S.modalLabel}>Children</div>
+        <div style={S.modalValue}>{kids.map((c, i) => <div key={i}>{c.name}{c.age ? `, age ${c.age}` : ""}</div>)}</div>
+        <div style={S.modalLabel}>Parent</div>
+        <div style={S.modalValue}>{booking.parent_name}<br /><span style={{ fontSize: 13, color: "#888" }}>{booking.parent_email} · {booking.parent_phone}</span></div>
+        <div style={S.modalLabel}>Tier</div>
+        <div style={{ marginBottom: 16 }}><span style={{ ...S.badge(tierInfo.color), fontSize: 13 }}>{tierInfo.label}</span></div>
+        <div style={S.modalLabel}>Amount</div>
+        <div style={S.modalValue}>{booking.price_paid === 0 ? "Free" : `$${booking.price_paid}`}</div>
+        <div style={S.modalLabel}>Payment Status</div>
+        <div style={{ marginBottom: 16 }}><span style={{ ...S.badge(booking.payment_status === "paid" || booking.payment_status === "free" ? GREEN : ORANGE), fontSize: 13 }}>{booking.payment_status}</span></div>
+        {booking.member_code && <><div style={S.modalLabel}>Code Used</div><div style={S.modalValue}>{booking.member_code}</div></>}
+        <div style={S.modalLabel}>Waiver Signed</div>
+        <div style={S.modalValue}>{booking.waiver_signature || "—"}</div>
+        <div style={S.modalLabel}>Booked</div>
+        <div style={S.modalValue}>{new Date(booking.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+      </div>
+    </div>
+  );
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Admin() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("week"); // "week" | "calendar" | "saturdays"
+  const [tab, setTab] = useState("week");
   const [registrations, setRegistrations] = useState([]);
   const [harmonyBookings, setHarmonyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +217,7 @@ export default function Admin() {
   const [showHistory, setShowHistory] = useState(false);
   const [calMonth, setCalMonth] = useState(new Date());
   const [calSelectedDay, setCalSelectedDay] = useState(null);
-  const [saturdayFilter, setSaturdayFilter] = useState("upcoming"); // "upcoming" | "past" | "all"
+  const [saturdayFilter, setSaturdayFilter] = useState("upcoming");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -116,17 +239,12 @@ export default function Admin() {
     setLoading(false);
   }
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
+  const signOut = async () => { await supabase.auth.signOut(); navigate("/login"); };
 
-  // ── Weekly view data ───────────────────────────────────────────────────────
   const weeks = groupByWeek(registrations);
   const currentWeeks = weeks.filter((w) => !isPastWeek(w.monday));
   const pastWeeks = weeks.filter((w) => isPastWeek(w.monday));
 
-  // ── Calendar view data ─────────────────────────────────────────────────────
   const calYear = calMonth.getFullYear();
   const calMonthIdx = calMonth.getMonth();
   const daysInMonth = getDaysInMonth(calYear, calMonthIdx);
@@ -142,7 +260,6 @@ export default function Admin() {
     return harmonyBookings.filter((b) => b.session_date === dateStr);
   }
 
-  // ── Saturdays data ─────────────────────────────────────────────────────────
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -153,123 +270,13 @@ export default function Admin() {
     return acc;
   }, {});
 
-  const sortedSaturdayDates = Object.keys(groupedSaturdays).sort();
-
-  const filteredSaturdayDates = sortedSaturdayDates.filter((dateStr) => {
+  const filteredSaturdayDates = Object.keys(groupedSaturdays).sort().filter((dateStr) => {
     const d = new Date(dateStr + "T00:00:00");
     if (saturdayFilter === "upcoming") return d >= today;
     if (saturdayFilter === "past") return d < today;
     return true;
   });
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
-  const S = {
-    page: { minHeight: "100vh", background: CREAM, fontFamily: "'Georgia', serif" },
-    header: { background: OLIVE_DARK, height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", position: "sticky", top: 0, zIndex: 100 },
-    headerBtn: { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "8px 14px", color: "#fff", fontSize: 12, fontFamily: "'Georgia', serif", cursor: "pointer" },
-    tabBar: { background: NAVY, display: "flex", padding: "0 20px", gap: 4 },
-    tab: (active) => ({ padding: "12px 20px", color: active ? "#fff" : "rgba(255,255,255,0.55)", background: active ? "rgba(255,255,255,0.12)" : "transparent", border: "none", borderBottom: active ? `2px solid ${ORANGE}` : "2px solid transparent", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 14, letterSpacing: "0.04em" }),
-    card: { background: "#fff", borderRadius: 12, border: `1px solid ${CREAM_DARK}`, marginBottom: 12 },
-    weekHeader: (isCurrent, isPast) => ({
-      background: isCurrent ? OLIVE : isPast ? "#888" : NAVY,
-      borderRadius: 10,
-      padding: "12px 18px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      cursor: "pointer",
-      marginBottom: 8,
-    }),
-    regRow: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: `1px solid ${CREAM_DARK}`, cursor: "pointer" },
-    badge: (color) => ({ background: color, color: "#fff", borderRadius: 20, padding: "2px 10px", fontSize: 11 }),
-    modal: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 },
-    modalCard: { background: "#fff", borderRadius: 16, padding: 28, maxWidth: 500, width: "100%", maxHeight: "85vh", overflowY: "auto" },
-    modalLabel: { fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: OLIVE, marginBottom: 4 },
-    modalValue: { fontSize: 15, marginBottom: 16, color: "#2a2a2a" },
-    satCard: (isUpcoming) => ({ background: "#fff", borderRadius: 12, border: `2px solid ${isUpcoming ? TEAL : CREAM_DARK}`, marginBottom: 16, overflow: "hidden" }),
-    satHeader: (isUpcoming) => ({ background: isUpcoming ? `${TEAL}15` : "#f8f8f8", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isUpcoming ? TEAL + "30" : CREAM_DARK}` }),
-  };
-
-  // ── Registration modal ─────────────────────────────────────────────────────
-  function RegModal({ reg, onClose }) {
-    return (
-      <div style={S.modal} onClick={onClose}>
-        <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h3 style={{ margin: 0, color: OLIVE_DARK, fontSize: 18 }}>Enrollment Details</h3>
-            <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>×</button>
-          </div>
-          <div style={S.modalLabel}>Child</div>
-          <div style={S.modalValue}>{reg.child_first_name} {reg.child_last_name}</div>
-          <div style={S.modalLabel}>Program</div>
-          <div style={S.modalValue}>{reg.program_name}</div>
-          <div style={S.modalLabel}>Parent</div>
-          <div style={S.modalValue}>{reg.parent_name}<br /><span style={{ fontSize: 13, color: "#888" }}>{reg.parent_email} · {reg.parent_phone}</span></div>
-          <div style={S.modalLabel}>Selected Days</div>
-          <div style={S.modalValue}>{(reg.selected_days || []).map(formatDate).join(", ")}</div>
-          <div style={S.modalLabel}>Lunch</div>
-          <div style={S.modalValue}>{reg.lunch ? "Yes" : "No"}</div>
-          <div style={S.modalLabel}>Total</div>
-          <div style={S.modalValue}>${reg.grand_total}</div>
-          <div style={S.modalLabel}>Payment</div>
-          <div style={{ marginBottom: 16 }}>
-            <span style={{ ...S.badge(reg.payment_status === "paid" ? GREEN : ORANGE), fontSize: 13 }}>
-              {reg.payment_status || "pending"}
-            </span>
-          </div>
-          {reg.discount_code && <><div style={S.modalLabel}>Discount Code</div><div style={S.modalValue}>{reg.discount_code} ({reg.discount_pct}% off)</div></>}
-          {reg.payment_plan && reg.payment_plan !== "full" && <><div style={S.modalLabel}>Payment Plan</div><div style={S.modalValue}>{reg.payment_plan}</div></>}
-          <div style={S.modalLabel}>Registered</div>
-          <div style={S.modalValue}>{new Date(reg.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Harmony modal ──────────────────────────────────────────────────────────
-  function HarmonyModal({ booking, onClose }) {
-    const tierInfo = TIER_LABELS[booking.tier] || { label: booking.tier, color: NAVY };
-    const kids = Array.isArray(booking.children) ? booking.children : [];
-    return (
-      <div style={S.modal} onClick={onClose}>
-        <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h3 style={{ margin: 0, color: TEAL, fontSize: 18 }}>Saturday Booking</h3>
-            <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>×</button>
-          </div>
-          <div style={S.modalLabel}>Date</div>
-          <div style={S.modalValue}>{formatSaturdayDate(booking.session_date)} · 8–11am</div>
-          <div style={S.modalLabel}>Children</div>
-          <div style={S.modalValue}>
-            {kids.map((c, i) => (
-              <div key={i}>{c.name}{c.age ? `, age ${c.age}` : ""}</div>
-            ))}
-          </div>
-          <div style={S.modalLabel}>Parent</div>
-          <div style={S.modalValue}>{booking.parent_name}<br /><span style={{ fontSize: 13, color: "#888" }}>{booking.parent_email} · {booking.parent_phone}</span></div>
-          <div style={S.modalLabel}>Tier</div>
-          <div style={{ marginBottom: 16 }}>
-            <span style={{ ...S.badge(tierInfo.color), fontSize: 13 }}>{tierInfo.label}</span>
-          </div>
-          <div style={S.modalLabel}>Amount</div>
-          <div style={S.modalValue}>{booking.price_paid === 0 ? "Free" : `$${booking.price_paid}`}</div>
-          <div style={S.modalLabel}>Payment Status</div>
-          <div style={{ marginBottom: 16 }}>
-            <span style={{ ...S.badge(booking.payment_status === "paid" || booking.payment_status === "free" ? GREEN : ORANGE), fontSize: 13 }}>
-              {booking.payment_status}
-            </span>
-          </div>
-          {booking.member_code && <><div style={S.modalLabel}>Code Used</div><div style={S.modalValue}>{booking.member_code}</div></>}
-          <div style={S.modalLabel}>Waiver Signed</div>
-          <div style={S.modalValue}>{booking.waiver_signature || "—"}</div>
-          <div style={S.modalLabel}>Booked</div>
-          <div style={S.modalValue}>{new Date(booking.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={S.page}>
       {/* Header */}
@@ -286,7 +293,7 @@ export default function Admin() {
         <button style={S.tab(tab === "week")} onClick={() => setTab("week")}>By Week</button>
         <button style={S.tab(tab === "calendar")} onClick={() => setTab("calendar")}>Calendar</button>
         <button style={S.tab(tab === "saturdays")} onClick={() => setTab("saturdays")}>
-          🌿 Saturdays {harmonyBookings.length > 0 && <span style={{ background: TEAL, color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, marginLeft: 4 }}>{harmonyBookings.length}</span>}
+          🌿 Saturdays{harmonyBookings.length > 0 && <span style={{ background: TEAL, color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, marginLeft: 6 }}>{harmonyBookings.length}</span>}
         </button>
       </div>
 
@@ -295,64 +302,25 @@ export default function Admin() {
       ) : (
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
 
-          {/* ── BY WEEK TAB ── */}
+          {/* BY WEEK */}
           {tab === "week" && (
             <>
               {currentWeeks.length === 0 && <div style={{ textAlign: "center", padding: 40, color: "#888" }}>No upcoming enrollments.</div>}
-              {currentWeeks.map((week) => {
-                const isCurrent = isThisWeek(week.monday);
-                const [open, setOpen] = useState(isCurrent);
-                return (
-                  <div key={week.monday.toISOString()} style={{ marginBottom: 16 }}>
-                    <div style={S.weekHeader(isCurrent, false)} onClick={() => setOpen(!open)}>
-                      <div>
-                        <span style={{ color: "#fff", fontSize: 15 }}>Week of {formatWeekLabel(week.monday)}</span>
-                        {isCurrent && <span style={{ marginLeft: 10, background: ORANGE, color: "#fff", borderRadius: 10, padding: "2px 8px", fontSize: 11 }}>This Week</span>}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>{week.registrations.length} enrolled</span>
-                        <span style={{ color: "#fff", fontSize: 12 }}>{open ? "▲" : "▼"}</span>
-                      </div>
-                    </div>
-                    {open && (
-                      <div style={S.card}>
-                        {week.registrations.map((reg) => (
-                          <div key={reg.id} style={S.regRow} onClick={() => setSelectedReg(reg)}>
-                            <div>
-                              <div style={{ fontWeight: "bold", fontSize: 14 }}>{reg.child_first_name} {reg.child_last_name}</div>
-                              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{reg.program_name} · {reg.parent_name}</div>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              {reg.lunch && <span style={S.badge(GREEN)}>Lunch</span>}
-                              <span style={S.badge(reg.payment_status === "paid" ? GREEN : ORANGE)}>{reg.payment_status || "pending"}</span>
-                              <span style={{ color: "#ccc" }}>›</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Past weeks toggle */}
+              {currentWeeks.map((week) => (
+                <WeekRow key={week.monday.toISOString()} week={week} onSelectReg={setSelectedReg} />
+              ))}
               <div style={{ textAlign: "center", margin: "24px 0" }}>
                 <button onClick={() => setShowHistory(!showHistory)} style={{ background: "none", border: `1px solid ${CREAM_DARK}`, borderRadius: 8, padding: "10px 20px", color: "#888", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 13 }}>
                   {showHistory ? "Hide" : "Show"} registration history ({pastWeeks.length} past weeks)
                 </button>
               </div>
               {showHistory && pastWeeks.map((week) => (
-                <div key={week.monday.toISOString()} style={{ marginBottom: 12, opacity: 0.6 }}>
-                  <div style={S.weekHeader(false, true)} onClick={() => {}}>
-                    <span style={{ color: "#fff", fontSize: 14 }}>Week of {formatWeekLabel(week.monday)}</span>
-                    <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>{week.registrations.length} enrolled</span>
-                  </div>
-                </div>
+                <WeekRow key={week.monday.toISOString()} week={week} onSelectReg={setSelectedReg} />
               ))}
             </>
           )}
 
-          {/* ── CALENDAR TAB ── */}
+          {/* CALENDAR */}
           {tab === "calendar" && (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -362,9 +330,9 @@ export default function Admin() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 16 }}>
                 {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-                  <div key={d} style={{ textAlign: "center", fontSize: 11, color: "#999", padding: "4px 0", letterSpacing: "0.05em" }}>{d}</div>
+                  <div key={d} style={{ textAlign: "center", fontSize: 11, color: "#999", padding: "4px 0" }}>{d}</div>
                 ))}
-                {Array(firstDay).fill(null).map((_, i) => <div key={`empty-${i}`} />)}
+                {Array(firstDay).fill(null).map((_, i) => <div key={`e${i}`} />)}
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                   const regs = getRegsForDay(day);
                   const harmony = getHarmonyForDay(day);
@@ -375,8 +343,8 @@ export default function Admin() {
                     <div key={day} onClick={() => setCalSelectedDay(calSelectedDay === day ? null : day)}
                       style={{ borderRadius: 8, padding: "6px 4px", textAlign: "center", cursor: "pointer", border: isToday ? `2px solid ${ORANGE}` : isSelected ? `2px solid ${OLIVE}` : `1px solid ${CREAM_DARK}`, background: isSelected ? `${OLIVE}10` : isSat ? `${TEAL}08` : "#fff", minHeight: 52 }}>
                       <div style={{ fontSize: 13, fontWeight: isToday ? "bold" : "normal", color: isToday ? ORANGE : "#333", marginBottom: 3 }}>{day}</div>
-                      {regs.length > 0 && <div style={{ background: OLIVE, color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 6px", marginBottom: 2 }}>{regs.length}</div>}
-                      {harmony.length > 0 && <div style={{ background: TEAL, color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 6px" }}>🌿{harmony.length}</div>}
+                      {regs.length > 0 && <div style={{ background: OLIVE, color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 5px", marginBottom: 2 }}>{regs.length}</div>}
+                      {harmony.length > 0 && <div style={{ background: TEAL, color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 5px" }}>🌿{harmony.length}</div>}
                     </div>
                   );
                 })}
@@ -384,15 +352,12 @@ export default function Admin() {
               {calSelectedDay && (() => {
                 const regs = getRegsForDay(calSelectedDay);
                 const harmony = getHarmonyForDay(calSelectedDay);
-                const isSat = new Date(calYear, calMonthIdx, calSelectedDay).getDay() === 6;
                 return (
                   <div style={S.card}>
                     <div style={{ padding: "14px 18px", borderBottom: `1px solid ${CREAM_DARK}`, fontWeight: "bold", color: OLIVE_DARK }}>
                       {new Date(calYear, calMonthIdx, calSelectedDay).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                     </div>
-                    {regs.length === 0 && harmony.length === 0 && (
-                      <div style={{ padding: "20px 18px", color: "#888", fontSize: 14 }}>No enrollments or bookings this day.</div>
-                    )}
+                    {regs.length === 0 && harmony.length === 0 && <div style={{ padding: "20px 18px", color: "#888", fontSize: 14 }}>No enrollments this day.</div>}
                     {regs.map((reg) => (
                       <div key={reg.id} style={S.regRow} onClick={() => setSelectedReg(reg)}>
                         <div>
@@ -417,40 +382,33 @@ export default function Admin() {
             </>
           )}
 
-          {/* ── SATURDAYS TAB ── */}
+          {/* SATURDAYS */}
           {tab === "saturdays" && (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <h2 style={{ margin: 0, color: TEAL, fontSize: 20, fontWeight: "normal" }}>🌿 Harmony Co-Op Saturdays</h2>
                 <div style={{ display: "flex", gap: 6 }}>
-                  {["upcoming", "past", "all"].map((f) => (
+                  {["upcoming","past","all"].map((f) => (
                     <button key={f} onClick={() => setSaturdayFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${saturdayFilter === f ? TEAL : CREAM_DARK}`, background: saturdayFilter === f ? TEAL : "#fff", color: saturdayFilter === f ? "#fff" : "#666", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 12, textTransform: "capitalize" }}>
                       {f}
                     </button>
                   ))}
                 </div>
               </div>
-
               {filteredSaturdayDates.length === 0 && (
-                <div style={{ textAlign: "center", padding: 60, color: "#888" }}>
-                  No {saturdayFilter === "all" ? "" : saturdayFilter} Saturday bookings yet.
-                </div>
+                <div style={{ textAlign: "center", padding: 60, color: "#888" }}>No {saturdayFilter === "all" ? "" : saturdayFilter} Saturday bookings yet.</div>
               )}
-
               {filteredSaturdayDates.map((dateStr) => {
                 const bookings = groupedSaturdays[dateStr];
                 const d = new Date(dateStr + "T00:00:00");
                 const isUpcoming = d >= today;
                 const totalRevenue = bookings.reduce((sum, b) => sum + (b.price_paid || 0), 0);
                 const tierCounts = bookings.reduce((acc, b) => { acc[b.tier] = (acc[b.tier] || 0) + 1; return acc; }, {});
-
                 return (
                   <div key={dateStr} style={S.satCard(isUpcoming)}>
                     <div style={S.satHeader(isUpcoming)}>
                       <div>
-                        <div style={{ fontWeight: "bold", fontSize: 16, color: isUpcoming ? TEAL : "#666" }}>
-                          {formatSaturdayDate(dateStr)}
-                        </div>
+                        <div style={{ fontWeight: "bold", fontSize: 16, color: isUpcoming ? TEAL : "#666" }}>{formatSaturdayDate(dateStr)}</div>
                         <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>8:00 – 11:00 am · Harmony Co-Op Playground</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
@@ -458,21 +416,17 @@ export default function Admin() {
                         <div style={{ fontSize: 12, color: "#888" }}>${totalRevenue} collected</div>
                       </div>
                     </div>
-
-                    {/* Tier summary */}
-                    <div style={{ padding: "10px 20px", borderBottom: `1px solid ${CREAM_DARK}`, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ padding: "10px 20px", borderBottom: `1px solid ${CREAM_DARK}`, display: "flex", gap: 10, flexWrap: "wrap" }}>
                       {Object.entries(tierCounts).map(([tier, count]) => {
                         const info = TIER_LABELS[tier] || { label: tier, color: NAVY };
                         return <span key={tier} style={{ ...S.badge(info.color), fontSize: 12, padding: "3px 10px" }}>{info.label}: {count}</span>;
                       })}
                     </div>
-
-                    {/* Booking rows */}
                     {bookings.map((b) => {
                       const kids = Array.isArray(b.children) ? b.children : [];
                       const tierInfo = TIER_LABELS[b.tier] || { label: b.tier, color: NAVY };
                       return (
-                        <div key={b.id} style={{ ...S.regRow, background: "#fff" }} onClick={() => setSelectedHarmony(b)}>
+                        <div key={b.id} style={S.regRow} onClick={() => setSelectedHarmony(b)}>
                           <div>
                             <div style={{ fontWeight: "bold", fontSize: 14 }}>{kids.map(c => c.name).join(", ") || "—"}</div>
                             <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{b.parent_name} · {b.parent_email}</div>
@@ -493,7 +447,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Modals */}
       {selectedReg && <RegModal reg={selectedReg} onClose={() => setSelectedReg(null)} />}
       {selectedHarmony && <HarmonyModal booking={selectedHarmony} onClose={() => setSelectedHarmony(null)} />}
     </div>
