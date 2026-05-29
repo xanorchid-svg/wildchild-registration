@@ -518,7 +518,7 @@ export default function ScheduleView() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return;
-      const { data: staff } = await supabase.from("staff").select("id").eq("id", session.user.id).single();
+      const { data: staff } = await supabase.from("staff").select("id").eq("id", session.user.id).maybeSingle();
       if (staff) setIsAdmin(true);
     });
   }, []);
