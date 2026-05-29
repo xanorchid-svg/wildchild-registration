@@ -562,7 +562,11 @@ export default function ParentPortal() {
                 style={{ display:"block", padding:"9px 0", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
                 Our Website ↗
               </a>
-              <button onClick={signOut}
+              <a href="mailto:info@dandelionwildschooling.com" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"14px", fontFamily:"Georgia,serif" }}>✉️ info@dandelionwildschooling.com</a>
+              <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"14px", fontFamily:"Georgia,serif" }}>💬 WhatsApp us</a>
+                            <a href="mailto:info@dandelionwildschooling.com" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"13px", fontFamily:"Georgia,serif" }}>✉️ info@dandelionwildschooling.com</a>
+            <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer" style={{ display:"block", padding:"10px 20px", color:"#555", textDecoration:"none", fontSize:"13px", fontFamily:"Georgia,serif" }}>💬 WhatsApp us</a>
+                        <button onClick={signOut}
                 style={{ width:"100%", background:"transparent", border:`1px solid ${CREAM_DARK}`, borderRadius:"8px", padding:"11px", color:TEXT_MID, fontSize:"14px", fontFamily:"Georgia,serif", cursor:"pointer", textAlign:"left", marginTop:"8px" }}>
                 Sign Out
               </button>
