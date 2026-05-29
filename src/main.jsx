@@ -1,31 +1,27 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import App from "./App.jsx";
-import PathDeep from "./PathDeep.jsx";
-import CreationDeep from "./CreationDeep.jsx";
-import LivingNetworkDeep from "./LivingNetworkDeep.jsx";
-import SeekerPage from "./SeekerPage.jsx";
-import FacilitatorPage from "./FacilitatorPage.jsx";
-import ContainerPage from "./ContainerPage.jsx";
-import ContainerApply from "./ContainerApply.jsx";
-import FacilitatorApply from "./FacilitatorApply.jsx";
-import "./index.css";
+import WelcomePage from "./WelcomePage";
+import WildChildRegistration from "./WildChildRegistration";
+import AdminLogin from "./AdminLogin";
+import Admin from "./Admin";
+import ParentPortal from "./ParentPortal";
+import ScheduleView from "./ScheduleView";
+import HarmonyCoop from "./HarmonyCoop";
+import ProtectedRoute from "./ProtectedRoute";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/path" element={<PathDeep />} />
-        <Route path="/creation" element={<CreationDeep />} />
-        <Route path="/living-network" element={<LivingNetworkDeep />} />
-        <Route path="/seeker" element={<SeekerPage />} />
-        <Route path="/facilitator" element={<FacilitatorPage />} />
-        <Route path="/container" element={<ContainerPage />} />
-        <Route path="/apply/container" element={<ContainerApply />} />
-        <Route path="/apply/facilitator" element={<FacilitatorApply />} />
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/register" element={<WildChildRegistration />} />
+        <Route path="/harmony" element={<HarmonyCoop />} />
+        <Route path="/login" element={<AdminLogin />} />
+        <Route path="/schedule" element={<ScheduleView />} />
+        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+        <Route path="/portal" element={<ParentPortal />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </StrictMode>
 );
