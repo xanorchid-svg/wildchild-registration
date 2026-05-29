@@ -1,5 +1,5 @@
 // Admin.jsx — Wild Child Nosara
-// Tabs: By Week | Calendar | Saturdays
+// Tabs: By Week | Calendar | Saturdays | Change Requests
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,6 @@ const CREAM_DARK = "#e0d8c8";
 const GREEN      = "#5a7a3a";
 const TEAL       = "#427889";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function getMonday(date) {
   const d = new Date(date);
   const day = d.getDay();
@@ -24,33 +23,25 @@ function getMonday(date) {
   d.setHours(0, 0, 0, 0);
   return d;
 }
-
 function formatWeekLabel(monday) {
-  return monday.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return monday.toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
 }
-
 function formatDate(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
 }
-
 function formatSaturdayDate(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
 }
-
 function isThisWeek(monday) {
-  const now = getMonday(new Date());
-  return monday.toDateString() === now.toDateString();
+  return monday.toDateString() === getMonday(new Date()).toDateString();
 }
-
 function isPastWeek(monday) {
-  const now = getMonday(new Date());
-  return monday < now;
+  return monday < getMonday(new Date());
 }
-
 function groupByWeek(registrations) {
   const weeks = {};
   registrations.forEach((reg) => {
@@ -59,62 +50,52 @@ function groupByWeek(registrations) {
       const monday = getMonday(new Date(day + "T00:00:00"));
       const key = monday.toISOString();
       if (!weeks[key]) weeks[key] = { monday, registrations: [] };
-      if (!weeks[key].registrations.find((r) => r.id === reg.id)) {
-        weeks[key].registrations.push(reg);
-      }
+      if (!weeks[key].registrations.find((r) => r.id === reg.id)) weeks[key].registrations.push(reg);
     });
   });
   return Object.values(weeks).sort((a, b) => a.monday - b.monday);
 }
-
-function getDaysInMonth(year, month) {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function getFirstDayOfMonth(year, month) {
-  return new Date(year, month, 1).getDay();
-}
+function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+function getFirstDayOfMonth(year, month) { return new Date(year, month, 1).getDay(); }
 
 const TIER_LABELS = {
-  harmony:   { label: "Harmony Member",    color: GREEN },
-  wildchild: { label: "Wild Child Family", color: OLIVE },
-  general:   { label: "Open to All",       color: NAVY  },
+  harmony:   { label:"Harmony Member",    color:GREEN  },
+  wildchild: { label:"Wild Child Family", color:OLIVE  },
+  general:   { label:"Open to All",       color:NAVY   },
 };
 
 const S = {
-  page: { minHeight: "100vh", background: CREAM, fontFamily: "'Georgia', serif" },
-  header: { background: OLIVE_DARK, height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", position: "sticky", top: 0, zIndex: 100 },
-  headerBtn: { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "8px 14px", color: "#fff", fontSize: 12, fontFamily: "'Georgia', serif", cursor: "pointer" },
-  tabBar: { background: NAVY, display: "flex", padding: "0 20px", gap: 4 },
-  tab: (active) => ({ padding: "12px 20px", color: active ? "#fff" : "rgba(255,255,255,0.55)", background: active ? "rgba(255,255,255,0.12)" : "transparent", border: "none", borderBottom: active ? `2px solid ${ORANGE}` : "2px solid transparent", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 14, letterSpacing: "0.04em" }),
-  card: { background: "#fff", borderRadius: 12, border: `1px solid ${CREAM_DARK}`, marginBottom: 12, overflow: "hidden" },
-  weekHeader: (isCurrent, isPast) => ({ background: isCurrent ? OLIVE : isPast ? "#888" : NAVY, borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", marginBottom: 8 }),
-  regRow: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: `1px solid ${CREAM_DARK}`, cursor: "pointer" },
-  badge: (color) => ({ background: color, color: "#fff", borderRadius: 20, padding: "2px 10px", fontSize: 11 }),
-  modal: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 },
-  modalCard: { background: "#fff", borderRadius: 16, padding: 28, maxWidth: 500, width: "100%", maxHeight: "85vh", overflowY: "auto" },
-  modalLabel: { fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: OLIVE, marginBottom: 4 },
-  modalValue: { fontSize: 15, marginBottom: 16, color: "#2a2a2a" },
-  satCard: (isUpcoming) => ({ background: "#fff", borderRadius: 12, border: `2px solid ${isUpcoming ? TEAL : CREAM_DARK}`, marginBottom: 16, overflow: "hidden" }),
-  satHeader: (isUpcoming) => ({ background: isUpcoming ? `${TEAL}15` : "#f8f8f8", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isUpcoming ? TEAL + "30" : CREAM_DARK}` }),
+  page: { minHeight:"100vh", background:CREAM, fontFamily:"'Georgia', serif" },
+  header: { background:OLIVE_DARK, height:72, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px", position:"sticky", top:0, zIndex:100 },
+  headerBtn: { background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"8px 14px", color:"#fff", fontSize:12, fontFamily:"'Georgia', serif", cursor:"pointer" },
+  tabBar: { background:NAVY, display:"flex", padding:"0 20px", gap:4, flexWrap:"wrap" },
+  tab: (active) => ({ padding:"12px 16px", color:active?"#fff":"rgba(255,255,255,0.55)", background:active?"rgba(255,255,255,0.12)":"transparent", border:"none", borderBottom:active?`2px solid ${ORANGE}`:"2px solid transparent", cursor:"pointer", fontFamily:"'Georgia', serif", fontSize:13, letterSpacing:"0.03em", whiteSpace:"nowrap" }),
+  card: { background:"#fff", borderRadius:12, border:`1px solid ${CREAM_DARK}`, marginBottom:12, overflow:"hidden" },
+  weekHeader: (isCurrent, isPast) => ({ background:isCurrent?OLIVE:isPast?"#888":NAVY, borderRadius:10, padding:"12px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", marginBottom:8 }),
+  regRow: { display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 18px", borderBottom:`1px solid ${CREAM_DARK}`, cursor:"pointer" },
+  badge: (color) => ({ background:color, color:"#fff", borderRadius:20, padding:"2px 10px", fontSize:11 }),
+  modal: { position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 },
+  modalCard: { background:"#fff", borderRadius:16, padding:28, maxWidth:500, width:"100%", maxHeight:"85vh", overflowY:"auto" },
+  modalLabel: { fontSize:11, letterSpacing:"0.12em", textTransform:"uppercase", color:OLIVE, marginBottom:4 },
+  modalValue: { fontSize:15, marginBottom:16, color:"#2a2a2a" },
+  satCard: (u) => ({ background:"#fff", borderRadius:12, border:`2px solid ${u?TEAL:CREAM_DARK}`, marginBottom:16, overflow:"hidden" }),
+  satHeader: (u) => ({ background:u?`${TEAL}15`:"#f8f8f8", padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${u?TEAL+"30":CREAM_DARK}` }),
 };
 
-// ── Week row component (hooks-safe) ───────────────────────────────────────────
 function WeekRow({ week, onSelectReg }) {
   const isCurrent = isThisWeek(week.monday);
   const isPast = isPastWeek(week.monday);
   const [open, setOpen] = useState(isCurrent);
-
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom:16 }}>
       <div style={S.weekHeader(isCurrent, isPast)} onClick={() => setOpen(!open)}>
         <div>
-          <span style={{ color: "#fff", fontSize: 15 }}>Week of {formatWeekLabel(week.monday)}</span>
-          {isCurrent && <span style={{ marginLeft: 10, background: ORANGE, color: "#fff", borderRadius: 10, padding: "2px 8px", fontSize: 11 }}>This Week</span>}
+          <span style={{ color:"#fff", fontSize:15 }}>Week of {formatWeekLabel(week.monday)}</span>
+          {isCurrent && <span style={{ marginLeft:10, background:ORANGE, color:"#fff", borderRadius:10, padding:"2px 8px", fontSize:11 }}>This Week</span>}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>{week.registrations.length} enrolled</span>
-          <span style={{ color: "#fff", fontSize: 12 }}>{open ? "▲" : "▼"}</span>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ color:"rgba(255,255,255,0.7)", fontSize:13 }}>{week.registrations.length} enrolled</span>
+          <span style={{ color:"#fff", fontSize:12 }}>{open?"▲":"▼"}</span>
         </div>
       </div>
       {open && (
@@ -122,13 +103,13 @@ function WeekRow({ week, onSelectReg }) {
           {week.registrations.map((reg) => (
             <div key={reg.id} style={S.regRow} onClick={() => onSelectReg(reg)}>
               <div>
-                <div style={{ fontWeight: "bold", fontSize: 14 }}>{reg.child_first_name} {reg.child_last_name}</div>
-                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{reg.program_name} · {reg.parent_name}</div>
+                <div style={{ fontWeight:"bold", fontSize:14 }}>{reg.child_first_name} {reg.child_last_name}</div>
+                <div style={{ fontSize:12, color:"#888", marginTop:2 }}>{reg.program_name} · {reg.parent_name}</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 {reg.lunch && <span style={S.badge(GREEN)}>Lunch</span>}
-                <span style={S.badge(reg.payment_status === "paid" ? GREEN : ORANGE)}>{reg.payment_status || "pending"}</span>
-                <span style={{ color: "#ccc" }}>›</span>
+                <span style={S.badge(reg.payment_status==="paid"?GREEN:ORANGE)}>{reg.payment_status||"pending"}</span>
+                <span style={{ color:"#ccc" }}>›</span>
               </div>
             </div>
           ))}
@@ -138,79 +119,60 @@ function WeekRow({ week, onSelectReg }) {
   );
 }
 
-// ── Reg modal ─────────────────────────────────────────────────────────────────
 function RegModal({ reg, onClose }) {
   return (
     <div style={S.modal} onClick={onClose}>
-      <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ margin: 0, color: OLIVE_DARK, fontSize: 18 }}>Enrollment Details</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>×</button>
+      <div style={S.modalCard} onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <h3 style={{ margin:0, color:OLIVE_DARK, fontSize:18 }}>Enrollment Details</h3>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#999" }}>×</button>
         </div>
-        <div style={S.modalLabel}>Child</div>
-        <div style={S.modalValue}>{reg.child_first_name} {reg.child_last_name}</div>
-        <div style={S.modalLabel}>Program</div>
-        <div style={S.modalValue}>{reg.program_name}</div>
-        <div style={S.modalLabel}>Parent</div>
-        <div style={S.modalValue}>{reg.parent_name}<br /><span style={{ fontSize: 13, color: "#888" }}>{reg.parent_email} · {reg.parent_phone}</span></div>
-        <div style={S.modalLabel}>Selected Days</div>
-        <div style={S.modalValue}>{(reg.selected_days || []).map(formatDate).join(", ")}</div>
-        <div style={S.modalLabel}>Lunch</div>
-        <div style={S.modalValue}>{reg.lunch ? "Yes" : "No"}</div>
-        <div style={S.modalLabel}>Total</div>
-        <div style={S.modalValue}>${reg.grand_total}</div>
+        <div style={S.modalLabel}>Child</div><div style={S.modalValue}>{reg.child_first_name} {reg.child_last_name}</div>
+        <div style={S.modalLabel}>Program</div><div style={S.modalValue}>{reg.program_name}</div>
+        <div style={S.modalLabel}>Parent</div><div style={S.modalValue}>{reg.parent_name}<br/><span style={{ fontSize:13, color:"#888" }}>{reg.parent_email} · {reg.parent_phone}</span></div>
+        <div style={S.modalLabel}>Selected Days</div><div style={S.modalValue}>{(reg.selected_days||[]).map(formatDate).join(", ")}</div>
+        <div style={S.modalLabel}>Lunch</div><div style={S.modalValue}>{reg.lunch?"Yes":"No"}</div>
+        <div style={S.modalLabel}>Total</div><div style={S.modalValue}>${reg.grand_total}</div>
         <div style={S.modalLabel}>Payment</div>
-        <div style={{ marginBottom: 16 }}>
-          <span style={{ ...S.badge(reg.payment_status === "paid" ? GREEN : ORANGE), fontSize: 13 }}>{reg.payment_status || "pending"}</span>
-        </div>
+        <div style={{ marginBottom:16 }}><span style={{ ...S.badge(reg.payment_status==="paid"?GREEN:ORANGE), fontSize:13 }}>{reg.payment_status||"pending"}</span></div>
         {reg.discount_code && <><div style={S.modalLabel}>Discount</div><div style={S.modalValue}>{reg.discount_code} ({reg.discount_pct}% off)</div></>}
-        {reg.payment_plan && reg.payment_plan !== "full" && <><div style={S.modalLabel}>Payment Plan</div><div style={S.modalValue}>{reg.payment_plan}</div></>}
-        <div style={S.modalLabel}>Registered</div>
-        <div style={S.modalValue}>{new Date(reg.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+        {reg.payment_plan && reg.payment_plan!=="full" && <><div style={S.modalLabel}>Payment Plan</div><div style={S.modalValue}>{reg.payment_plan}</div></>}
+        <div style={S.modalLabel}>Registered</div><div style={S.modalValue}>{new Date(reg.created_at).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
       </div>
     </div>
   );
 }
 
-// ── Harmony modal ─────────────────────────────────────────────────────────────
 function HarmonyModal({ booking, onClose }) {
-  const tierInfo = TIER_LABELS[booking.tier] || { label: booking.tier, color: NAVY };
+  const tierInfo = TIER_LABELS[booking.tier] || { label:booking.tier, color:NAVY };
   const kids = Array.isArray(booking.children) ? booking.children : [];
   return (
     <div style={S.modal} onClick={onClose}>
-      <div style={S.modalCard} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ margin: 0, color: TEAL, fontSize: 18 }}>🌿 Saturday Booking</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>×</button>
+      <div style={S.modalCard} onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <h3 style={{ margin:0, color:TEAL, fontSize:18 }}>🌿 Saturday Booking</h3>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#999" }}>×</button>
         </div>
-        <div style={S.modalLabel}>Date</div>
-        <div style={S.modalValue}>{formatSaturdayDate(booking.session_date)} · 8–11am</div>
-        <div style={S.modalLabel}>Children</div>
-        <div style={S.modalValue}>{kids.map((c, i) => <div key={i}>{c.name}{c.age ? `, age ${c.age}` : ""}</div>)}</div>
-        <div style={S.modalLabel}>Parent</div>
-        <div style={S.modalValue}>{booking.parent_name}<br /><span style={{ fontSize: 13, color: "#888" }}>{booking.parent_email} · {booking.parent_phone}</span></div>
-        <div style={S.modalLabel}>Tier</div>
-        <div style={{ marginBottom: 16 }}><span style={{ ...S.badge(tierInfo.color), fontSize: 13 }}>{tierInfo.label}</span></div>
-        <div style={S.modalLabel}>Amount</div>
-        <div style={S.modalValue}>{booking.price_paid === 0 ? "Free" : `$${booking.price_paid}`}</div>
-        <div style={S.modalLabel}>Payment Status</div>
-        <div style={{ marginBottom: 16 }}><span style={{ ...S.badge(booking.payment_status === "paid" || booking.payment_status === "free" ? GREEN : ORANGE), fontSize: 13 }}>{booking.payment_status}</span></div>
+        <div style={S.modalLabel}>Date</div><div style={S.modalValue}>{formatSaturdayDate(booking.session_date)} · 8–11am</div>
+        <div style={S.modalLabel}>Children</div><div style={S.modalValue}>{kids.map((c,i)=><div key={i}>{c.name}{c.age?`, age ${c.age}`:""}</div>)}</div>
+        <div style={S.modalLabel}>Parent</div><div style={S.modalValue}>{booking.parent_name}<br/><span style={{ fontSize:13, color:"#888" }}>{booking.parent_email} · {booking.parent_phone}</span></div>
+        <div style={S.modalLabel}>Tier</div><div style={{ marginBottom:16 }}><span style={{ ...S.badge(tierInfo.color), fontSize:13 }}>{tierInfo.label}</span></div>
+        <div style={S.modalLabel}>Amount</div><div style={S.modalValue}>{booking.price_paid===0?"Free":`$${booking.price_paid}`}</div>
+        <div style={S.modalLabel}>Payment Status</div><div style={{ marginBottom:16 }}><span style={{ ...S.badge(booking.payment_status==="paid"||booking.payment_status==="free"?GREEN:ORANGE), fontSize:13 }}>{booking.payment_status}</span></div>
         {booking.member_code && <><div style={S.modalLabel}>Code Used</div><div style={S.modalValue}>{booking.member_code}</div></>}
-        <div style={S.modalLabel}>Waiver Signed</div>
-        <div style={S.modalValue}>{booking.waiver_signature || "—"}</div>
-        <div style={S.modalLabel}>Booked</div>
-        <div style={S.modalValue}>{new Date(booking.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+        <div style={S.modalLabel}>Waiver Signed</div><div style={S.modalValue}>{booking.waiver_signature||"—"}</div>
+        <div style={S.modalLabel}>Booked</div><div style={S.modalValue}>{new Date(booking.created_at).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
       </div>
     </div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export default function Admin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("week");
   const [registrations, setRegistrations] = useState([]);
   const [harmonyBookings, setHarmonyBookings] = useState([]);
+  const [changeRequests, setChangeRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReg, setSelectedReg] = useState(null);
   const [selectedHarmony, setSelectedHarmony] = useState(null);
@@ -218,11 +180,13 @@ export default function Admin() {
   const [calMonth, setCalMonth] = useState(new Date());
   const [calSelectedDay, setCalSelectedDay] = useState(null);
   const [saturdayFilter, setSaturdayFilter] = useState("upcoming");
+  const [crFilter, setCrFilter] = useState("pending");
+  const [approvingId, setApprovingId] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
-      const { data: staff } = await supabase.from("staff").select("id").eq("id", session.user.id).maybeSingle();
+      const { data:staff } = await supabase.from("staff").select("id").eq("id", session.user.id).maybeSingle();
       if (!staff) { navigate("/login"); return; }
     });
     fetchData();
@@ -230,20 +194,46 @@ export default function Admin() {
 
   async function fetchData() {
     setLoading(true);
-    const [regRes, harmonyRes] = await Promise.all([
-      supabase.from("registrations").select("*").order("created_at", { ascending: false }),
-      supabase.from("harmony_bookings").select("*").order("session_date", { ascending: true }),
+    const [regRes, harmonyRes, crRes] = await Promise.all([
+      supabase.from("registrations").select("*").order("created_at", { ascending:false }),
+      supabase.from("harmony_bookings").select("*").order("session_date", { ascending:true }),
+      supabase.from("enrollment_change_requests").select("*").order("created_at", { ascending:false }),
     ]);
     setRegistrations(regRes.data || []);
     setHarmonyBookings(harmonyRes.data || []);
+    setChangeRequests(crRes.data || []);
     setLoading(false);
+  }
+
+  async function approveRequest(req) {
+    setApprovingId(req.id);
+    try {
+      // 1. Mark request as approved
+      await supabase.from("enrollment_change_requests").update({ status:"approved" }).eq("id", req.id);
+      // 2. Add credit to parent_profiles
+      const { data:profile } = await supabase.from("parent_profiles").select("account_credit").eq("id", req.parent_user_id).maybeSingle();
+      const currentCredit = profile?.account_credit || 0;
+      await supabase.from("parent_profiles").update({ account_credit: currentCredit + req.credit_value }).eq("id", req.parent_user_id);
+      // 3. Refresh
+      await fetchData();
+    } catch(e) {
+      alert("Error approving request: " + e.message);
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  async function declineRequest(req) {
+    if (!window.confirm("Decline this request?")) return;
+    await supabase.from("enrollment_change_requests").update({ status:"declined" }).eq("id", req.id);
+    await fetchData();
   }
 
   const signOut = async () => { await supabase.auth.signOut(); navigate("/login"); };
 
   const weeks = groupByWeek(registrations);
-  const currentWeeks = weeks.filter((w) => !isPastWeek(w.monday));
-  const pastWeeks = weeks.filter((w) => isPastWeek(w.monday));
+  const currentWeeks = weeks.filter(w => !isPastWeek(w.monday));
+  const pastWeeks = weeks.filter(w => isPastWeek(w.monday));
 
   const calYear = calMonth.getFullYear();
   const calMonthIdx = calMonth.getMonth();
@@ -251,129 +241,110 @@ export default function Admin() {
   const firstDay = getFirstDayOfMonth(calYear, calMonthIdx);
 
   function getRegsForDay(day) {
-    const dateStr = `${calYear}-${String(calMonthIdx + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return registrations.filter((r) => r.selected_days && r.selected_days.includes(dateStr));
+    const dateStr = `${calYear}-${String(calMonthIdx+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    return registrations.filter(r => r.selected_days && r.selected_days.includes(dateStr));
   }
-
   function getHarmonyForDay(day) {
-    const dateStr = `${calYear}-${String(calMonthIdx + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return harmonyBookings.filter((b) => b.session_date === dateStr);
+    const dateStr = `${calYear}-${String(calMonthIdx+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    return harmonyBookings.filter(b => b.session_date === dateStr);
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const groupedSaturdays = harmonyBookings.reduce((acc, b) => {
-    const key = b.session_date;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(b);
-    return acc;
-  }, {});
-
-  const filteredSaturdayDates = Object.keys(groupedSaturdays).sort().filter((dateStr) => {
-    const d = new Date(dateStr + "T00:00:00");
-    if (saturdayFilter === "upcoming") return d >= today;
-    if (saturdayFilter === "past") return d < today;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const groupedSaturdays = harmonyBookings.reduce((acc,b) => { if(!acc[b.session_date]) acc[b.session_date]=[]; acc[b.session_date].push(b); return acc; }, {});
+  const filteredSaturdayDates = Object.keys(groupedSaturdays).sort().filter(ds => {
+    const d = new Date(ds+"T00:00:00");
+    if (saturdayFilter==="upcoming") return d >= today;
+    if (saturdayFilter==="past") return d < today;
     return true;
   });
 
+  const pendingCRs = changeRequests.filter(r => r.status === "pending").length;
+  const filteredCRs = changeRequests.filter(r => crFilter === "all" ? true : r.status === crFilter);
+
   return (
     <div style={S.page}>
-      {/* Header */}
       <div style={S.header}>
         <button style={S.headerBtn} onClick={() => navigate("/schedule")}>📅 Schedule</button>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
-          <img src={logo} alt="Wild Child Nosara" style={{ height: 60, objectFit: "contain" }} />
+        <div style={{ position:"absolute", left:"50%", transform:"translateX(-50%)" }}>
+          <img src={logo} alt="Wild Child Nosara" style={{ height:60, objectFit:"contain" }} />
         </div>
         <button style={S.headerBtn} onClick={signOut}>Sign Out</button>
       </div>
 
-      {/* Tab bar */}
       <div style={S.tabBar}>
-        <button style={S.tab(tab === "week")} onClick={() => setTab("week")}>By Week</button>
-        <button style={S.tab(tab === "calendar")} onClick={() => setTab("calendar")}>Calendar</button>
-        <button style={S.tab(tab === "saturdays")} onClick={() => setTab("saturdays")}>
-          🌿 Saturdays{harmonyBookings.length > 0 && <span style={{ background: TEAL, color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, marginLeft: 6 }}>{harmonyBookings.length}</span>}
+        <button style={S.tab(tab==="week")} onClick={() => setTab("week")}>By Week</button>
+        <button style={S.tab(tab==="calendar")} onClick={() => setTab("calendar")}>Calendar</button>
+        <button style={S.tab(tab==="saturdays")} onClick={() => setTab("saturdays")}>
+          🌿 Saturdays{harmonyBookings.length>0&&<span style={{ background:TEAL, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:11, marginLeft:6 }}>{harmonyBookings.length}</span>}
+        </button>
+        <button style={S.tab(tab==="changes")} onClick={() => setTab("changes")}>
+          Change Requests{pendingCRs>0&&<span style={{ background:ORANGE, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:11, marginLeft:6 }}>{pendingCRs}</span>}
         </button>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 60, color: "#888", fontSize: 15 }}>Loading…</div>
+        <div style={{ textAlign:"center", padding:60, color:"#888", fontSize:15 }}>Loading…</div>
       ) : (
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
+        <div style={{ maxWidth:900, margin:"0 auto", padding:"24px 16px" }}>
 
           {/* BY WEEK */}
-          {tab === "week" && (
+          {tab==="week" && (
             <>
-              {currentWeeks.length === 0 && <div style={{ textAlign: "center", padding: 40, color: "#888" }}>No upcoming enrollments.</div>}
-              {currentWeeks.map((week) => (
-                <WeekRow key={week.monday.toISOString()} week={week} onSelectReg={setSelectedReg} />
-              ))}
-              <div style={{ textAlign: "center", margin: "24px 0" }}>
-                <button onClick={() => setShowHistory(!showHistory)} style={{ background: "none", border: `1px solid ${CREAM_DARK}`, borderRadius: 8, padding: "10px 20px", color: "#888", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 13 }}>
-                  {showHistory ? "Hide" : "Show"} registration history ({pastWeeks.length} past weeks)
+              {currentWeeks.length===0 && <div style={{ textAlign:"center", padding:40, color:"#888" }}>No upcoming enrollments.</div>}
+              {currentWeeks.map(week => <WeekRow key={week.monday.toISOString()} week={week} onSelectReg={setSelectedReg} />)}
+              <div style={{ textAlign:"center", margin:"24px 0" }}>
+                <button onClick={() => setShowHistory(!showHistory)} style={{ background:"none", border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:"10px 20px", color:"#888", cursor:"pointer", fontFamily:"'Georgia', serif", fontSize:13 }}>
+                  {showHistory?"Hide":"Show"} registration history ({pastWeeks.length} past weeks)
                 </button>
               </div>
-              {showHistory && pastWeeks.map((week) => (
-                <WeekRow key={week.monday.toISOString()} week={week} onSelectReg={setSelectedReg} />
-              ))}
+              {showHistory && pastWeeks.map(week => <WeekRow key={week.monday.toISOString()} week={week} onSelectReg={setSelectedReg} />)}
             </>
           )}
 
           {/* CALENDAR */}
-          {tab === "calendar" && (
+          {tab==="calendar" && (
             <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                <button onClick={() => setCalMonth(new Date(calYear, calMonthIdx - 1, 1))} style={{ background: "none", border: `1px solid ${CREAM_DARK}`, borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "'Georgia', serif" }}>← Prev</button>
-                <span style={{ fontSize: 17, color: OLIVE_DARK }}>{calMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
-                <button onClick={() => setCalMonth(new Date(calYear, calMonthIdx + 1, 1))} style={{ background: "none", border: `1px solid ${CREAM_DARK}`, borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "'Georgia', serif" }}>Next →</button>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+                <button onClick={() => setCalMonth(new Date(calYear,calMonthIdx-1,1))} style={{ background:"none", border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:"8px 14px", cursor:"pointer", fontFamily:"'Georgia',serif" }}>← Prev</button>
+                <span style={{ fontSize:17, color:OLIVE_DARK }}>{calMonth.toLocaleDateString("en-US",{month:"long",year:"numeric"})}</span>
+                <button onClick={() => setCalMonth(new Date(calYear,calMonthIdx+1,1))} style={{ background:"none", border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:"8px 14px", cursor:"pointer", fontFamily:"'Georgia',serif" }}>Next →</button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 16 }}>
-                {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-                  <div key={d} style={{ textAlign: "center", fontSize: 11, color: "#999", padding: "4px 0" }}>{d}</div>
-                ))}
-                {Array(firstDay).fill(null).map((_, i) => <div key={`e${i}`} />)}
-                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                  const regs = getRegsForDay(day);
-                  const harmony = getHarmonyForDay(day);
-                  const isToday = new Date().getDate() === day && new Date().getMonth() === calMonthIdx && new Date().getFullYear() === calYear;
-                  const isSelected = calSelectedDay === day;
-                  const isSat = new Date(calYear, calMonthIdx, day).getDay() === 6;
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4, marginBottom:16 }}>
+                {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=><div key={d} style={{ textAlign:"center", fontSize:11, color:"#999", padding:"4px 0" }}>{d}</div>)}
+                {Array(firstDay).fill(null).map((_,i)=><div key={`e${i}`}/>)}
+                {Array.from({length:daysInMonth},(_,i)=>i+1).map(day => {
+                  const regs=getRegsForDay(day); const harmony=getHarmonyForDay(day);
+                  const isToday=new Date().getDate()===day&&new Date().getMonth()===calMonthIdx&&new Date().getFullYear()===calYear;
+                  const isSelected=calSelectedDay===day;
+                  const isSat=new Date(calYear,calMonthIdx,day).getDay()===6;
                   return (
-                    <div key={day} onClick={() => setCalSelectedDay(calSelectedDay === day ? null : day)}
-                      style={{ borderRadius: 8, padding: "6px 4px", textAlign: "center", cursor: "pointer", border: isToday ? `2px solid ${ORANGE}` : isSelected ? `2px solid ${OLIVE}` : `1px solid ${CREAM_DARK}`, background: isSelected ? `${OLIVE}10` : isSat ? `${TEAL}08` : "#fff", minHeight: 52 }}>
-                      <div style={{ fontSize: 13, fontWeight: isToday ? "bold" : "normal", color: isToday ? ORANGE : "#333", marginBottom: 3 }}>{day}</div>
-                      {regs.length > 0 && <div style={{ background: OLIVE, color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 5px", marginBottom: 2 }}>{regs.length}</div>}
-                      {harmony.length > 0 && <div style={{ background: TEAL, color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 5px" }}>🌿{harmony.length}</div>}
+                    <div key={day} onClick={()=>setCalSelectedDay(calSelectedDay===day?null:day)}
+                      style={{ borderRadius:8, padding:"6px 4px", textAlign:"center", cursor:"pointer", border:isToday?`2px solid ${ORANGE}`:isSelected?`2px solid ${OLIVE}`:`1px solid ${CREAM_DARK}`, background:isSelected?`${OLIVE}10`:isSat?`${TEAL}08`:"#fff", minHeight:52 }}>
+                      <div style={{ fontSize:13, fontWeight:isToday?"bold":"normal", color:isToday?ORANGE:"#333", marginBottom:3 }}>{day}</div>
+                      {regs.length>0&&<div style={{ background:OLIVE, color:"#fff", borderRadius:10, fontSize:10, padding:"1px 5px", marginBottom:2 }}>{regs.length}</div>}
+                      {harmony.length>0&&<div style={{ background:TEAL, color:"#fff", borderRadius:10, fontSize:10, padding:"1px 5px" }}>🌿{harmony.length}</div>}
                     </div>
                   );
                 })}
               </div>
-              {calSelectedDay && (() => {
-                const regs = getRegsForDay(calSelectedDay);
-                const harmony = getHarmonyForDay(calSelectedDay);
+              {calSelectedDay&&(()=>{
+                const regs=getRegsForDay(calSelectedDay); const harmony=getHarmonyForDay(calSelectedDay);
                 return (
                   <div style={S.card}>
-                    <div style={{ padding: "14px 18px", borderBottom: `1px solid ${CREAM_DARK}`, fontWeight: "bold", color: OLIVE_DARK }}>
-                      {new Date(calYear, calMonthIdx, calSelectedDay).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                    <div style={{ padding:"14px 18px", borderBottom:`1px solid ${CREAM_DARK}`, fontWeight:"bold", color:OLIVE_DARK }}>
+                      {new Date(calYear,calMonthIdx,calSelectedDay).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}
                     </div>
-                    {regs.length === 0 && harmony.length === 0 && <div style={{ padding: "20px 18px", color: "#888", fontSize: 14 }}>No enrollments this day.</div>}
-                    {regs.map((reg) => (
-                      <div key={reg.id} style={S.regRow} onClick={() => setSelectedReg(reg)}>
-                        <div>
-                          <div style={{ fontWeight: "bold", fontSize: 14 }}>{reg.child_first_name} {reg.child_last_name}</div>
-                          <div style={{ fontSize: 12, color: "#888" }}>{reg.program_name} · {reg.parent_name}</div>
-                        </div>
-                        <span style={{ color: "#ccc" }}>›</span>
+                    {regs.length===0&&harmony.length===0&&<div style={{ padding:"20px 18px", color:"#888", fontSize:14 }}>No enrollments this day.</div>}
+                    {regs.map(reg=>(
+                      <div key={reg.id} style={S.regRow} onClick={()=>setSelectedReg(reg)}>
+                        <div><div style={{ fontWeight:"bold", fontSize:14 }}>{reg.child_first_name} {reg.child_last_name}</div><div style={{ fontSize:12, color:"#888" }}>{reg.program_name} · {reg.parent_name}</div></div>
+                        <span style={{ color:"#ccc" }}>›</span>
                       </div>
                     ))}
-                    {harmony.map((b) => (
-                      <div key={b.id} style={{ ...S.regRow, background: `${TEAL}08` }} onClick={() => setSelectedHarmony(b)}>
-                        <div>
-                          <div style={{ fontWeight: "bold", fontSize: 14, color: TEAL }}>🌿 {Array.isArray(b.children) ? b.children.map(c => c.name).join(", ") : "—"}</div>
-                          <div style={{ fontSize: 12, color: "#888" }}>Harmony Co-Op · {b.parent_name}</div>
-                        </div>
-                        <span style={{ color: "#ccc" }}>›</span>
+                    {harmony.map(b=>(
+                      <div key={b.id} style={{ ...S.regRow, background:`${TEAL}08` }} onClick={()=>setSelectedHarmony(b)}>
+                        <div><div style={{ fontWeight:"bold", fontSize:14, color:TEAL }}>🌿 {Array.isArray(b.children)?b.children.map(c=>c.name).join(", "):"—"}</div><div style={{ fontSize:12, color:"#888" }}>Harmony Co-Op · {b.parent_name}</div></div>
+                        <span style={{ color:"#ccc" }}>›</span>
                       </div>
                     ))}
                   </div>
@@ -383,58 +354,50 @@ export default function Admin() {
           )}
 
           {/* SATURDAYS */}
-          {tab === "saturdays" && (
+          {tab==="saturdays" && (
             <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <h2 style={{ margin: 0, color: TEAL, fontSize: 20, fontWeight: "normal" }}>🌿 Harmony Co-Op Saturdays</h2>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {["upcoming","past","all"].map((f) => (
-                    <button key={f} onClick={() => setSaturdayFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${saturdayFilter === f ? TEAL : CREAM_DARK}`, background: saturdayFilter === f ? TEAL : "#fff", color: saturdayFilter === f ? "#fff" : "#666", cursor: "pointer", fontFamily: "'Georgia', serif", fontSize: 12, textTransform: "capitalize" }}>
-                      {f}
-                    </button>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+                <h2 style={{ margin:0, color:TEAL, fontSize:20, fontWeight:"normal" }}>🌿 Harmony Co-Op Saturdays</h2>
+                <div style={{ display:"flex", gap:6 }}>
+                  {["upcoming","past","all"].map(f=>(
+                    <button key={f} onClick={()=>setSaturdayFilter(f)} style={{ padding:"6px 14px", borderRadius:20, border:`1px solid ${saturdayFilter===f?TEAL:CREAM_DARK}`, background:saturdayFilter===f?TEAL:"#fff", color:saturdayFilter===f?"#fff":"#666", cursor:"pointer", fontFamily:"'Georgia',serif", fontSize:12, textTransform:"capitalize" }}>{f}</button>
                   ))}
                 </div>
               </div>
-              {filteredSaturdayDates.length === 0 && (
-                <div style={{ textAlign: "center", padding: 60, color: "#888" }}>No {saturdayFilter === "all" ? "" : saturdayFilter} Saturday bookings yet.</div>
-              )}
-              {filteredSaturdayDates.map((dateStr) => {
-                const bookings = groupedSaturdays[dateStr];
-                const d = new Date(dateStr + "T00:00:00");
-                const isUpcoming = d >= today;
-                const totalRevenue = bookings.reduce((sum, b) => sum + (b.price_paid || 0), 0);
-                const tierCounts = bookings.reduce((acc, b) => { acc[b.tier] = (acc[b.tier] || 0) + 1; return acc; }, {});
+              {filteredSaturdayDates.length===0&&<div style={{ textAlign:"center", padding:60, color:"#888" }}>No {saturdayFilter==="all"?"":""+saturdayFilter+" "}Saturday bookings yet.</div>}
+              {filteredSaturdayDates.map(dateStr=>{
+                const bookings=groupedSaturdays[dateStr];
+                const d=new Date(dateStr+"T00:00:00"); const isUpcoming=d>=today;
+                const totalRevenue=bookings.reduce((sum,b)=>sum+(b.price_paid||0),0);
+                const tierCounts=bookings.reduce((acc,b)=>{acc[b.tier]=(acc[b.tier]||0)+1;return acc;},{});
                 return (
                   <div key={dateStr} style={S.satCard(isUpcoming)}>
                     <div style={S.satHeader(isUpcoming)}>
                       <div>
-                        <div style={{ fontWeight: "bold", fontSize: 16, color: isUpcoming ? TEAL : "#666" }}>{formatSaturdayDate(dateStr)}</div>
-                        <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>8:00 – 11:00 am · Harmony Co-Op Playground</div>
+                        <div style={{ fontWeight:"bold", fontSize:16, color:isUpcoming?TEAL:"#666" }}>{formatSaturdayDate(dateStr)}</div>
+                        <div style={{ fontSize:12, color:"#888", marginTop:2 }}>8:00 – 11:00 am · Harmony Co-Op Playground</div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: "bold", color: OLIVE_DARK, fontSize: 16 }}>{bookings.length} booking{bookings.length !== 1 ? "s" : ""}</div>
-                        <div style={{ fontSize: 12, color: "#888" }}>${totalRevenue} collected</div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontWeight:"bold", color:OLIVE_DARK, fontSize:16 }}>{bookings.length} booking{bookings.length!==1?"s":""}</div>
+                        <div style={{ fontSize:12, color:"#888" }}>${totalRevenue} collected</div>
                       </div>
                     </div>
-                    <div style={{ padding: "10px 20px", borderBottom: `1px solid ${CREAM_DARK}`, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {Object.entries(tierCounts).map(([tier, count]) => {
-                        const info = TIER_LABELS[tier] || { label: tier, color: NAVY };
-                        return <span key={tier} style={{ ...S.badge(info.color), fontSize: 12, padding: "3px 10px" }}>{info.label}: {count}</span>;
+                    <div style={{ padding:"10px 20px", borderBottom:`1px solid ${CREAM_DARK}`, display:"flex", gap:10, flexWrap:"wrap" }}>
+                      {Object.entries(tierCounts).map(([tier,count])=>{
+                        const info=TIER_LABELS[tier]||{label:tier,color:NAVY};
+                        return <span key={tier} style={{ ...S.badge(info.color), fontSize:12, padding:"3px 10px" }}>{info.label}: {count}</span>;
                       })}
                     </div>
-                    {bookings.map((b) => {
-                      const kids = Array.isArray(b.children) ? b.children : [];
-                      const tierInfo = TIER_LABELS[b.tier] || { label: b.tier, color: NAVY };
+                    {bookings.map(b=>{
+                      const kids=Array.isArray(b.children)?b.children:[];
+                      const tierInfo=TIER_LABELS[b.tier]||{label:b.tier,color:NAVY};
                       return (
-                        <div key={b.id} style={S.regRow} onClick={() => setSelectedHarmony(b)}>
-                          <div>
-                            <div style={{ fontWeight: "bold", fontSize: 14 }}>{kids.map(c => c.name).join(", ") || "—"}</div>
-                            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{b.parent_name} · {b.parent_email}</div>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div key={b.id} style={S.regRow} onClick={()=>setSelectedHarmony(b)}>
+                          <div><div style={{ fontWeight:"bold", fontSize:14 }}>{kids.map(c=>c.name).join(", ")||"—"}</div><div style={{ fontSize:12, color:"#888", marginTop:2 }}>{b.parent_name} · {b.parent_email}</div></div>
+                          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                             <span style={S.badge(tierInfo.color)}>{tierInfo.label}</span>
-                            <span style={{ fontSize: 13, color: OLIVE_DARK, fontWeight: "bold" }}>{b.price_paid === 0 ? "Free" : `$${b.price_paid}`}</span>
-                            <span style={{ color: "#ccc" }}>›</span>
+                            <span style={{ fontSize:13, color:OLIVE_DARK, fontWeight:"bold" }}>{b.price_paid===0?"Free":`$${b.price_paid}`}</span>
+                            <span style={{ color:"#ccc" }}>›</span>
                           </div>
                         </div>
                       );
@@ -444,11 +407,72 @@ export default function Admin() {
               })}
             </>
           )}
+
+          {/* CHANGE REQUESTS */}
+          {tab==="changes" && (
+            <>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+                <h2 style={{ margin:0, color:OLIVE_DARK, fontSize:20, fontWeight:"normal" }}>Enrollment Change Requests</h2>
+                <div style={{ display:"flex", gap:6 }}>
+                  {["pending","approved","declined","all"].map(f=>(
+                    <button key={f} onClick={()=>setCrFilter(f)} style={{ padding:"6px 14px", borderRadius:20, border:`1px solid ${crFilter===f?OLIVE_DARK:CREAM_DARK}`, background:crFilter===f?OLIVE_DARK:"#fff", color:crFilter===f?"#fff":"#666", cursor:"pointer", fontFamily:"'Georgia',serif", fontSize:12, textTransform:"capitalize" }}>{f}</button>
+                  ))}
+                </div>
+              </div>
+
+              {filteredCRs.length===0&&<div style={{ textAlign:"center", padding:60, color:"#888" }}>No {crFilter==="all"?"":crFilter+" "}requests.</div>}
+
+              {filteredCRs.map(req=>{
+                const weeks=Array.isArray(req.weeks_to_cancel)?req.weeks_to_cancel:[];
+                const isPending=req.status==="pending";
+                const isApproved=req.status==="approved";
+                return (
+                  <div key={req.id} style={{ background:"#fff", borderRadius:12, border:`2px solid ${isPending?ORANGE:isApproved?GREEN:CREAM_DARK}`, marginBottom:16, overflow:"hidden" }}>
+                    <div style={{ background:isPending?`${ORANGE}10`:isApproved?`${GREEN}10`:"#f8f8f8", padding:"14px 20px", borderBottom:`1px solid ${isPending?ORANGE+"30":isApproved?GREEN+"30":CREAM_DARK}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <div>
+                        <div style={{ fontWeight:"bold", fontSize:16, color:OLIVE_DARK }}>{req.child_name}</div>
+                        <div style={{ fontSize:12, color:"#888", marginTop:2 }}>Requested {new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <span style={{ fontWeight:"bold", color:isApproved?GREEN:OLIVE_DARK, fontSize:16 }}>${req.credit_value} credit</span>
+                        <span style={{ ...S.badge(isPending?ORANGE:isApproved?GREEN:"#888"), fontSize:12 }}>{req.status}</span>
+                      </div>
+                    </div>
+                    <div style={{ padding:"16px 20px" }}>
+                      <div style={{ fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", color:"#999", marginBottom:8 }}>Weeks to cancel</div>
+                      {weeks.map((w,i)=>(
+                        <div key={i} style={{ fontSize:14, color:"#444", marginBottom:4 }}>
+                          · Week of {w.weekOf} ({w.days?.length||0} day{w.days?.length!==1?"s":""})
+                        </div>
+                      ))}
+                      {req.parent_note && (
+                        <div style={{ marginTop:12, padding:"10px 14px", background:`${CREAM_DARK}50`, borderRadius:8, fontSize:13, color:"#555", fontStyle:"italic" }}>
+                          "{req.parent_note}"
+                        </div>
+                      )}
+                      {isPending && (
+                        <div style={{ display:"flex", gap:10, marginTop:16 }}>
+                          <button onClick={()=>approveRequest(req)} disabled={approvingId===req.id}
+                            style={{ flex:1, padding:"11px", background:approvingId===req.id?"#ccc":GREEN, color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontFamily:"'Georgia',serif", fontSize:14 }}>
+                            {approvingId===req.id?"Approving…":`✓ Approve · Add $${req.credit_value} credit`}
+                          </button>
+                          <button onClick={()=>declineRequest(req)}
+                            style={{ padding:"11px 18px", background:"none", border:`1px solid #f87171`, color:"#b91c1c", borderRadius:8, cursor:"pointer", fontFamily:"'Georgia',serif", fontSize:14 }}>
+                            Decline
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
       )}
 
-      {selectedReg && <RegModal reg={selectedReg} onClose={() => setSelectedReg(null)} />}
-      {selectedHarmony && <HarmonyModal booking={selectedHarmony} onClose={() => setSelectedHarmony(null)} />}
+      {selectedReg && <RegModal reg={selectedReg} onClose={()=>setSelectedReg(null)} />}
+      {selectedHarmony && <HarmonyModal booking={selectedHarmony} onClose={()=>setSelectedHarmony(null)} />}
     </div>
   );
 }

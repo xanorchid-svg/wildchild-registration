@@ -119,6 +119,15 @@ function ReferralCard({ profile, userId, onCodeGenerated }) {
         <div>
           <p style={{ fontSize:"15px", fontWeight:500, margin:"0 0 4px", color:"#fff" }}>Bring a Friend to Wild Child</p>
           <p style={{ fontSize:"13px", color:"rgba(255,255,255,0.78)", margin:0, lineHeight:1.5 }}>
+            {accountCredit > 0 && (
+              <div style={{ background:"#f0f7f0", border:"1px solid #b8d4b8", borderRadius:10, padding:"14px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <div>
+                  <p style={{ fontSize:11, letterSpacing:"1px", textTransform:"uppercase", color:"#5a7a3a", margin:"0 0 4px" }}>Account Credit</p>
+                  <p style={{ fontSize:22, fontWeight:"bold", color:"#5a7a3a", margin:0, fontFamily:"Georgia,serif" }}>${accountCredit.toFixed(2)}</p>
+                </div>
+                <div style={{ fontSize:12, color:"#7a9a7a", maxWidth:160, textAlign:"right", lineHeight:1.5 }}>Applied automatically at your next enrollment checkout</div>
+              </div>
+            )}
             Share your code with a family — they get 5% off their first enrollment, and you'll earn a 5% credit on your next one.
           </p>
         </div>
@@ -226,12 +235,162 @@ function EnrollmentCalendar({ enrolledDays, hasLunch }) {
   );
 }
 
+
+// ── Change Request Modal ──────────────────────────────────────────────────────
+function ChangeRequestModal({ reg, session, onClose, onSubmitted }) {
+  const OLIVE_DARK = "#4d5a2c";
+  const OLIVE = "#6b7a3f";
+  const ORANGE = "#c4682a";
+  const CREAM = "#f5f0e8";
+  const CREAM_DARK = "#e0d8c8";
+  const GREEN = "#5a7a3a";
+  const TEXT_LIGHT = "#7a7a9a";
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const daysFromMonday = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - daysFromMonday);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  function parseLocalKey(key) {
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  // Group days into weeks
+  const today = new Date(); today.setHours(0,0,0,0);
+  const futureDays = (reg.selected_days || []).filter(dk => parseLocalKey(dk) >= today);
+
+  // Group future days by week
+  const weekMap = {};
+  futureDays.forEach(dk => {
+    const mon = getMonday(parseLocalKey(dk));
+    const key = mon.toISOString();
+    if (!weekMap[key]) weekMap[key] = { monday: mon, days: [] };
+    weekMap[key].days.push(dk);
+  });
+  const weeks = Object.values(weekMap).sort((a,b) => a.monday - b.monday);
+
+  const [selectedWeeks, setSelectedWeeks] = useState([]);
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  function toggleWeek(key) {
+    setSelectedWeeks(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  }
+
+  // Calculate credit value
+  const weeksPerReg = Math.ceil((reg.selected_days || []).length / (reg.selected_days?.length > 0 ? [...new Set((reg.selected_days||[]).map(dk => getMonday(parseLocalKey(dk)).toISOString()))].length : 1));
+  const weeklyRate = reg.subtotal_tuition / Math.max(1, [...new Set((reg.selected_days||[]).map(dk => getMonday(parseLocalKey(dk)).toISOString()))].length);
+  const creditValue = selectedWeeks.length * weeklyRate;
+
+  async function handleSubmit() {
+    if (selectedWeeks.length === 0) { setError("Please select at least one week to cancel."); return; }
+    setSubmitting(true);
+    setError("");
+    try {
+      const weeksData = selectedWeeks.map(key => {
+        const w = weekMap[key];
+        return {
+          weekOf: w.monday.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          days: w.days,
+        };
+      });
+      const { error: dbErr } = await supabase.from("enrollment_change_requests").insert({
+        parent_user_id: session.user.id,
+        registration_id: reg.id,
+        child_name: `${reg.child_first_name} ${reg.child_last_name}`,
+        weeks_to_cancel: weeksData,
+        credit_value: Math.round(creditValue * 100) / 100,
+        parent_note: note.trim() || null,
+        status: "pending",
+      });
+      if (dbErr) throw dbErr;
+      onSubmitted();
+      onClose();
+    } catch(e) {
+      setError(e.message || "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={onClose}>
+      <div style={{ background:"#fff", borderRadius:16, padding:28, maxWidth:480, width:"100%", maxHeight:"85vh", overflowY:"auto" }} onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <h3 style={{ margin:0, color:OLIVE_DARK, fontSize:18, fontFamily:"Georgia,serif" }}>Request a Change</h3>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#999" }}>×</button>
+        </div>
+
+        <div style={{ background:`${ORANGE}10`, border:`1px solid ${ORANGE}30`, borderRadius:8, padding:"12px 14px", marginBottom:20, fontSize:13, color:ORANGE, lineHeight:1.5 }}>
+          ℹ️ Cancelled weeks are non-refundable but the value will be added as <strong>account credit</strong> once approved by Wild Child staff. Credit applies automatically to your next enrollment.
+        </div>
+
+        <p style={{ fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:12 }}>Select weeks to cancel</p>
+
+        {weeks.length === 0 && (
+          <p style={{ color:"#888", fontSize:14, marginBottom:16 }}>No upcoming weeks found for this enrollment.</p>
+        )}
+
+        {weeks.map(w => {
+          const key = w.monday.toISOString();
+          const selected = selectedWeeks.includes(key);
+          const wkCredit = weeklyRate;
+          return (
+            <div key={key} onClick={() => toggleWeek(key)}
+              style={{ border:`2px solid ${selected ? OLIVE : CREAM_DARK}`, borderRadius:10, padding:"12px 16px", marginBottom:8, cursor:"pointer", background: selected ? `${OLIVE}10` : "#fff", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div>
+                <div style={{ fontWeight:"bold", fontSize:14, fontFamily:"Georgia,serif" }}>
+                  Week of {w.monday.toLocaleDateString("en-US", { month:"short", day:"numeric" })}
+                </div>
+                <div style={{ fontSize:12, color:"#888", marginTop:2 }}>{w.days.length} day{w.days.length !== 1 ? "s" : ""}</div>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:13, color:OLIVE, fontWeight:"bold" }}>${Math.round(wkCredit)}</span>
+                <div style={{ width:20, height:20, borderRadius:"50%", border:`2px solid ${selected ? OLIVE : CREAM_DARK}`, background: selected ? OLIVE : "transparent", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {selected && <span style={{ color:"#fff", fontSize:11 }}>✓</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {selectedWeeks.length > 0 && (
+          <div style={{ background:`${GREEN}10`, border:`1px solid ${GREEN}30`, borderRadius:8, padding:"12px 16px", marginTop:8, marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontSize:14, color:GREEN }}>Credit if approved</span>
+            <span style={{ fontSize:18, fontWeight:"bold", color:GREEN }}>${Math.round(creditValue)}</span>
+          </div>
+        )}
+
+        <div style={{ marginBottom:16 }}>
+          <label style={{ display:"block", fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", color:TEXT_LIGHT, marginBottom:6 }}>Note to Wild Child team (optional)</label>
+          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. travelling for 2 weeks, will be back in June" rows={3}
+            style={{ width:"100%", padding:"11px 13px", border:`1px solid ${CREAM_DARK}`, borderRadius:8, fontSize:14, fontFamily:"Georgia,serif", resize:"vertical", boxSizing:"border-box", outline:"none" }} />
+        </div>
+
+        {error && <div style={{ background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:8, padding:"10px 14px", color:"#b91c1c", fontSize:13, marginBottom:12 }}>{error}</div>}
+
+        <button onClick={handleSubmit} disabled={submitting || selectedWeeks.length === 0}
+          style={{ width:"100%", padding:"14px", background: submitting || selectedWeeks.length === 0 ? "#ccc" : OLIVE_DARK, color:"#fff", border:"none", borderRadius:10, fontSize:15, fontFamily:"Georgia,serif", cursor: submitting || selectedWeeks.length === 0 ? "not-allowed" : "pointer" }}>
+          {submitting ? "Submitting…" : `Submit Request${selectedWeeks.length > 0 ? ` · $${Math.round(creditValue)} credit` : ""}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ParentPortal() {
   const routerNavigate = useRouterNavigate();
   const [user, setUser]           = useState(null);  // ← FIXED: was missing
   const [profile, setProfile]     = useState({ full_name:"", phone:"", email:"" });
   const [children, setChildren]   = useState([]);
   const [registrations, setRegs]  = useState([]);
+  const [accountCredit, setAccountCredit] = useState(0);
+  const [changeRequests, setChangeRequests] = useState([]);
+  const [showChangeModal, setShowChangeModal] = useState(null); // reg object
   const [loading, setLoading]     = useState(true);
   const [activeSection, setSection] = useState("children");
   const [activeChildIdx, setChildIdx] = useState(0);
@@ -253,6 +412,8 @@ export default function ParentPortal() {
         const { data:ch } = await supabase.from("children").select("*").eq("parent_id",session.user.id).order("created_at");
         setChildren(ch||[]);
         const { data:regs } = await supabase.from("registrations").select("*").eq("parent_email",session.user.email).order("created_at",{ascending:false});
+        const { data:crData } = await supabase.from("enrollment_change_requests").select("*").eq("parent_user_id",session.user.id).order("created_at",{ascending:false});
+        if (crData) setChangeRequests(crData);
         setRegs(regs||[]);
       } catch(e) {
         console.error("Portal load error:", e);
@@ -543,6 +704,11 @@ export default function ParentPortal() {
                                           {(reg.selected_days||[]).map(dk=>parseLocalKey(dk).toLocaleDateString("en-US",{weekday:"short"})).sort().join(", ")}
                                         </p>
                                         <p style={{ fontSize:"12px", color:TEXT_LIGHT, margin:0 }}>{(reg.selected_days||[]).length} days{reg.lunch?" · Lunch":""}</p>
+                                        {(reg.selected_days||[]).some(dk=>parseLocalKey(dk)>=today) && (
+                                          <button onClick={()=>setShowChangeModal(reg)} style={{ marginTop:8, background:"none", border:`1px solid ${CREAM_DARK}`, borderRadius:6, padding:"5px 12px", fontSize:11, color:TEXT_LIGHT, cursor:"pointer", fontFamily:"Georgia,serif", letterSpacing:"0.05em" }}>
+                                            Request a change
+                                          </button>
+                                        )}
                                       </div>
                                       <div style={{ textAlign:"right" }}>
                                         <p style={{ fontSize:"14px", color:TEXT_MID, margin:"0 0 4px" }}>${reg.grand_total}</p>
