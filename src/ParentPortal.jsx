@@ -536,7 +536,7 @@ export default function ParentPortal() {
   );
 
   return (
-    <div style={{ fontFamily:"Georgia,serif", background:CREAM, minHeight:"100vh", color:TEXT_DARK, display:"flex", flexDirection:"column" }}>
+    <div style={{ fontFamily:"Georgia,serif", background:CREAM, height:"100vh", overflow:"hidden", color:TEXT_DARK, display:"flex", flexDirection:"column" }}>
       <style>{`
         html, body, #root { margin:0; padding:0; width:100%; }
         * { box-sizing: border-box; }
@@ -616,10 +616,10 @@ export default function ParentPortal() {
       )}
 
       {/* Body: sidebar + main */}
-      <div style={{ display:"flex", flex:1 }}>
+      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
 
         {/* Desktop sidebar */}
-        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, alignSelf:"flex-start", minHeight:"calc(100vh - 130px)", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, height:"calc(100vh - 130px)", overflowY:"auto", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
           <div>
             <SidebarContent/>
           </div>
@@ -636,7 +636,7 @@ export default function ParentPortal() {
         </div>
 
         {/* Main content */}
-        <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px" }}>
+        <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px", overflowY:"auto" }}>
 
           {/* ── Children ── */}
           {activeSection==="children"&&(
