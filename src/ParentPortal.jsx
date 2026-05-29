@@ -619,11 +619,11 @@ export default function ParentPortal() {
       <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
 
         {/* Desktop sidebar */}
-        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, paddingTop:"24px", background:"#fff", position:"sticky", top:0, height:"calc(100vh - 130px)", overflowY:"auto", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
-          <div>
+        <div className="portal-sidebar" style={{ width:"240px", flexShrink:0, borderRight:`1px solid ${CREAM_DARK}`, background:"#fff", position:"sticky", top:0, height:"calc(100vh - 130px)", display:"flex", flexDirection:"column" }}>
+          <div style={{ flex:1, overflowY:"auto", paddingTop:"24px" }}>
             <SidebarContent/>
           </div>
-          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", paddingBottom:"12px" }}>
+          <div style={{ borderTop:`1px solid ${CREAM_DARK}`, paddingTop:"8px", paddingBottom:"12px", flexShrink:0 }}>
             <a href="https://wildchildnosara.com" target="_blank" rel="noopener noreferrer"
               style={{ display:"block", padding:"8px 20px", fontSize:"13px", color:TEXT_LIGHT, textDecoration:"none", fontFamily:"Georgia,serif" }}>
               Our Website ↗
