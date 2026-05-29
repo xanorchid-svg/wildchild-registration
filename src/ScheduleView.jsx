@@ -4,7 +4,7 @@
 // Wild Roots:    May (A) | Jun/Jul/Aug (B)
 // Earth Leaders: Jun (C) | Jul/Aug (C with Independent Work replacing Boxing)
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "./assets/logo1.svg";
 import { supabase } from "./supabase";
 
@@ -513,6 +513,15 @@ export default function ScheduleView() {
   }
 
   const schedule = SCHEDULES[month].data;
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const { data: staff } = await supabase.from("staff").select("id").eq("id", session.user.id).maybeSingle();
+      if (staff) setIsAdmin(true);
+    });
+  }, []);
 
   const signOut = async () => { await supabase.auth.signOut(); window.location.href = "/login"; };
 
