@@ -957,7 +957,7 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
     setPaying(true); setPayErr('');
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('create-payment-intent', {
-        body: { amount: installmentAmt(), currency: 'usd' }
+        body: { amount: installmentAmt, currency: 'usd' }
       });
       if (fnErr) throw fnErr;
       const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(
