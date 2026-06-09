@@ -1,8 +1,7 @@
 // ScheduleView.jsx — Wild Child Nosara
-// Time-proportional schedule: 8:00am – 2:00pm (360 min)
-// Programs: Wild Roots (5–9) | Earth Leaders (9–12)
-// Wild Roots:    May (A) | Jun/Jul/Aug (B)
-// Earth Leaders: Jun (C) | Jul/Aug (C with Independent Work replacing Boxing)
+// Programs: Wild Roots (5–8) | Earth Leaders (9–12)
+// Wild Roots:    Jun W1 (Jun 8–12) | Jun W2 (Jun 15–19) | Jun W3/Jul/Aug (shared)
+// Earth Leaders: Jun W1 (Jun 8–12) | Jun W2 (Jun 15–19) | Jun W3/Jul/Aug (shared)
 
 import { useState, useEffect } from "react";
 import logo from "./assets/logo1.svg";
@@ -12,7 +11,6 @@ import { supabase } from "./supabase";
 const OLIVE      = "#6b7a3f";
 const OLIVE_DARK = "#4d5a2c";
 const NAVY       = "#0f1f5c";
-const ORANGE     = "#c4682a";
 const CREAM      = "#f5f0e8";
 const CREAM_DARK = "#e0d8c8";
 const TEXT_DARK  = "#1a1a2e";
@@ -37,8 +35,9 @@ const C = {
   ruben:    { bg:"#fce8cc", border:"#d09040", text:"#3a1800" },
   daniel:   { bg:"#ece8c0", border:"#b8a030", text:"#2a2000" },
   carina:   { bg:"#e0d0f0", border:"#9060c8", text:"#1a0038" },
+  leo:      { bg:"#ffd8b0", border:"#e07830", text:"#3a1000" },
   snack:    { bg:"#fdf4dc", border:"#d8b840", text:"#3a2800" },
-  blue:     { bg:"#d0e4f8", border:"#5080c0", text:"#0a1f48" }, // Independent Work
+  blue:     { bg:"#d0e4f8", border:"#5080c0", text:"#0a1f48" },
 };
 
 function colorFor(block) {
@@ -51,6 +50,7 @@ function colorFor(block) {
   if (t.includes("ruben"))    return C.ruben;
   if (t.includes("daniel"))   return C.daniel;
   if (t.includes("carina"))   return C.carina;
+  if (t.includes("leo"))      return C.leo;
   return C.circle;
 }
 
@@ -68,210 +68,376 @@ function parseRange(str) {
   return { start, end, duration: end - start };
 }
 
-// ── Schedule data — Wild Roots (5–9) ─────────────────────────────────────────
-const CIRCLE_WR = { time:"8:00 – 9:00 am",      name:"Circle Time & Gardening",        nameEs:"Círculo de la mañana y jardinería",    type:"circle"   };
-const SNACK_WR  = { time:"10:00 – 10:30 am",     name:"Snack & Hand-washing",           nameEs:"Merienda y ritual de lavado de manos", type:"snack"    };
-const LUNCH_WR  = { time:"11:45 am – 12:30 pm",  name:"Lunch & Outdoor Play",           nameEs:"Almuerzo saludable y juego exterior",  type:"lunch"    };
+// ── Shared block constants ────────────────────────────────────────────────────
+const CIRCLE    = { time:"8:00 – 8:50 am",    name:"Circle Time & Gardening",       nameEs:"Círculo de la mañana y jardinería",           type:"circle"   };
+const FREE_PLAY = { time:"8:50 – 9:20 am",    name:"Free Play",                     nameEs:"Juego libre",                                  teacher:"Dunnia", type:"activity" };
+const SNACK     = { time:"10:00 – 10:30 am",  name:"Hand-washing & Organic Snack",  nameEs:"Ritual de lavado de manos y merienda orgánica", type:"snack"    };
+const OUT_PLAY  = { time:"10:30 – 11:00 am",  name:"Outside Movement & Play",       nameEs:"Movimiento y juego al aire libre",             teacher:"Carina", type:"activity" };
+const OUT_PLAY_D= { time:"10:30 – 11:00 am",  name:"Outside Movement & Play",       nameEs:"Movimiento y juego al aire libre",             teacher:"Dunnia", type:"activity" };
+const LUNCH     = { time:"12:00 – 12:30 pm",  name:"Hand-washing, Wholesome Lunch & Outdoor Play", nameEs:"Lavado de manos, almuerzo saludable y juego exterior", type:"lunch" };
+const OUT_PLAY2 = { time:"12:30 – 1:00 pm",  name:"Outside Movement & Play",       nameEs:"Movimiento y juego al aire libre",             teacher:"Carina", type:"activity" };
+const OUT_PLAY2_D={ time:"12:30 – 1:00 pm",  name:"Outside Movement & Play",       nameEs:"Movimiento y juego al aire libre",             teacher:"Dunnia", type:"activity" };
 
-// Wild Roots May
-const WR_A = {
-  MON: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Permaculture",                nameEs:"Permacultura",                     teacher:"Jenne",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:15 am",  name:"Storytelling",                nameEs:"Narración de cuentos",             teacher:"Dunnia",   type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Dunnia Project",              nameEs:"Proyecto con Dunnia",              teacher:"Dunnia",   type:"project"  },
-  ],
-  TUE: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Capoeira",                    nameEs:"Capoeira",                         teacher:"Jenne",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:45 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Dunnia Project",              nameEs:"Proyecto con Dunnia",              teacher:"Dunnia",   type:"project"  },
-  ],
-  WED: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Nature Walk",                 nameEs:"Caminata por la naturaleza",       teacher:"Dunnia",   type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:45 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Dunnia Project",              nameEs:"Proyecto con Dunnia",              teacher:"Dunnia",   type:"project"  },
-  ],
-  THU: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Baking & Nutrition",          nameEs:"Horneado y nutrición",             teacher:"Jenne",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:15 am",  name:"Storytelling",                nameEs:"Narración de cuentos",             teacher:"Dunnia",   type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Pottery",                     nameEs:"Alfarería",                        teacher:"Daniel",   type:"activity" },
-  ],
-  FRI: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Drumming",                    nameEs:"Percusión",                        teacher:"Ruben",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:45 am",  name:"Botany & Geography",          nameEs:"Botánica y Geografía",             teacher:"Victoria", type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Dunnia Project",              nameEs:"Proyecto con Dunnia",              teacher:"Dunnia",   type:"project"  },
-  ],
-};
+// Thursday: Storytelling spans 8:00–9:20 (no free play slot, just one big block)
+const THU_STORY = { time:"8:00 – 9:20 am",   name:"Storytelling & Reading @ Bookstore", nameEs:"Narración de cuentos y lectura en la librería", teacher:"Jenne & Carina", type:"activity" };
+// Friday: Tree Planting spans 8:00–9:20
+const FRI_TREE  = { time:"8:00 – 9:20 am",   name:"Tree Planting",                 nameEs:"Plantación de árboles",                       teacher:"Carina", type:"activity" };
 
-// Wild Roots Jun/Jul/Aug
-const WR_B = {
-  MON: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Permaculture",                nameEs:"Permacultura",                     teacher:"Jenne",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:15 am",  name:"Music & Singing",             nameEs:"Música y canto",                   teacher:"Ruben",    type:"activity" },
-    { time:"11:15 – 11:45 am",  name:"Storytelling",                nameEs:"Narración de cuentos",             teacher:"Dunnia",   type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Project with Dunnia",         nameEs:"Proyecto con Dunnia",              teacher:"Dunnia",   type:"project"  },
-  ],
-  TUE: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Capoeira",                    nameEs:"Capoeira",                         teacher:"Jenne",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:45 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Leadership",                  nameEs:"Liderazgo",                        teacher:"Carina",   type:"activity" },
-  ],
-  WED: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Nature Walk",                 nameEs:"Caminata por la naturaleza",       teacher:"Dunnia",   type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:45 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Leadership",                  nameEs:"Liderazgo",                        teacher:"Carina",   type:"activity" },
-  ],
-  THU: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Baking & Nutrition",          nameEs:"Horneado y nutrición",             teacher:"Jenne",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:15 am",  name:"Music & Singing",             nameEs:"Música y canto",                   teacher:"Ruben",    type:"activity" },
-    { time:"11:15 – 11:45 am",  name:"Storytelling",                nameEs:"Narración de cuentos",             teacher:"Dunnia",   type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Pottery",                     nameEs:"Alfarería",                        teacher:"Daniel",   type:"activity" },
-  ],
-  FRI: [ CIRCLE_WR,
-    { time:"9:00 – 10:00 am",   name:"Drumming",                    nameEs:"Percusión",                        teacher:"Ruben",    type:"activity" },
-    SNACK_WR,
-    { time:"10:30 – 11:45 am",  name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",  teacher:"Victoria", type:"activity" },
-    LUNCH_WR,
-    { time:"12:30 – 2:00 pm",   name:"Project with Dunnia",         nameEs:"Proyecto con Dunnia",              teacher:"Dunnia",   type:"project"  },
-  ],
-};
-
-// ── Schedule data — Earth Leaders (9–12) ─────────────────────────────────────
-const SNACK_EL  = { time:"10:00 – 10:15 am", name:"Snack & Hand-washing",           nameEs:"Merienda y ritual de lavado de manos", type:"snack"    };
-const LUNCH_EL  = { time:"12:00 – 12:30 pm", name:"Lunch & Outdoor Play",           nameEs:"Almuerzo saludable y juego exterior",  type:"lunch"    };
-
-const BOXING    = { time:"10:15 – 11:15 am", name:"Boxing",                         nameEs:"Boxeo",                                teacher:"Carina", type:"activity" };
-const INDEP     = { time:"10:15 – 11:15 am", name:"Independent Work Session",       nameEs:"Sesión de trabajo independiente",       teacher:"Dunnia", type:"independent" };
-const LEADERSHIP_LAB = { time:"11:15 am – 12:00 pm", name:"Leadership Lab",         nameEs:"Laboratorio de Liderazgo",             teacher:"Carina", type:"activity" };
-
-// Earth Leaders June (C)
-const EL_C = {
+// ── Wild Roots (5–8) — June Week 1 (Jun 8–12) ────────────────────────────────
+const WR_JUN1 = {
   MON: [
-    { time:"9:00 – 10:00 am",   name:"Permaculture",                nameEs:"Permacultura",                     teacher:"Jenne",    type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Permaculture",              nameEs:"Permacultura",                        teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
   ],
   TUE: [
-    { time:"9:00 – 10:00 am",   name:"Capoeira",                    nameEs:"Capoeira",                         teacher:"Jenne",    type:"activity" },
-    SNACK_EL,
-    { time:"10:15 – 11:15 am",  name:"Independent Work Session",    nameEs:"Sesión de trabajo independiente",   teacher:"Victoria", type:"activity" },
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
+    { time:"8:00 – 9:20 am",   name:"Drumming",                  nameEs:"Percusión",                           teacher:"Ruben",   type:"activity" },
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",   teacher:"Victoria", type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Leadership",                nameEs:"Liderazgo",                           teacher:"Carina",  type:"activity" },
   ],
   WED: [
-    { time:"9:00 – 10:00 am",   name:"Nature Walk",                 nameEs:"Caminata por la naturaleza",       teacher:"Dunnia",   type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Nature Walk",               nameEs:"Caminata por la naturaleza",          teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",   teacher:"Victoria", type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
   ],
   THU: [
-    { time:"9:00 – 10:00 am",   name:"Baking & Nutrition",          nameEs:"Horneado y nutrición",             teacher:"Jenne",    type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
+    THU_STORY,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Cosmic Education & Numeracy", nameEs:"Educación Cósmica y Matemáticas",   teacher:"Victoria", type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Pottery",                   nameEs:"Alfarería",                           teacher:"Daniel",  type:"activity" },
   ],
   FRI: [
-    { time:"9:00 – 10:00 am",   name:"Drumming",                    nameEs:"Percusión",                        teacher:"Ruben",    type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
+    FRI_TREE,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Acro",                      nameEs:"Acrobacias",                          teacher:"Leo",     type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
   ],
 };
 
-// Earth Leaders Jul/Aug/Sep (D) — Mon/Wed/Thu/Fri keep Boxing, Tue = Independent Work (Dunnia, blue)
-const EL_D = {
+// ── Wild Roots (5–8) — June Week 2 (Jun 15–19) ───────────────────────────────
+const WR_JUN2 = {
   MON: [
-    { time:"9:00 – 10:00 am",   name:"Permaculture",                nameEs:"Permacultura",                     teacher:"Jenne",    type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Permaculture",              nameEs:"Permacultura",                        teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
   ],
   TUE: [
-    { time:"9:00 – 10:00 am",   name:"Capoeira",                    nameEs:"Capoeira",                         teacher:"Jenne",    type:"activity" },
-    SNACK_EL,
-    INDEP,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Leadership",                nameEs:"Liderazgo",                           teacher:"Carina",  type:"activity" },
   ],
   WED: [
-    { time:"9:00 – 10:00 am",   name:"Nature Walk",                 nameEs:"Caminata por la naturaleza",       teacher:"Dunnia",   type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Community Partnership",       nameEs:"Asociación comunitaria",           nameNote:"with 5–9 year olds", teacher:"Carina", type:"activity" },
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Nature Walk",               nameEs:"Caminata por la naturaleza",          teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Academics",                 nameEs:"Académicas",                          teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
   ],
   THU: [
-    { time:"9:00 – 10:00 am",   name:"Baking & Nutrition",          nameEs:"Horneado y nutrición",             teacher:"Jenne",    type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
+    THU_STORY,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Pottery",                   nameEs:"Alfarería",                           teacher:"Daniel",  type:"activity" },
   ],
   FRI: [
-    { time:"9:00 – 10:00 am",   name:"Drumming",                    nameEs:"Percusión",                        teacher:"Ruben",    type:"activity" },
-    SNACK_EL,
-    BOXING,
-    LEADERSHIP_LAB,
-    LUNCH_EL,
-    { time:"12:30 – 2:00 pm",   name:"Activism Session",            nameEs:"Sesión de activismo",              teacher:"Carina",   type:"activity" },
+    FRI_TREE,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Acro",                      nameEs:"Acrobacias",                          teacher:"Leo",     type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
+  ],
+};
+
+// ── Wild Roots & Earth Leaders — July / August (shared) ──────────────────────
+const JUL_AUG = {
+  MON: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Permaculture",              nameEs:"Permacultura",                        teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Leadership with Carina",    nameEs:"Liderazgo con Carina",                teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
+  ],
+  TUE: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Boxing with Carina",        nameEs:"Boxeo con Carina",                    teacher:"Carina",  type:"activity" },
+  ],
+  WED: [
+    { time:"8:00 – 9:20 am",   name:"Leadership Project with Carina", nameEs:"Proyecto de liderazgo con Carina (reunirse en la playa / otros lugares)", teacher:"Carina", type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Numeracy & Phonics with Carina", nameEs:"Numeración y fonética con Carina", teacher:"Carina", type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
+  ],
+  THU: [
+    THU_STORY,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Pottery",                   nameEs:"Alfarería",                           teacher:"Daniel",  type:"activity" },
+  ],
+  FRI: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Drumming",                  nameEs:"Percusión",                           teacher:"Ruben",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Acro",                      nameEs:"Acrobacias",                          teacher:"Leo",     type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
+  ],
+};
+
+// ── Earth Leaders (9–12) — June Week 1 (Jun 8–12) ────────────────────────────
+const EL_JUN1 = {
+  MON: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Permaculture",              nameEs:"Permacultura",                        teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Activism",                  nameEs:"Activismo",                           teacher:"Carina",  type:"activity" },
+  ],
+  TUE: [
+    { time:"8:00 – 8:50 am",   name:"Drumming",                  nameEs:"Percusión",                           teacher:"Ruben",   type:"activity" },
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Leadership Lab",            nameEs:"Laboratorio de liderazgo",            teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Leadership",                nameEs:"Liderazgo",                           teacher:"Carina",  type:"activity" },
+  ],
+  WED: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Nature Walk",               nameEs:"Caminata por la naturaleza",          teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Leadership Lab",            nameEs:"Laboratorio de liderazgo",            teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
+  ],
+  THU: [
+    THU_STORY,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Leadership with Carina",    nameEs:"Liderazgo con Carina",                teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Pottery",                   nameEs:"Alfarería",                           teacher:"Daniel",  type:"activity" },
+  ],
+  FRI: [
+    FRI_TREE,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Acro",                      nameEs:"Acrobacias",                          teacher:"Leo",     type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
+  ],
+};
+
+// ── Earth Leaders (9–12) — June Week 2 (Jun 15–19) ───────────────────────────
+const EL_JUN2 = {
+  MON: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Permaculture",              nameEs:"Permacultura",                        teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Activism",                  nameEs:"Activismo",                           teacher:"Carina",  type:"activity" },
+  ],
+  TUE: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Leadership Lab",            nameEs:"Laboratorio de liderazgo",            teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Leadership",                nameEs:"Liderazgo",                           teacher:"Carina",  type:"activity" },
+  ],
+  WED: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Nature Walk",               nameEs:"Caminata por la naturaleza",          teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY,
+    { time:"11:00 – 12:00 pm", name:"Independent Reading",       nameEs:"Lectura independiente",               teacher:"Carina",  type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
+  ],
+  THU: [
+    THU_STORY,
+    { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    LUNCH,
+    OUT_PLAY2_D,
+    { time:"1:00 – 2:00 pm",   name:"Pottery",                   nameEs:"Alfarería",                           teacher:"Daniel",  type:"activity" },
+  ],
+  FRI: [
+    CIRCLE,
+    FREE_PLAY,
+    { time:"9:20 – 10:00 am",  name:"Drumming",                  nameEs:"Percusión",                           teacher:"Ruben",   type:"activity" },
+    SNACK,
+    OUT_PLAY_D,
+    { time:"11:00 – 12:00 pm", name:"Acro",                      nameEs:"Acrobacias",                          teacher:"Leo",     type:"activity" },
+    LUNCH,
+    OUT_PLAY2,
+    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
   ],
 };
 
 // ── Schedule map ──────────────────────────────────────────────────────────────
 const SCHEDULES = {
-  "wr-may": { label:"May 2026",    data: WR_A },
-  "wr-jun": { label:"June 2026",   data: WR_B },
-  "wr-jul": { label:"July 2026",   data: WR_B },
-  "wr-aug": { label:"August 2026", data: WR_B },
-  "el-jun": { label:"June 2026",      data: EL_C },
-  "el-jul": { label:"July 2026",      data: EL_D },
-  "el-aug": { label:"August 2026",    data: EL_D },
-  "el-sep": { label:"September 2026", data: EL_D },
+  // Wild Roots
+  "wr-jun1": { label:"Jun 8–12",  monthLabel:"June", data: WR_JUN1 },
+  "wr-jun2": { label:"Jun 15–19", monthLabel:"June", data: WR_JUN2 },
+  "wr-jun3": { label:"Jun 22–26", monthLabel:"June", data: JUL_AUG },
+  "wr-jul":  { label:"July",      monthLabel:"July",  data: JUL_AUG },
+  "wr-aug":  { label:"August",    monthLabel:"August",data: JUL_AUG },
+  // Earth Leaders
+  "el-jun1": { label:"Jun 8–12",  monthLabel:"June",  data: EL_JUN1 },
+  "el-jun2": { label:"Jun 15–19", monthLabel:"June",  data: EL_JUN2 },
+  "el-jun3": { label:"Jun 22–26", monthLabel:"June",  data: JUL_AUG },
+  "el-jul":  { label:"July",      monthLabel:"July",  data: JUL_AUG },
+  "el-aug":  { label:"August",    monthLabel:"August",data: JUL_AUG },
 };
 
-const MONTHS_WR = ["wr-may","wr-jun","wr-jul","wr-aug"];
-const MONTHS_EL = ["el-jun","el-jul","el-aug","el-sep"];
+// Month groups for tab navigation
+const MONTH_GROUPS = {
+  wr: [
+    { month:"June",   keys:["wr-jun1","wr-jun2","wr-jun3"], year:2026, m:6 },
+    { month:"July",   keys:["wr-jul"],                      year:2026, m:7 },
+    { month:"August", keys:["wr-aug"],                      year:2026, m:8 },
+  ],
+  el: [
+    { month:"June",   keys:["el-jun1","el-jun2","el-jun3"], year:2026, m:6 },
+    { month:"July",   keys:["el-jul"],                      year:2026, m:7 },
+    { month:"August", keys:["el-aug"],                      year:2026, m:8 },
+  ],
+};
 
 const DAYS      = ["MON","TUE","WED","THU","FRI"];
 const DAY_FULL  = { MON:"Monday",TUE:"Tuesday",WED:"Wednesday",THU:"Thursday",FRI:"Friday" };
 const DAY_SHORT = { MON:"Mon",   TUE:"Tue",    WED:"Wed",      THU:"Thu",     FRI:"Fri"    };
-
 const HOURS     = [8,9,10,11,12,13,14];
 const HOUR_LBLS = ["8am","9am","10am","11am","12pm","1pm","2pm"];
 
-// ── Single time-proportional block ────────────────────────────────────────────
+// ── Smart calendar helpers ────────────────────────────────────────────────────
+function isMonthAvailable({ year, m }) {
+  const now = new Date();
+  const lastDay = new Date(year, m, 0);
+  return lastDay >= now;
+}
+
+function todayDayKey() {
+  const dow = new Date().getDay();
+  const map = { 1:"MON", 2:"TUE", 3:"WED", 4:"THU", 5:"FRI" };
+  return map[dow] || "MON";
+}
+
+function getDefaultSelections(program) {
+  const groups = MONTH_GROUPS[program].filter(isMonthAvailable);
+  if (groups.length === 0) return { monthGroup: MONTH_GROUPS[program][MONTH_GROUPS[program].length - 1], weekKey: null };
+  const group = groups[0];
+  // For June (multi-week), pick the appropriate week based on today's date
+  let weekKey = group.keys[0];
+  if (group.keys.length > 1) {
+    const now = new Date();
+    const nowY = now.getFullYear();
+    const nowM = now.getMonth() + 1;
+    if (nowY === group.year && nowM === group.m) {
+      const day = now.getDate();
+      if (day <= 12)      weekKey = group.keys[0];
+      else if (day <= 19) weekKey = group.keys[1];
+      else                weekKey = group.keys[2];
+    }
+  }
+  return { monthGroup: group, weekKey };
+}
+
+// ── Block rendering ───────────────────────────────────────────────────────────
 function Block({ block, ppm }) {
   const { start, end, duration } = parseRange(block.time);
   const topPx    = (start - DAY_START) * ppm;
@@ -293,7 +459,7 @@ function Block({ block, ppm }) {
         whiteSpace:tiny?"nowrap":"normal",
         display:"-webkit-box", WebkitLineClamp:tiny?1:2, WebkitBoxOrient:"vertical",
       }}>
-        {block.name}{block.nameNote ? ` (${block.nameNote})` : ""}
+        {block.name}
       </div>
       {!small && block.teacher && (
         <div style={{ fontSize:"9px", color:col.text, opacity:0.72, marginTop:"1px" }}>
@@ -404,7 +570,7 @@ function DayView({ schedule, selectedDay, onSelectDay }) {
         </div>
       </div>
       {/* Harmony Co-Op Saturday */}
-      <div style={{ margin:"12px 20px 0", borderRadius:"12px", overflow:"hidden", border:"1px solid #b0c8d0", background:"linear-gradient(135deg, #e8f4f8 0%, #d4eaf0 100%)" }}>
+      <div style={{ margin:"12px 0 0", borderRadius:"12px", overflow:"hidden", border:"1px solid #b0c8d0", background:"linear-gradient(135deg, #e8f4f8 0%, #d4eaf0 100%)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"14px", padding:"14px 18px" }}>
           <span style={{ fontSize:"22px", flexShrink:0 }}>🌿</span>
           <div style={{ flex:1 }}>
@@ -422,7 +588,7 @@ function DayView({ schedule, selectedDay, onSelectDay }) {
 }
 
 function Legend({ program }) {
-  const baseItems = [
+  const items = [
     { label:"Circle / Gardening", c:C.circle   },
     { label:"Jenne",              c:C.jenne    },
     { label:"Dunnia",             c:C.dunnia   },
@@ -430,14 +596,9 @@ function Legend({ program }) {
     { label:"Ruben",              c:C.ruben    },
     { label:"Daniel",             c:C.daniel   },
     { label:"Carina",             c:C.carina   },
+    { label:"Leo",                c:C.leo      },
     { label:"Snack & Lunch",      c:C.snack    },
   ];
-  const elItems = [
-    ...baseItems,
-    { label:"Boxing (Carina)",                      c:C.carina   },
-    { label:"Independent Work Session (Dunnia)",    c:C.blue     },
-  ];
-  const items = program === "el" ? elItems : baseItems;
   return (
     <div style={{ display:"flex", flexWrap:"wrap", gap:"5px 10px", padding:"10px 12px", background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", marginBottom:"12px" }}>
       <span style={{ fontSize:"9px", color:TEXT_LIGHT, letterSpacing:"1px", textTransform:"uppercase", width:"100%", marginBottom:"2px" }}>Teachers & Activities</span>
@@ -463,67 +624,17 @@ function MoonClubBanner() {
   );
 }
 
-// ── Smart calendar helpers ────────────────────────────────────────────────────
-// Map month keys to their year/month for comparison
-const MONTH_KEY_DATE = {
-  "wr-may": { y:2026, m:5  },
-  "wr-jun": { y:2026, m:6  },
-  "wr-jul": { y:2026, m:7  },
-  "wr-aug": { y:2026, m:8  },
-  "el-jun": { y:2026, m:6  },
-  "el-jul": { y:2026, m:7  },
-  "el-aug": { y:2026, m:8  },
-  "el-sep": { y:2026, m:9  },
-};
-
-function isMonthAvailable(key) {
-  const now = new Date();
-  const { y, m } = MONTH_KEY_DATE[key];
-  // Hide only if the month has fully passed (last day is before today)
-  const lastDay = new Date(y, m, 0); // day 0 of next month = last day of this month
-  return lastDay >= now;
-}
-
-function todayDayKey() {
-  const dow = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
-  const map = { 1:"MON", 2:"TUE", 3:"WED", 4:"THU", 5:"FRI" };
-  return map[dow] || "MON"; // weekend defaults to Monday
-}
-
-function currentMonthKey(programKeys) {
-  const now = new Date();
-  const nowY = now.getFullYear();
-  const nowM = now.getMonth() + 1;
-  // Find the first available month that matches or follows today
-  const available = programKeys.filter(isMonthAvailable);
-  if (available.length === 0) return programKeys[programKeys.length - 1];
-  // Prefer current month if available
-  const current = available.find(k => {
-    const { y, m } = MONTH_KEY_DATE[k];
-    return y === nowY && m === nowM;
-  });
-  return current || available[0];
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function ScheduleView() {
   const [program,     setProgram]     = useState("wr");
   const [viewMode,    setViewMode]    = useState("day");
   const [selectedDay, setSelectedDay] = useState(todayDayKey);
 
-  const wrAvailable = MONTHS_WR.filter(isMonthAvailable);
-  const elAvailable = MONTHS_EL.filter(isMonthAvailable);
-
-  const [month, setMonth] = useState(() => currentMonthKey(MONTHS_WR));
-
-  const monthKeys = program === "wr" ? wrAvailable : elAvailable;
-
-  function switchProgram(p) {
-    setProgram(p);
-    setMonth(currentMonthKey(p === "wr" ? MONTHS_WR : MONTHS_EL));
-  }
-
-  const schedule = SCHEDULES[month].data;
+  // monthGroup = one of the MONTH_GROUPS entries (June/July/August)
+  // weekKey    = the specific schedule key (e.g. "wr-jun1")
+  const defaults = getDefaultSelections("wr");
+  const [monthGroup, setMonthGroup] = useState(defaults.monthGroup);
+  const [weekKey,    setWeekKey]    = useState(defaults.weekKey || defaults.monthGroup.keys[0]);
 
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
@@ -533,6 +644,22 @@ export default function ScheduleView() {
       if (staff) setIsAdmin(true);
     });
   }, []);
+
+  function switchProgram(p) {
+    setProgram(p);
+    const d = getDefaultSelections(p);
+    setMonthGroup(d.monthGroup);
+    setWeekKey(d.weekKey || d.monthGroup.keys[0]);
+  }
+
+  function selectMonthGroup(grp) {
+    setMonthGroup(grp);
+    setWeekKey(grp.keys[0]);
+  }
+
+  const isJune = monthGroup.keys.length > 1;
+  const schedule = SCHEDULES[weekKey].data;
+  const groups = MONTH_GROUPS[program].filter(isMonthAvailable);
 
   const signOut = async () => { await supabase.auth.signOut(); window.location.href = "/login"; };
 
@@ -563,13 +690,13 @@ export default function ScheduleView() {
         <div>
           <p style={{ color:"#fff", fontSize:"15px", margin:"0 0 1px", fontWeight:400 }}>Weekly Schedule</p>
           <p style={{ color:"rgba(255,255,255,0.55)", fontSize:"11px", margin:0 }}>
-            {program === "wr" ? "Ages 5–9 · Wild Roots" : "Ages 9–12 · Earth Leaders"}
+            {program === "wr" ? "Ages 5–8 · Wild Roots" : "Ages 9–12 · Earth Leaders"}
           </p>
         </div>
         {/* Program selector */}
         <div style={{ display:"flex", background:"rgba(255,255,255,0.1)", borderRadius:"8px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.2)" }}>
           {[
-            { id:"wr", label:"Wild Roots",    sub:"Ages 5–9"  },
+            { id:"wr", label:"Wild Roots",    sub:"Ages 5–8"  },
             { id:"el", label:"Earth Leaders", sub:"Ages 9–12" },
           ].map(opt => (
             <button key={opt.id} onClick={() => switchProgram(opt.id)} style={{
@@ -590,23 +717,25 @@ export default function ScheduleView() {
 
         <MoonClubBanner />
 
-        {/* Controls */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px", marginBottom:"10px", flexWrap:"wrap" }}>
-          {/* Month tabs */}
+        {/* Month tabs */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px", marginBottom:"8px", flexWrap:"wrap" }}>
           <div style={{ display:"flex", gap:"4px", flexWrap:"wrap" }}>
-            {monthKeys.map(key => (
-              <button key={key} onClick={() => setMonth(key)} style={{
-                background:  month === key ? OLIVE : "#fff",
-                color:       month === key ? "#fff" : TEXT_MID,
-                border:      `1.5px solid ${month === key ? OLIVE : CREAM_DARK}`,
-                borderRadius:"7px", padding:"6px 12px", fontSize:"12px",
-                fontFamily:"Georgia, serif", cursor:"pointer",
-                fontWeight:  month === key ? 700 : 400,
-                transition:"all .15s", whiteSpace:"nowrap",
-              }}>
-                {SCHEDULES[key].label.split(" ")[0]}
-              </button>
-            ))}
+            {groups.map(grp => {
+              const active = grp.month === monthGroup.month;
+              return (
+                <button key={grp.month} onClick={() => selectMonthGroup(grp)} style={{
+                  background:  active ? OLIVE : "#fff",
+                  color:       active ? "#fff" : TEXT_MID,
+                  border:      `1.5px solid ${active ? OLIVE : CREAM_DARK}`,
+                  borderRadius:"7px", padding:"6px 14px", fontSize:"12px",
+                  fontFamily:"Georgia, serif", cursor:"pointer",
+                  fontWeight:  active ? 700 : 400,
+                  transition:"all .15s", whiteSpace:"nowrap",
+                }}>
+                  {grp.month}
+                </button>
+              );
+            })}
           </div>
 
           {/* Day/Week toggle */}
@@ -622,6 +751,29 @@ export default function ScheduleView() {
             ))}
           </div>
         </div>
+
+        {/* Week tabs — only shown for June */}
+        {isJune && (
+          <div style={{ display:"flex", gap:"4px", marginBottom:"12px", flexWrap:"wrap" }}>
+            {monthGroup.keys.map((key, i) => {
+              const active = key === weekKey;
+              const weekLabels = ["Week 1 · Jun 8–12", "Week 2 · Jun 15–19", "Week 3 · Jun 22–26"];
+              return (
+                <button key={key} onClick={() => setWeekKey(key)} style={{
+                  background:  active ? "#e8f0e0" : "#fff",
+                  color:       active ? OLIVE_DARK : TEXT_LIGHT,
+                  border:      `1.5px solid ${active ? OLIVE : CREAM_DARK}`,
+                  borderRadius:"6px", padding:"5px 12px", fontSize:"11px",
+                  fontFamily:"Georgia, serif", cursor:"pointer",
+                  fontWeight:  active ? 700 : 400,
+                  transition:"all .15s", whiteSpace:"nowrap",
+                }}>
+                  {weekLabels[i]}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <Legend program={program} />
 
