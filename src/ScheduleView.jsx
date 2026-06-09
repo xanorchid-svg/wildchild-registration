@@ -64,7 +64,10 @@ function parseRange(str) {
   const toMin = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   let start = toMin(nums[0]);
   let end   = toMin(nums[1]);
-  if (end < start || end <= 7 * 60) end += 12 * 60;
+  // Schedule runs 8am–2pm. Any value under 8*60 (480) is a pm time that needs +12h
+  if (start < 8 * 60) start += 12 * 60;
+  if (end   < 8 * 60) end   += 12 * 60;
+  if (end  <= start)  end   += 12 * 60;
   return { start, end, duration: end - start };
 }
 
