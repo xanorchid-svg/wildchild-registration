@@ -225,7 +225,7 @@ const JUL_AUG = {
     { time:"1:00 – 2:00 pm",   name:"Boxing with Carina",        nameEs:"Boxeo con Carina",                    teacher:"Carina",  type:"activity" },
   ],
   WED: [
-    { time:"8:00 – 9:20 am",   name:"Leadership Project with Carina", nameEs:"Proyecto de liderazgo con Carina (reunirse en la playa / otros lugares)", teacher:"Carina", type:"activity" },
+    { time:"8:00 – 10:00 am",  name:"Leadership Project with Carina", nameEs:"Proyecto de liderazgo con Carina (reunirse en la playa / otros lugares)", teacher:"Carina", type:"activity" },
     SNACK,
     OUT_PLAY,
     { time:"11:00 – 12:00 pm", name:"Numeracy & Phonics with Carina", nameEs:"Numeración y fonética con Carina", teacher:"Carina", type:"activity" },
