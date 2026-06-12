@@ -886,17 +886,9 @@ export default function ParentPortal() {
         </div>
       </div>
 
-      {/* ── Footer with contact links (desktop only, bottom-left) ── */}
-      <div className="portal-footer" style={{ borderTop:`1px solid ${CREAM_DARK}`, background:"#fff", padding:"16px 20px", display:"flex", alignItems:"center", gap:"24px" }}>
-        <span style={{ fontSize:"12px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>Wild Child Nosara · Nosara, Costa Rica</span>
-        <a href="mailto:info@dandelionwildschooling.com"
-          style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
-          <span>✉️</span> info@dandelionwildschooling.com
-        </a>
-        <a href="https://wa.me/50661640827" target="_blank" rel="noopener noreferrer"
-          style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"13px", color:TEXT_MID, textDecoration:"none", fontFamily:"Georgia,serif" }}>
-          <span>💬</span> WhatsApp us
-        </a>
+      {/* ── Footer — compact one-liner ── */}
+      <div className="portal-footer" style={{ borderTop:`1px solid ${CREAM_DARK}`, background:"#fff", padding:"8px 20px", textAlign:"center" }}>
+        <span style={{ fontSize:"11px", color:TEXT_LIGHT, fontFamily:"Georgia,serif" }}>Wild Child Nosara · Nosara, Costa Rica</span>
       </div>
 
       {/* Change request modal */}

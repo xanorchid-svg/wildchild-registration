@@ -51,6 +51,7 @@ function colorFor(block) {
   if (t.includes("daniel"))   return C.daniel;
   if (t.includes("carina"))   return C.carina;
   if (t.includes("leo"))      return C.leo;
+  if (t.includes("gustavo"))  return C.daniel;
   return C.circle;
 }
 
@@ -162,10 +163,10 @@ const WR_JUN2 = {
     { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
     SNACK,
     OUT_PLAY_D,
-    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    { time:"11:00 – 12:00 pm", name:"Leadership with Carina",    nameEs:"Liderazgo con Carina",                teacher:"Carina",  type:"activity" },
     LUNCH,
     OUT_PLAY2,
-    { time:"1:00 – 2:00 pm",   name:"Leadership",                nameEs:"Liderazgo",                           teacher:"Carina",  type:"activity" },
+    { time:"1:00 – 2:00 pm",   name:"Woodwork",                  nameEs:"Carpintería",                         teacher:"Gustavo", type:"activity" },
   ],
   WED: [
     CIRCLE,
@@ -173,7 +174,7 @@ const WR_JUN2 = {
     { time:"9:20 – 10:00 am",  name:"Nature Walk",               nameEs:"Caminata por la naturaleza",          teacher:"Dunnia",  type:"activity" },
     SNACK,
     OUT_PLAY,
-    { time:"11:00 – 12:00 pm", name:"Academics",                 nameEs:"Académicas",                          teacher:"Carina",  type:"activity" },
+    { time:"11:00 – 12:00 pm", name:"Maths / Phonics / Independent Reading", nameEs:"Matemáticas / Fonética / Lectura independiente", teacher:"Carina",  type:"activity" },
     LUNCH,
     OUT_PLAY2,
     { time:"1:00 – 2:00 pm",   name:"Boxing",                    nameEs:"Boxeo",                               teacher:"Carina",  type:"activity" },
@@ -208,9 +209,9 @@ const JUL_AUG = {
     { time:"9:20 – 10:00 am",  name:"Permaculture",              nameEs:"Permacultura",                        teacher:"Jenne",   type:"activity" },
     SNACK,
     OUT_PLAY,
-    { time:"11:00 – 12:00 pm", name:"Leadership with Carina",    nameEs:"Liderazgo con Carina",                teacher:"Carina",  type:"activity" },
+    { time:"11:00 – 12:00 pm", name:"Dunnia Project",            nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
     LUNCH,
-    OUT_PLAY2,
+    OUT_PLAY2_D,
     { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
   ],
   TUE: [
@@ -219,28 +220,28 @@ const JUL_AUG = {
     { time:"9:20 – 10:00 am",  name:"Capoeira",                  nameEs:"Capoeira",                            teacher:"Jenne",   type:"activity" },
     SNACK,
     OUT_PLAY_D,
-    { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
+    { time:"11:00 – 12:00 pm", name:"Numeracy & Phonics with Carina", nameEs:"Numeración y fonética con Carina", teacher:"Carina", type:"activity" },
     LUNCH,
     OUT_PLAY2_D,
-    { time:"1:00 – 2:00 pm",   name:"Boxing with Carina",        nameEs:"Boxeo con Carina",                    teacher:"Carina",  type:"activity" },
+    { time:"1:00 – 2:00 pm",   name:"Woodwork",                  nameEs:"Carpintería",                         teacher:"Gustavo", type:"activity" },
   ],
   WED: [
     { time:"8:00 – 10:00 am",  name:"Leadership Project with Carina", nameEs:"Proyecto de liderazgo con Carina (reunirse en la playa / otros lugares)", teacher:"Carina", type:"activity" },
     SNACK,
     OUT_PLAY,
-    { time:"11:00 – 12:00 pm", name:"Numeracy & Phonics with Carina", nameEs:"Numeración y fonética con Carina", teacher:"Carina", type:"activity" },
+    { time:"11:00 – 12:00 pm", name:"Boxing with Carina",        nameEs:"Boxeo con Carina",                    teacher:"Carina",  type:"activity" },
     LUNCH,
     OUT_PLAY2,
-    { time:"1:00 – 2:00 pm",   name:"Project with Dunnia",       nameEs:"Proyecto con Dunnia",                 teacher:"Dunnia",  type:"activity" },
+    { time:"1:00 – 2:00 pm",   name:"Woodwork",                  nameEs:"Carpintería",                         teacher:"Gustavo", type:"activity" },
   ],
   THU: [
     THU_STORY,
     { time:"9:20 – 10:00 am",  name:"Free Play",                 nameEs:"Juego libre",                         teacher:"Dunnia",  type:"activity" },
     SNACK,
-    OUT_PLAY_D,
+    OUT_PLAY,
     { time:"11:00 – 12:00 pm", name:"Music & Singing with Ruben", nameEs:"Música y canto con Ruben",           teacher:"Ruben",   type:"activity" },
     LUNCH,
-    OUT_PLAY2_D,
+    OUT_PLAY2,
     { time:"1:00 – 2:00 pm",   name:"Pottery",                   nameEs:"Alfarería",                           teacher:"Daniel",  type:"activity" },
   ],
   FRI: [
@@ -335,7 +336,7 @@ const EL_JUN2 = {
     { time:"11:00 – 12:00 pm", name:"Leadership Lab",            nameEs:"Laboratorio de liderazgo",            teacher:"Carina",  type:"activity" },
     LUNCH,
     OUT_PLAY2,
-    { time:"1:00 – 2:00 pm",   name:"Leadership",                nameEs:"Liderazgo",                           teacher:"Carina",  type:"activity" },
+    { time:"1:00 – 2:00 pm",   name:"Woodwork",                  nameEs:"Carpintería",                         teacher:"Gustavo", type:"activity" },
   ],
   WED: [
     CIRCLE,
@@ -601,6 +602,7 @@ function Legend({ program }) {
     { label:"Carina",             c:C.carina   },
     { label:"Leo",                c:C.leo      },
     { label:"Snack & Lunch",      c:C.snack    },
+    { label:"Gustavo",            c:C.daniel   },
   ];
   return (
     <div style={{ display:"flex", flexWrap:"wrap", gap:"5px 10px", padding:"10px 12px", background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:"10px", marginBottom:"12px" }}>
