@@ -509,7 +509,7 @@ export default function ParentPortal() {
 
       <div style={{ height:"1px", background:CREAM_DARK, margin:"10px 0" }}/>
 
-      {[{id:"general",label:"My Information"},{id:"payments",label:"Payments"}].map(item=>(
+      {[{id:"general",label:"My Information"},{id:"payments",label:"Payments"},{id:"menu",label:"🍽️ Weekly Menu"}].map(item=>(
         <button key={item.id} onClick={()=>navigate(item.id)}
           style={{ width:"100%", textAlign:"left", background:activeSection===item.id?"rgba(107,122,63,0.1)":"transparent",
             border:"none", padding:"9px 20px", cursor:"pointer", fontSize:"14px",
