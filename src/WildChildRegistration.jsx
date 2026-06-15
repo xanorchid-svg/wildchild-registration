@@ -186,6 +186,7 @@ export default function WildChildRegistration() {
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
   const [registrationId, setRegistrationId] = useState(null);
+  const [stripeCustomerId, setStripeCustomerId] = useState(null);
 
   const today = todayYMD();
   const [calMonth, setCalMonth] = useState(today.m);
@@ -206,6 +207,7 @@ export default function WildChildRegistration() {
         .from('parent_profiles').select('*').eq('id', session.user.id).maybeSingle();
       if (profile) {
         setParentInfo({ name: profile.full_name || '', email: profile.email || '', phone: profile.phone || '' });
+        if (profile.stripe_customer_id) setStripeCustomerId(profile.stripe_customer_id);
         // Waiver skip ONLY when re-enrolling an existing child (portalChildId is set).
         // Any new child always sees the full waiver regardless of parent's history.
         if (profile.waiver_signed_at && portalChildId) {
@@ -288,7 +290,7 @@ export default function WildChildRegistration() {
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
-  async function submitRegistration(paymentIntentId) {
+  async function submitRegistration(paymentIntentId, newStripeCustomerId = null) {
     setLoading(true); setError('');
     try {
       let userId = user?.id;
@@ -357,6 +359,49 @@ export default function WildChildRegistration() {
           waiver_signature: signature, waiver_signed_at: new Date().toISOString(),
         }).eq('id', userId);
       }
+
+      // ── Save Stripe Customer ID + schedule installments ──────────────────
+      const resolvedCustomerId = newStripeCustomerId || stripeCustomerId;
+      if (resolvedCustomerId) {
+        setStripeCustomerId(resolvedCustomerId);
+        if (userId) {
+          await supabase.from('parent_profiles')
+            .update({ stripe_customer_id: resolvedCustomerId })
+            .eq('id', userId);
+        }
+      }
+
+      // Insert future installment rows for payment plan enrollments
+      if (paymentPlan !== 'full' && resolvedCustomerId && savedIds.length > 0) {
+        const today = new Date();
+        const intervalDays = paymentPlan === 'biweekly' ? 14 : 30;
+        const numInstallments = paymentPlan === 'biweekly'
+          ? Math.ceil(totalWeeksAll / 2) - 1   // first already paid
+          : Math.ceil(totalWeeksAll / 4) - 1;
+
+        if (numInstallments > 0) {
+          // Split remaining balance evenly across children registrations
+          const remainingTotal = grandTotal - installmentAmt();
+          const perInstallment = Math.round((remainingTotal / numInstallments) * 100) / 100;
+
+          const rows = [];
+          for (let n = 1; n <= numInstallments; n++) {
+            const dueDate = new Date(today);
+            dueDate.setDate(dueDate.getDate() + intervalDays * n);
+            const dueDateStr = dueDate.toISOString().split('T')[0];
+            rows.push({
+              registration_id:   savedIds[0],
+              parent_user_id:    userId || null,
+              stripe_customer_id: resolvedCustomerId,
+              amount:            perInstallment,
+              due_date:          dueDateStr,
+              status:            'pending',
+            });
+          }
+          await supabase.from('payment_installments').insert(rows);
+        }
+      }
+
       try {
         await supabase.functions.invoke('send-enrollment-notification', {
           body: {
@@ -740,6 +785,7 @@ export default function WildChildRegistration() {
               referralValid={referralValid} setReferralValid={setReferralValid}
               validateLocalCode={validateLocalCode} validateReferralCode={validateReferralCode}
               onBack={prevStep} onSuccess={submitRegistration}
+              existingStripeCustomerId={stripeCustomerId}
               loading={loading} error={error}
             />
           </Elements>
@@ -944,6 +990,7 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
   localCode, setLocalCode, localCodeValid, setLocalCodeValid,
   referralCode, setReferralCode, referralValid, setReferralValid,
   validateLocalCode, validateReferralCode,
+  existingStripeCustomerId,
   onBack, onSuccess, loading, error }) {
   const stripe   = useStripe();
   const elements = useElements();
@@ -956,8 +1003,16 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
     if (!nameOnCard.trim()) { setPayErr('Please enter the name on your card.'); return; }
     setPaying(true); setPayErr('');
     try {
+      const isPaymentPlan = paymentPlan !== 'full';
       const { data, error: fnErr } = await supabase.functions.invoke('create-payment-intent', {
-        body: { amount: installmentAmt, currency: 'usd' }
+        body: {
+          amount:             installmentAmt,
+          currency:           'usd',
+          saveCard:           isPaymentPlan,
+          customerEmail:      children[0] ? undefined : undefined, // filled server-side via metadata
+          customerName:       nameOnCard.trim(),
+          existingCustomerId: existingStripeCustomerId || null,
+        }
       });
       if (fnErr) throw fnErr;
       const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(
@@ -969,7 +1024,7 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
         }
       );
       if (stripeErr) throw stripeErr;
-      await onSuccess(paymentIntent.id);
+      await onSuccess(paymentIntent.id, data.stripeCustomerId || null);
     } catch (err) {
       setPayErr(err.message || 'Payment failed. Please try again.');
     }

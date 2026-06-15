@@ -129,6 +129,20 @@ function WeekRow({ week, onSelectReg }) {
 }
 
 function RegModal({ reg, onClose }) {
+  const [installments, setInstallments] = useState([]);
+
+  useEffect(() => {
+    if (reg.payment_plan && reg.payment_plan !== "full") {
+      supabase.from("payment_installments")
+        .select("*")
+        .eq("registration_id", reg.id)
+        .order("due_date", { ascending: true })
+        .then(({ data }) => setInstallments(data || []));
+    }
+  }, [reg.id]);
+
+  const statusColor = (s) => s === "paid" ? GREEN : s === "failed" ? "#c00" : ORANGE;
+
   return (
     <div style={S.modal} onClick={onClose}>
       <div style={S.modalCard} onClick={e => e.stopPropagation()}>
@@ -142,10 +156,45 @@ function RegModal({ reg, onClose }) {
         <div style={S.modalLabel}>Selected Days</div><div style={S.modalValue}>{(reg.selected_days||[]).map(formatDate).join(", ")}</div>
         <div style={S.modalLabel}>Lunch</div><div style={S.modalValue}>{reg.lunch?"Yes":"No"}</div>
         <div style={S.modalLabel}>Total</div><div style={S.modalValue}>${reg.grand_total}</div>
-        <div style={S.modalLabel}>Payment</div>
+        <div style={S.modalLabel}>Payment Status</div>
         <div style={{ marginBottom:16 }}><span style={{ ...S.badge(reg.payment_status==="paid"?GREEN:ORANGE), fontSize:13 }}>{reg.payment_status||"pending"}</span></div>
         {reg.discount_code && <><div style={S.modalLabel}>Discount</div><div style={S.modalValue}>{reg.discount_code} ({reg.discount_pct}% off)</div></>}
-        {reg.payment_plan && reg.payment_plan!=="full" && <><div style={S.modalLabel}>Payment Plan</div><div style={S.modalValue}>{reg.payment_plan}</div></>}
+        {reg.payment_plan && reg.payment_plan!=="full" && (
+          <>
+            <div style={S.modalLabel}>Payment Plan</div>
+            <div style={S.modalValue}>{reg.payment_plan === "biweekly" ? "Bi-Weekly" : "Monthly"}</div>
+            {installments.length > 0 && (
+              <>
+                <div style={S.modalLabel}>Installment Schedule</div>
+                <div style={{ marginBottom:16 }}>
+                  {/* First installment — charged at enrollment */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 10px", borderRadius:6, background:"#f0f4e8", marginBottom:4 }}>
+                    <div>
+                      <span style={{ fontSize:13, color:OLIVE_DARK, fontWeight:"bold" }}>Instalment 1</span>
+                      <span style={{ fontSize:11, color:"#888", marginLeft:8 }}>Charged at enrollment</span>
+                    </div>
+                    <span style={{ ...S.badge(GREEN), fontSize:11 }}>paid</span>
+                  </div>
+                  {installments.map((inst, i) => (
+                    <div key={inst.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 10px", borderRadius:6, background: inst.status==="paid"?"#f0f4e8": inst.status==="failed"?"#fff0f0":"#fafafa", marginBottom:4, border:`1px solid ${inst.status==="failed"?"#fca5a5":CREAM_DARK}` }}>
+                      <div>
+                        <span style={{ fontSize:13, color:OLIVE_DARK, fontWeight:"bold" }}>Instalment {i+2}</span>
+                        <span style={{ fontSize:11, color:"#888", marginLeft:8 }}>
+                          {new Date(inst.due_date + "T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}
+                        </span>
+                        {inst.error_message && <div style={{ fontSize:11, color:"#c00", marginTop:2 }}>{inst.error_message}</div>}
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontSize:13, fontWeight:"bold", color:OLIVE_DARK, marginBottom:3 }}>${inst.amount}</div>
+                        <span style={{ ...S.badge(statusColor(inst.status)), fontSize:11 }}>{inst.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
         <div style={S.modalLabel}>Registered</div><div style={S.modalValue}>{new Date(reg.created_at).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
       </div>
     </div>
