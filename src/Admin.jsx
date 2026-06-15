@@ -472,7 +472,7 @@ export default function Admin() {
           🧒 Kids{allChildren.length>0&&<span style={{ background:OLIVE, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:11, marginLeft:6 }}>{allChildren.length}</span>}
         </button>
         <button style={S.tab(tab==="families")} onClick={() => setTab("families")}>
-          👨‍👩‍👧 Families
+          🏠 Families
         </button>
       </div>
 
@@ -765,7 +765,7 @@ export default function Admin() {
             <>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12 }}>
                 <h2 style={{ margin:0, color:OLIVE_DARK, fontSize:20, fontWeight:"normal" }}>
-                  👨‍👩‍👧 Families
+                  🏠 Families
                   <span style={{ marginLeft:10, fontSize:14, color:"#888", fontWeight:"normal" }}>({families.length} famil{families.length===1?"y":"ies"})</span>
                 </h2>
                 <input
@@ -868,13 +868,9 @@ export default function Admin() {
         </div>
       )}
 
-        </div>
-      )}
-
       {selectedReg && <RegModal reg={selectedReg} onClose={()=>setSelectedReg(null)} />}
       {selectedHarmony && <HarmonyModal booking={selectedHarmony} onClose={()=>setSelectedHarmony(null)} />}
       {selectedKid && <KidModal child={selectedKid} onClose={()=>setSelectedKid(null)} />}
-    </div>
     </div>
   );
 }
