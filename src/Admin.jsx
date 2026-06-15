@@ -246,12 +246,59 @@ export default function Admin() {
     setRegistrations(regRes.data || []);
     setHarmonyBookings(harmonyRes.data || []);
     setChangeRequests(crRes.data || []);
-    // Flatten parent info onto each child
-    setAllChildren((childrenRes.data || []).map(c => ({
+
+    // Start with children table rows (account holders)
+    const fromChildren = (childrenRes.data || []).map(c => ({
       ...c,
       parent_name:  c.parent_profiles?.full_name || "—",
       parent_email: c.parent_profiles?.email || "",
-    })));
+      source: "children",
+    }));
+
+    // Build a dedup key set from children table
+    const childKeys = new Set(fromChildren.map(c =>
+      `${c.first_name?.toLowerCase()}|${c.last_name?.toLowerCase()}`
+    ));
+
+    // Pull guest enrollments from registrations (no parent_user_id = guest)
+    // Also catch account holders whose children row may not exist yet
+    const regs = regRes.data || [];
+    const fromRegs = [];
+    const seenFromRegs = new Set();
+
+    regs.forEach(r => {
+      const key = `${r.child_first_name?.toLowerCase()}|${r.child_last_name?.toLowerCase()}`;
+      if (childKeys.has(key)) return;        // already in children table
+      if (seenFromRegs.has(key)) return;     // already added from another registration
+      seenFromRegs.add(key);
+      // Sum weeks across all registrations for this child name
+      const totalWeeks = regs
+        .filter(x =>
+          x.child_first_name?.toLowerCase() === r.child_first_name?.toLowerCase() &&
+          x.child_last_name?.toLowerCase()  === r.child_last_name?.toLowerCase()
+        )
+        .reduce((sum, x) => sum + (x.weeks_total || 0), 0);
+      fromRegs.push({
+        id:                   r.id,
+        first_name:           r.child_first_name,
+        last_name:            r.child_last_name,
+        dob:                  r.child_dob || null,
+        allergies:            r.child_allergies || null,
+        medical_notes:        r.child_medical_notes || null,
+        program_id:           r.program_id,
+        program_name:         r.program_name,
+        total_weeks_enrolled: totalWeeks,
+        created_at:           r.created_at,
+        parent_name:          r.parent_name || "—",
+        parent_email:         r.parent_email || "",
+        source:               "registrations",
+      });
+    });
+
+    const merged = [...fromChildren, ...fromRegs]
+      .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`));
+
+    setAllChildren(merged);
     setLoading(false);
   }
 
