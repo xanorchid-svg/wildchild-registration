@@ -526,6 +526,9 @@ export default function Admin() {
         <button style={S.tab(tab==="menu")} onClick={() => setTab("menu")}>
           🍽️ Menu
         </button>
+        <button style={S.tab(tab==="menu")} onClick={() => setTab("menu")}>
+          🍽️ Menu
+        </button>
       </div>
 
       {loading ? (
@@ -811,6 +814,21 @@ export default function Admin() {
             </>
           )}
 
+
+          {/* MENU */}
+          {tab==="menu" && (
+            <>
+              <h2 style={{ margin:"0 0 8px", color:"#4d5a2c", fontSize:20, fontWeight:"normal" }}>🍽️ Weekly Menu</h2>
+              <p style={{ fontSize:13, color:"#888", marginBottom:20, fontFamily:"'Georgia',serif" }}>
+                Fresh, locally sourced meals prepared daily. Natural electrolytes on Monday, Wednesday and Friday.
+              </p>
+              <img
+                src="/weekly-menu.jpg"
+                alt="Wild Child Nosara Weekly Menu"
+                style={{ width:"100%", borderRadius:12, border:"1px solid #e0d8c8", display:"block" }}
+              />
+            </>
+          )}
 
           {/* MENU */}
           {tab==="menu" && (
