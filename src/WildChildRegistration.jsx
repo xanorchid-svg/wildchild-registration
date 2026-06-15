@@ -786,6 +786,7 @@ export default function WildChildRegistration() {
               validateLocalCode={validateLocalCode} validateReferralCode={validateReferralCode}
               onBack={prevStep} onSuccess={submitRegistration}
               existingStripeCustomerId={stripeCustomerId}
+              parentInfo={parentInfo}
               loading={loading} error={error}
             />
           </Elements>
@@ -991,6 +992,7 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
   referralCode, setReferralCode, referralValid, setReferralValid,
   validateLocalCode, validateReferralCode,
   existingStripeCustomerId,
+  parentInfo,
   onBack, onSuccess, loading, error }) {
   const stripe   = useStripe();
   const elements = useElements();
@@ -1009,8 +1011,8 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
           amount:             installmentAmt,
           currency:           'usd',
           saveCard:           isPaymentPlan,
-          customerEmail:      children[0] ? undefined : undefined, // filled server-side via metadata
-          customerName:       nameOnCard.trim(),
+          customerEmail:      parentInfo?.email || '',
+          customerName:       parentInfo?.name || nameOnCard.trim(),
           existingCustomerId: existingStripeCustomerId || null,
         }
       });

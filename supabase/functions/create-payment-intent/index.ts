@@ -26,36 +26,40 @@ Deno.serve(async (req) => {
     } = await req.json();
 
     // ── Stripe Customer ──────────────────────────────────────────────────────
-    // If saveCard is true (payment plan), create or reuse a Stripe Customer
-    // so we can charge their saved card for future installments.
+    // Always create/reuse a customer so name + email show in Stripe dashboard.
     let customerId = existingCustomerId || null;
 
-    if (saveCard) {
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: customerEmail || undefined,
-          name:  customerName  || undefined,
-          metadata,
-        });
-        customerId = customer.id;
-      }
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: customerEmail || undefined,
+        name:  customerName  || undefined,
+        metadata,
+      });
+      customerId = customer.id;
+    } else {
+      // Update existing customer with latest name/email in case it changed
+      await stripe.customers.update(customerId, {
+        email: customerEmail || undefined,
+        name:  customerName  || undefined,
+      });
     }
 
     // ── Payment Intent ───────────────────────────────────────────────────────
     const intentParams: Stripe.PaymentIntentCreateParams = {
-      amount:   Math.round(amount * 100), // dollars → cents
+      amount:      Math.round(amount * 100), // dollars → cents
       currency,
+      customer:    customerId,
+      description: customerName ? `Wild Child enrollment — ${customerName}` : "Wild Child enrollment",
       metadata,
-      ...(customerId ? { customer: customerId } : {}),
-      ...(saveCard   ? { setup_future_usage: "off_session" } : {}),
+      ...(saveCard ? { setup_future_usage: "off_session" } : {}),
     };
 
     const paymentIntent = await stripe.paymentIntents.create(intentParams);
 
     return new Response(
       JSON.stringify({
-        clientSecret:       paymentIntent.client_secret,
-        stripeCustomerId:   customerId,
+        clientSecret:     paymentIntent.client_secret,
+        stripeCustomerId: customerId,
       }),
       { headers: { "Content-Type": "application/json", ...CORS } }
     );
