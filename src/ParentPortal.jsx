@@ -849,7 +849,7 @@ export default function ParentPortal() {
             </div>
           )}
 
-          {/* ── Payments ── */}
+          {/* menu-weekly */}{activeSection==="menu"&&(<div><h2 style={{fontSize:"22px",fontWeight:400,marginBottom:"8px"}}>Weekly Menu</h2><p style={{fontSize:"13px",color:"#7a7a9a",marginBottom:"20px",fontFamily:"Georgia,serif"}}>Our chef prepares fresh, locally sourced meals every day. Natural electrolytes served Monday, Wednesday and Friday.</p><img src="/weekly-menu.jpg" alt="Weekly Menu" style={{width:"100%",borderRadius:"12px",border:"1px solid #e0d8c8",display:"block"}}/></div>)}{/* ── Payments ── */}
           {activeSection==="payments"&&(
             <div>
               <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"20px" }}>Payments</h2>
@@ -893,21 +893,6 @@ export default function ParentPortal() {
       </div>
 
       {/* Change request modal */}
-      {/* ── Weekly Menu ── */}
-      {activeSection==="menu"&&(
-        <div style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px", overflowY:"auto" }}>
-          <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"8px", fontFamily:"Georgia,serif" }}>Weekly Menu</h2>
-          <p style={{ fontSize:"13px", color:"#7a7a9a", marginBottom:"20px", fontFamily:"Georgia,serif" }}>
-            Our chef prepares fresh, locally sourced meals every day. Natural electrolytes served Monday, Wednesday and Friday.
-          </p>
-          <img
-            src="/weekly-menu.jpg"
-            alt="Wild Child Nosara Weekly Menu"
-            style={{ width:"100%", borderRadius:"12px", border:"1px solid #e0d8c8", display:"block" }}
-          />
-        </div>
-      )}
-
       {showChangeModal && session && (
         <ChangeRequestModal
           reg={showChangeModal}
