@@ -632,6 +632,7 @@ export default function Admin() {
                       style={{
                         display:"grid", gridTemplateColumns:"2fr 1fr 1.5fr 0.7fr 2fr 2fr",
                         gap:0, padding:"12px 16px", cursor:"pointer",
+                        alignItems:"start",
                         borderBottom: isLast ? "none" : `1px solid ${CREAM_DARK}`,
                         background: idx % 2 === 0 ? "#fff" : "#fdfcfa",
                         transition:"background 0.1s",
@@ -640,27 +641,23 @@ export default function Admin() {
                       onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "#fdfcfa"}
                     >
                       <div>
-                        <div style={{ fontWeight:"bold", fontSize:14, color:OLIVE_DARK }}>{child.first_name} {child.last_name}</div>
+                        <div style={{ fontWeight:"bold", fontSize:14, color:OLIVE_DARK, wordBreak:"break-word" }}>{child.first_name} {child.last_name}</div>
                         <div style={{ fontSize:11, color:"#999", marginTop:2 }}>{child.parent_name}</div>
                       </div>
-                      <div style={{ fontSize:14, color:"#444", display:"flex", alignItems:"center" }}>
+                      <div style={{ fontSize:14, color:"#444", paddingTop:2 }}>
                         {age !== "—" ? `${age} yrs` : "—"}
                       </div>
-                      <div style={{ fontSize:13, color:"#555", display:"flex", alignItems:"center" }}>
+                      <div style={{ fontSize:13, color:"#555", paddingTop:2 }}>
                         {child.program_name || "—"}
                       </div>
-                      <div style={{ fontSize:14, fontWeight:"bold", color:OLIVE, display:"flex", alignItems:"center" }}>
+                      <div style={{ fontSize:14, fontWeight:"bold", color:OLIVE, paddingTop:2 }}>
                         {child.total_weeks_enrolled || 0}
                       </div>
-                      <div style={{ fontSize:12, color:"#666", display:"flex", alignItems:"center", paddingRight:8 }}>
-                        <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"100%" }}>
-                          {child.allergies || <span style={{ color:"#bbb" }}>None</span>}
-                        </span>
+                      <div style={{ fontSize:12, color:"#666", paddingTop:2, paddingRight:8, wordBreak:"break-word" }}>
+                        {child.allergies || <span style={{ color:"#bbb" }}>None</span>}
                       </div>
-                      <div style={{ fontSize:12, color:"#666", display:"flex", alignItems:"center" }}>
-                        <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"100%" }}>
-                          {child.medical_notes || <span style={{ color:"#bbb" }}>—</span>}
-                        </span>
+                      <div style={{ fontSize:12, color:"#666", paddingTop:2, wordBreak:"break-word" }}>
+                        {child.medical_notes || <span style={{ color:"#bbb" }}>—</span>}
                       </div>
                     </div>
                   );
