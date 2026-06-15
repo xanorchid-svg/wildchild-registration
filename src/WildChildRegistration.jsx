@@ -150,12 +150,10 @@ function calcChildTotal(child, selectedDays, prevWeeks, hasLocalCode, localBaseP
 }
 
 function blankChild() {
-  return { firstName: '', lastName: '', dob: '', allergies: '', program: '', prevWeeks: 0 };
+  return { firstName: '', lastName: '', dob: '', allergies: '', medicalNotes: '', program: '', prevWeeks: 0 };
 }
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
-// Normal flow:    0=Children, 1=Schedule, 2=YourInfo, 3=Payment, 4=Waiver, 5=Confirmation
-// Portal flow:    0=Schedule+Program, 1=Payment, 2=Waiver, 3=Confirmation
 const STEPS_NORMAL = ['Children', 'Schedule', 'Your Info', 'Payment', 'Waiver', 'Confirmation'];
 const STEPS_PORTAL = ['Schedule', 'Payment', 'Waiver', 'Confirmation'];
 
@@ -195,9 +193,6 @@ export default function WildChildRegistration() {
 
   const STEPS = comingFromPortal ? STEPS_PORTAL : STEPS_NORMAL;
 
-  // ── Portal flow step mapping ───────────────────────────────────────────────
-  // Portal: step 0 = Schedule+Program, step 1 = Payment, step 2 = Waiver, step 3 = Confirmation
-  // Normal: step 0 = Children, step 1 = Schedule, step 2 = YourInfo, step 3 = Payment, step 4 = Waiver, step 5 = Confirmation
   const CONFIRM_STEP = comingFromPortal ? 3 : 5;
   const WAIVER_STEP  = comingFromPortal ? 2 : 4;
   const PAYMENT_STEP = comingFromPortal ? 1 : 3;
@@ -211,10 +206,9 @@ export default function WildChildRegistration() {
         .from('parent_profiles').select('*').eq('id', session.user.id).maybeSingle();
       if (profile) {
         setParentInfo({ name: profile.full_name || '', email: profile.email || '', phone: profile.phone || '' });
-        // Only skip waiver if parent has already signed AND this is an existing child re-enrollment
-        // For new children, always show waiver regardless of parent's waiver_signed_at
-        const isNewChild = !portalChildId;
-        if (profile.waiver_signed_at && !isNewChild) {
+        // Waiver skip ONLY when re-enrolling an existing child (portalChildId is set).
+        // Any new child always sees the full waiver regardless of parent's history.
+        if (profile.waiver_signed_at && portalChildId) {
           setWaiverAlreadySigned(true);
           setWaivers({ liability: true, medical: true, media: true, excursion: true });
           setSignature(profile.waiver_signature || '');
@@ -227,12 +221,13 @@ export default function WildChildRegistration() {
             .from('children').select('*').eq('id', portalChildId).single();
           if (child) {
             setChildren([{
-              firstName: child.first_name,
-              lastName:  child.last_name,
-              dob:       child.dob,
-              allergies: child.allergies || '',
-              program:   child.program_id || '',
-              prevWeeks: child.total_weeks_enrolled || 0,
+              firstName:    child.first_name,
+              lastName:     child.last_name,
+              dob:          child.dob,
+              allergies:    child.allergies || '',
+              medicalNotes: child.medical_notes || '',
+              program:      child.program_id || '',
+              prevWeeks:    child.total_weeks_enrolled || 0,
             }]);
           }
         } else {
@@ -240,12 +235,13 @@ export default function WildChildRegistration() {
             .from('children').select('*').eq('parent_id', session.user.id);
           if (dbChildren && dbChildren.length > 0) {
             setChildren(dbChildren.map(c => ({
-              firstName: c.first_name,
-              lastName:  c.last_name,
-              dob:       c.dob,
-              allergies: c.allergies || '',
-              program:   c.program_id || '',
-              prevWeeks: c.total_weeks_enrolled || 0,
+              firstName:    c.first_name,
+              lastName:     c.last_name,
+              dob:          c.dob,
+              allergies:    c.allergies || '',
+              medicalNotes: c.medical_notes || '',
+              program:      c.program_id || '',
+              prevWeeks:    c.total_weeks_enrolled || 0,
             })));
           }
         }
@@ -317,6 +313,7 @@ export default function WildChildRegistration() {
           program_id: ch.program, program_name: prog?.name || ch.program,
           child_first_name: ch.firstName, child_last_name: ch.lastName,
           child_dob: ch.dob, child_allergies: ch.allergies,
+          child_medical_notes: ch.medicalNotes || null,
           parent_name: parentInfo.name, parent_email: parentInfo.email, parent_phone: parentInfo.phone,
           selected_days: selectedDays[i] || [], lunch,
           subtotal_tuition: tot.tuition,
@@ -341,11 +338,14 @@ export default function WildChildRegistration() {
             await supabase.from('children').update({
               total_weeks_enrolled: (existing.total_weeks_enrolled || 0) + tot.weeks,
               program_id: ch.program, program_name: prog?.name || ch.program,
+              allergies: ch.allergies,
+              medical_notes: ch.medicalNotes || null,
             }).eq('id', existing.id);
           } else {
             await supabase.from('children').insert({
               parent_id: userId, first_name: ch.firstName, last_name: ch.lastName,
               dob: ch.dob, allergies: ch.allergies,
+              medical_notes: ch.medicalNotes || null,
               program_id: ch.program, program_name: prog?.name || ch.program,
               total_weeks_enrolled: tot.weeks,
             });
@@ -560,10 +560,16 @@ export default function WildChildRegistration() {
                   </div>
                 )}
 
-                <Field label="Allergies or notes (optional)" style={{ marginTop: 16 }}>
+                <Field label="Allergies (optional)" style={{ marginTop: 16 }}>
                   <textarea value={ch.allergies} onChange={e => updateChild(i,'allergies',e.target.value)}
                     style={{ ...inputStyle, height: 72, resize: 'vertical' }}
-                    placeholder="Any allergies, dietary needs, or notes for teachers…" />
+                    placeholder="Any allergies or dietary needs…" />
+                </Field>
+
+                <Field label="Additional medical notes (N/A if not applicable)">
+                  <textarea value={ch.medicalNotes} onChange={e => updateChild(i,'medicalNotes',e.target.value)}
+                    style={{ ...inputStyle, height: 72, resize: 'vertical' }}
+                    placeholder="e.g. asthma, epi-pen required, seizure history — or write N/A" />
                 </Field>
 
                 {children.length > 1 && (
@@ -583,7 +589,7 @@ export default function WildChildRegistration() {
             )}
 
             <NavButtons onNext={() => setStep(1)}
-              nextDisabled={children.some(ch => !ch.firstName || !ch.lastName || !ch.dob || !ch.program)} />
+              nextDisabled={children.some(ch => !ch.firstName || !ch.lastName || !ch.dob || !ch.program || !ch.medicalNotes.trim())} />
           </div>
         )}
 
@@ -618,7 +624,6 @@ export default function WildChildRegistration() {
             ))}
 
             <LunchToggle lunch={lunch} setLunch={setLunch} />
-
             <NavButtons onBack={prevStep} onNext={() => setStep(2)} nextDisabled={!scheduleValid} />
           </div>
         )}
@@ -675,7 +680,6 @@ export default function WildChildRegistration() {
 
             {children.map((ch, i) => i !== activeChildTab ? null : (
               <div key={i}>
-                {/* Programme selector */}
                 <div style={{ marginBottom: 24 }}>
                   <label style={labelStyle}>Programme</label>
                   {ch.dob ? (() => {
@@ -696,7 +700,6 @@ export default function WildChildRegistration() {
                   )}
                 </div>
 
-                {/* Calendar — only show once program is selected */}
                 {ch.program && (
                   <>
                     <h3 style={{ color: OLIVE_DARK, marginBottom: 8, fontSize: 17 }}>Select days</h3>
@@ -715,14 +718,9 @@ export default function WildChildRegistration() {
               </div>
             ))}
 
-            {/* Lunch */}
             {children[activeChildTab]?.program && <LunchToggle lunch={lunch} setLunch={setLunch} />}
 
-            <NavButtons
-              onBack={prevStep}
-              onNext={() => setStep(1)}
-              nextDisabled={!scheduleValid}
-            />
+            <NavButtons onBack={prevStep} onNext={() => setStep(1)} nextDisabled={!scheduleValid} />
           </div>
         )}
 
@@ -975,7 +973,6 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
     <div>
       <h2 style={{ color: OLIVE_DARK, marginBottom: 16 }}>Payment</h2>
 
-      {/* Order summary */}
       <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:16, marginBottom:20 }}>
         <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:12 }}>Order summary</div>
         {childTotals.map((tot, i) => {
@@ -1007,7 +1004,6 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
         </div>
       </div>
 
-      {/* Discount & referral codes */}
       <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:16, marginBottom:20 }}>
         <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:12 }}>Discount & referral codes</div>
         <div style={{ marginBottom:12 }}>
@@ -1038,7 +1034,6 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
         </div>
       </div>
 
-      {/* Payment plan */}
       {totalWeeksAll >= 4 && (
         <div style={{ marginBottom:20 }}>
           <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:10 }}>Payment plan</div>
@@ -1062,7 +1057,6 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
         </div>
       )}
 
-      {/* Card details */}
       <div style={{ marginBottom:20 }}>
         <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:10 }}>Card details</div>
         <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:14 }}>

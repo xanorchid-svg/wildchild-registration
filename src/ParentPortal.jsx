@@ -683,6 +683,7 @@ export default function ParentPortal() {
                         <InfoRow label="Date of Birth" value={dob}/>
                         <InfoRow label="Program" value={prog}/>
                         <InfoRow label="Allergies / Notes" value={ch.allergies||"None"}/>
+                        <InfoRow label="Medical Notes" value={ch.medical_notes||"None"}/>
                       </SectionCard>
                     )}
 

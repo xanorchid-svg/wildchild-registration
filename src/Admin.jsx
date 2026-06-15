@@ -1,5 +1,5 @@
 // Admin.jsx — Wild Child Nosara
-// Tabs: By Week | Calendar | Saturdays | Change Requests
+// Tabs: By Week | Calendar | Saturdays | Change Requests | Kids
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -57,6 +57,15 @@ function groupByWeek(registrations) {
 }
 function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
 function getFirstDayOfMonth(year, month) { return new Date(year, month, 1).getDay(); }
+function calcAge(dob) {
+  if (!dob) return "—";
+  const birth = new Date(dob + "T00:00:00");
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
 
 const TIER_LABELS = {
   harmony:   { label:"Harmony Member",    color:GREEN  },
@@ -167,21 +176,55 @@ function HarmonyModal({ booking, onClose }) {
   );
 }
 
+// ── Kids detail modal ─────────────────────────────────────────────────────────
+function KidModal({ child, onClose }) {
+  const age = calcAge(child.dob);
+  const dob = child.dob ? new Date(child.dob + "T00:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : "—";
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalCard} onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <h3 style={{ margin:0, color:OLIVE_DARK, fontSize:18 }}>{child.first_name} {child.last_name}</h3>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#999" }}>×</button>
+        </div>
+        <div style={S.modalLabel}>Program</div>
+        <div style={S.modalValue}>{child.program_name || "—"}</div>
+        <div style={S.modalLabel}>Date of Birth</div>
+        <div style={S.modalValue}>{dob} {age !== "—" ? `(age ${age})` : ""}</div>
+        <div style={S.modalLabel}>Total Weeks Enrolled</div>
+        <div style={S.modalValue}>{child.total_weeks_enrolled || 0} week{child.total_weeks_enrolled !== 1 ? "s" : ""}</div>
+        <div style={S.modalLabel}>Allergies</div>
+        <div style={S.modalValue}>{child.allergies || "None"}</div>
+        <div style={S.modalLabel}>Medical Notes</div>
+        <div style={S.modalValue}>{child.medical_notes || "—"}</div>
+        <div style={S.modalLabel}>Parent</div>
+        <div style={S.modalValue}>{child.parent_name || "—"}<br/><span style={{ fontSize:13, color:"#888" }}>{child.parent_email || ""}</span></div>
+        <div style={S.modalLabel}>Enrolled Since</div>
+        <div style={S.modalValue}>{child.created_at ? new Date(child.created_at).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : "—"}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("week");
   const [registrations, setRegistrations] = useState([]);
   const [harmonyBookings, setHarmonyBookings] = useState([]);
   const [changeRequests, setChangeRequests] = useState([]);
+  const [allChildren, setAllChildren] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReg, setSelectedReg] = useState(null);
   const [selectedHarmony, setSelectedHarmony] = useState(null);
+  const [selectedKid, setSelectedKid] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [calMonth, setCalMonth] = useState(new Date());
   const [calSelectedDay, setCalSelectedDay] = useState(null);
   const [saturdayFilter, setSaturdayFilter] = useState("upcoming");
   const [crFilter, setCrFilter] = useState("pending");
   const [approvingId, setApprovingId] = useState(null);
+  const [kidSearch, setKidSearch] = useState("");
+  const [kidSort, setKidSort] = useState("name");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -194,27 +237,31 @@ export default function Admin() {
 
   async function fetchData() {
     setLoading(true);
-    const [regRes, harmonyRes, crRes] = await Promise.all([
+    const [regRes, harmonyRes, crRes, childrenRes] = await Promise.all([
       supabase.from("registrations").select("*").order("created_at", { ascending:false }),
       supabase.from("harmony_bookings").select("*").order("session_date", { ascending:true }),
       supabase.from("enrollment_change_requests").select("*").order("created_at", { ascending:false }),
+      supabase.from("children").select("*, parent_profiles(full_name, email)").order("first_name", { ascending:true }),
     ]);
     setRegistrations(regRes.data || []);
     setHarmonyBookings(harmonyRes.data || []);
     setChangeRequests(crRes.data || []);
+    // Flatten parent info onto each child
+    setAllChildren((childrenRes.data || []).map(c => ({
+      ...c,
+      parent_name:  c.parent_profiles?.full_name || "—",
+      parent_email: c.parent_profiles?.email || "",
+    })));
     setLoading(false);
   }
 
   async function approveRequest(req) {
     setApprovingId(req.id);
     try {
-      // 1. Mark request as approved
       await supabase.from("enrollment_change_requests").update({ status:"approved" }).eq("id", req.id);
-      // 2. Add credit to parent_profiles
       const { data:profile } = await supabase.from("parent_profiles").select("account_credit").eq("id", req.parent_user_id).maybeSingle();
       const currentCredit = profile?.account_credit || 0;
       await supabase.from("parent_profiles").update({ account_credit: currentCredit + req.credit_value }).eq("id", req.parent_user_id);
-      // 3. Refresh
       await fetchData();
     } catch(e) {
       alert("Error approving request: " + e.message);
@@ -261,6 +308,25 @@ export default function Admin() {
   const pendingCRs = changeRequests.filter(r => r.status === "pending").length;
   const filteredCRs = changeRequests.filter(r => crFilter === "all" ? true : r.status === crFilter);
 
+  // ── Kids filtering + sorting ──────────────────────────────────────────────
+  const filteredKids = allChildren
+    .filter(c => {
+      if (!kidSearch.trim()) return true;
+      const q = kidSearch.toLowerCase();
+      return (
+        `${c.first_name} ${c.last_name}`.toLowerCase().includes(q) ||
+        (c.program_name || "").toLowerCase().includes(q) ||
+        (c.parent_name || "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (kidSort === "name")    return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+      if (kidSort === "age")     return (a.dob || "").localeCompare(b.dob || "");
+      if (kidSort === "program") return (a.program_name || "").localeCompare(b.program_name || "");
+      if (kidSort === "weeks")   return (b.total_weeks_enrolled || 0) - (a.total_weeks_enrolled || 0);
+      return 0;
+    });
+
   return (
     <div style={S.page}>
       <div style={S.header}>
@@ -279,6 +345,9 @@ export default function Admin() {
         </button>
         <button style={S.tab(tab==="changes")} onClick={() => setTab("changes")}>
           Change Requests{pendingCRs>0&&<span style={{ background:ORANGE, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:11, marginLeft:6 }}>{pendingCRs}</span>}
+        </button>
+        <button style={S.tab(tab==="kids")} onClick={() => setTab("kids")}>
+          🧒 Kids{allChildren.length>0&&<span style={{ background:OLIVE, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:11, marginLeft:6 }}>{allChildren.length}</span>}
         </button>
       </div>
 
@@ -468,11 +537,112 @@ export default function Admin() {
               })}
             </>
           )}
+
+          {/* KIDS */}
+          {tab==="kids" && (
+            <>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+                <h2 style={{ margin:0, color:OLIVE_DARK, fontSize:20, fontWeight:"normal" }}>
+                  🧒 All Children
+                  <span style={{ marginLeft:10, fontSize:14, color:"#888", fontWeight:"normal" }}>({filteredKids.length} of {allChildren.length})</span>
+                </h2>
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  <input
+                    value={kidSearch}
+                    onChange={e => setKidSearch(e.target.value)}
+                    placeholder="Search name, program, parent…"
+                    style={{ padding:"8px 12px", border:`1px solid ${CREAM_DARK}`, borderRadius:8, fontSize:13, fontFamily:"'Georgia',serif", width:220, outline:"none" }}
+                  />
+                  <select value={kidSort} onChange={e => setKidSort(e.target.value)}
+                    style={{ padding:"8px 12px", border:`1px solid ${CREAM_DARK}`, borderRadius:8, fontSize:13, fontFamily:"'Georgia',serif", background:"#fff", cursor:"pointer", outline:"none" }}>
+                    <option value="name">Sort: Name</option>
+                    <option value="age">Sort: Age</option>
+                    <option value="program">Sort: Program</option>
+                    <option value="weeks">Sort: Weeks (most first)</option>
+                  </select>
+                </div>
+              </div>
+
+              {filteredKids.length === 0 && (
+                <div style={{ textAlign:"center", padding:60, color:"#888" }}>No children found.</div>
+              )}
+
+              <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${CREAM_DARK}`, overflow:"hidden" }}>
+                {/* Table header */}
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1.5fr 0.7fr 2fr 2fr", gap:0, background:OLIVE_DARK, padding:"10px 16px" }}>
+                  {["Name","Age","Program","Weeks","Allergies","Medical Notes"].map(h => (
+                    <div key={h} style={{ fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", color:"rgba(255,255,255,0.8)", fontFamily:"'Georgia',serif" }}>{h}</div>
+                  ))}
+                </div>
+
+                {filteredKids.map((child, idx) => {
+                  const age = calcAge(child.dob);
+                  const isLast = idx === filteredKids.length - 1;
+                  return (
+                    <div
+                      key={child.id}
+                      onClick={() => setSelectedKid(child)}
+                      style={{
+                        display:"grid", gridTemplateColumns:"2fr 1fr 1.5fr 0.7fr 2fr 2fr",
+                        gap:0, padding:"12px 16px", cursor:"pointer",
+                        borderBottom: isLast ? "none" : `1px solid ${CREAM_DARK}`,
+                        background: idx % 2 === 0 ? "#fff" : "#fdfcfa",
+                        transition:"background 0.1s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f0f4e8"}
+                      onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "#fdfcfa"}
+                    >
+                      <div>
+                        <div style={{ fontWeight:"bold", fontSize:14, color:OLIVE_DARK }}>{child.first_name} {child.last_name}</div>
+                        <div style={{ fontSize:11, color:"#999", marginTop:2 }}>{child.parent_name}</div>
+                      </div>
+                      <div style={{ fontSize:14, color:"#444", display:"flex", alignItems:"center" }}>
+                        {age !== "—" ? `${age} yrs` : "—"}
+                      </div>
+                      <div style={{ fontSize:13, color:"#555", display:"flex", alignItems:"center" }}>
+                        {child.program_name || "—"}
+                      </div>
+                      <div style={{ fontSize:14, fontWeight:"bold", color:OLIVE, display:"flex", alignItems:"center" }}>
+                        {child.total_weeks_enrolled || 0}
+                      </div>
+                      <div style={{ fontSize:12, color:"#666", display:"flex", alignItems:"center", paddingRight:8 }}>
+                        <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"100%" }}>
+                          {child.allergies || <span style={{ color:"#bbb" }}>None</span>}
+                        </span>
+                      </div>
+                      <div style={{ fontSize:12, color:"#666", display:"flex", alignItems:"center" }}>
+                        <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"100%" }}>
+                          {child.medical_notes || <span style={{ color:"#bbb" }}>—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Summary stats */}
+              <div style={{ display:"flex", gap:16, marginTop:20, flexWrap:"wrap" }}>
+                {["tiny-roots","little-roots","wild-roots","earth-leaders"].map(pid => {
+                  const count = allChildren.filter(c => c.program_id === pid).length;
+                  const label = { "tiny-roots":"Tiny Roots","little-roots":"Little Roots","wild-roots":"Wild Roots","earth-leaders":"Earth Leaders" }[pid];
+                  if (count === 0) return null;
+                  return (
+                    <div key={pid} style={{ background:"#fff", border:`1px solid ${CREAM_DARK}`, borderRadius:10, padding:"12px 18px", textAlign:"center", minWidth:100 }}>
+                      <div style={{ fontSize:22, fontWeight:"bold", color:OLIVE_DARK }}>{count}</div>
+                      <div style={{ fontSize:12, color:"#888", marginTop:2 }}>{label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
         </div>
       )}
 
       {selectedReg && <RegModal reg={selectedReg} onClose={()=>setSelectedReg(null)} />}
       {selectedHarmony && <HarmonyModal booking={selectedHarmony} onClose={()=>setSelectedHarmony(null)} />}
+      {selectedKid && <KidModal child={selectedKid} onClose={()=>setSelectedKid(null)} />}
     </div>
   );
 }
