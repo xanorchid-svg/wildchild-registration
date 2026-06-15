@@ -849,7 +849,7 @@ export default function ParentPortal() {
             </div>
           )}
 
-          {/* menu-weekly */}{activeSection==="menu"&&(<div style={{padding:"28px 32px"}}><h2 style={{fontSize:"22px",fontWeight:400,marginBottom:"8px",fontFamily:"Georgia,serif"}}>Weekly Menu</h2><p style={{fontSize:"13px",color:"#7a7a9a",marginBottom:"16px",fontFamily:"Georgia,serif"}}>Fresh, locally sourced meals daily. Natural electrolytes Mon, Wed and Fri.</p><img src="/weekly-menu.jpg" alt="Weekly Menu" style={{width:"100%",height:"auto",borderRadius:"12px",border:"1px solid #e0d8c8",display:"block"}}/></div>)}{/* ── Payments ── */}
+          {/* menu-weekly */}{activeSection==="menu"&&(<div style={{padding:"28px 32px"}}><h2 style={{fontSize:"22px",fontWeight:400,marginBottom:"8px",fontFamily:"Georgia,serif"}}>Weekly Menu</h2><p style={{fontSize:"13px",color:"#7a7a9a",marginBottom:"16px",fontFamily:"Georgia,serif"}}>Fresh, locally sourced meals daily. Natural electrolytes Mon, Wed and Fri.</p><img src="/weekly-menu.jpg" alt="Weekly Menu" style={{width:"100%",height:"auto",borderRadius:"12px",border:"1px solid #e0d8c8",display:"block",maxWidth:"100%"}} className="hide-on-mobile"/><img src="/weekly-menu-mobile.jpg" alt="Weekly Menu" style={{width:"100%",height:"auto",borderRadius:"12px",border:"1px solid #e0d8c8",display:"none"}} className="show-on-mobile"/></div>)}{/* ── Payments ── */}
           {activeSection==="payments"&&(
             <div>
               <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"20px" }}>Payments</h2>
