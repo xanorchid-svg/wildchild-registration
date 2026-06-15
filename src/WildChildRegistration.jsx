@@ -947,11 +947,13 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
   onBack, onSuccess, loading, error }) {
   const stripe   = useStripe();
   const elements = useElements();
-  const [paying, setPaying] = useState(false);
-  const [payErr, setPayErr] = useState('');
+  const [paying, setPaying]         = useState(false);
+  const [payErr, setPayErr]         = useState('');
+  const [nameOnCard, setNameOnCard] = useState('');
 
   async function handlePay() {
     if (!stripe || !elements) return;
+    if (!nameOnCard.trim()) { setPayErr('Please enter the name on your card.'); return; }
     setPaying(true); setPayErr('');
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('create-payment-intent', {
@@ -959,7 +961,12 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
       });
       if (fnErr) throw fnErr;
       const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(
-        data.clientSecret, { payment_method: { card: elements.getElement(CardElement) } }
+        data.clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: { name: nameOnCard.trim() },
+          }
+        }
       );
       if (stripeErr) throw stripeErr;
       await onSuccess(paymentIntent.id);
@@ -1059,8 +1066,20 @@ function PaymentStep({ childTotals, children, selectedDays, lunch, lunchTotal,
 
       <div style={{ marginBottom:20 }}>
         <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:10 }}>Card details</div>
-        <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, padding:14 }}>
-          <CardElement options={{ style:{ base:{ fontSize:'16px', color:'#333' } } }} />
+        <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:8, overflow:'hidden' }}>
+          <div style={{ padding:'12px 14px', borderBottom:`1px solid ${CREAM_DARK}` }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#888', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:6 }}>Name on card</label>
+            <input
+              value={nameOnCard}
+              onChange={e => setNameOnCard(e.target.value)}
+              placeholder="Full name as it appears on card"
+              style={{ width:'100%', border:'none', outline:'none', fontSize:16, color:'#333', background:'transparent', fontFamily:'inherit', boxSizing:'border-box' }}
+            />
+          </div>
+          <div style={{ padding:14 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#888', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>Card number</label>
+            <CardElement options={{ style:{ base:{ fontSize:'16px', color:'#333' } } }} />
+          </div>
         </div>
       </div>
 

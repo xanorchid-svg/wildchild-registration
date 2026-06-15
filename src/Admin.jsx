@@ -225,6 +225,8 @@ export default function Admin() {
   const [approvingId, setApprovingId] = useState(null);
   const [kidSearch, setKidSearch] = useState("");
   const [kidSort, setKidSort] = useState("name");
+  const [familySearch, setFamilySearch] = useState("");
+  const [expandedFamily, setExpandedFamily] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -355,6 +357,79 @@ export default function Admin() {
   const pendingCRs = changeRequests.filter(r => r.status === "pending").length;
   const filteredCRs = changeRequests.filter(r => crFilter === "all" ? true : r.status === crFilter);
 
+  // ── Families grouping ────────────────────────────────────────────────────────
+  const families = (() => {
+    // Group by last name. Use parent_profiles data from registrations as source of truth.
+    const map = {};
+    // From registrations — covers guests + account holders
+    registrations.forEach(r => {
+      const lastName = r.child_last_name?.trim() || "Unknown";
+      const key = lastName.toLowerCase();
+      if (!map[key]) {
+        map[key] = {
+          lastName,
+          parents: {},   // keyed by email to dedup
+          children: [],
+          childKeys: new Set(),
+        };
+      }
+      // Parent info
+      if (r.parent_email) {
+        map[key].parents[r.parent_email.toLowerCase()] = {
+          name:  r.parent_name  || "—",
+          email: r.parent_email || "—",
+          phone: r.parent_phone || "—",
+        };
+      }
+      // Child dedup by first+last
+      const ck = `${r.child_first_name?.toLowerCase()}|${r.child_last_name?.toLowerCase()}`;
+      if (!map[key].childKeys.has(ck)) {
+        map[key].childKeys.add(ck);
+        map[key].children.push({
+          firstName:   r.child_first_name,
+          lastName:    r.child_last_name,
+          dob:         r.child_dob,
+          program:     r.program_name,
+          allergies:   r.child_allergies,
+          medicalNotes:r.child_medical_notes,
+        });
+      }
+    });
+    // Also pull from children table (account holders) for any missing info
+    allChildren.forEach(ch => {
+      const lastName = ch.last_name?.trim() || "Unknown";
+      const key = lastName.toLowerCase();
+      if (!map[key]) {
+        map[key] = { lastName, parents: {}, children: [], childKeys: new Set() };
+      }
+      if (ch.parent_email) {
+        map[key].parents[ch.parent_email.toLowerCase()] = {
+          name:  ch.parent_name  || "—",
+          email: ch.parent_email || "—",
+          phone: "—",  // children table doesn't store phone
+        };
+      }
+      const ck = `${ch.first_name?.toLowerCase()}|${ch.last_name?.toLowerCase()}`;
+      if (!map[key].childKeys.has(ck)) {
+        map[key].childKeys.add(ck);
+        map[key].children.push({
+          firstName:    ch.first_name,
+          lastName:     ch.last_name,
+          dob:          ch.dob,
+          program:      ch.program_name,
+          allergies:    ch.allergies,
+          medicalNotes: ch.medical_notes,
+        });
+      }
+    });
+    return Object.values(map)
+      .map(f => ({ ...f, parents: Object.values(f.parents) }))
+      .sort((a, b) => a.lastName.localeCompare(b.lastName))
+      .filter(f => !familySearch.trim() || f.lastName.toLowerCase().includes(familySearch.toLowerCase()) ||
+        f.parents.some(p => p.name.toLowerCase().includes(familySearch.toLowerCase()))
+      );
+  })();
+
   // ── Kids filtering + sorting ──────────────────────────────────────────────
   const filteredKids = allChildren
     .filter(c => {
@@ -395,6 +470,9 @@ export default function Admin() {
         </button>
         <button style={S.tab(tab==="kids")} onClick={() => setTab("kids")}>
           🧒 Kids{allChildren.length>0&&<span style={{ background:OLIVE, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:11, marginLeft:6 }}>{allChildren.length}</span>}
+        </button>
+        <button style={S.tab(tab==="families")} onClick={() => setTab("families")}>
+          👨‍👩‍👧 Families
         </button>
       </div>
 
@@ -681,12 +759,122 @@ export default function Admin() {
             </>
           )}
 
+
+          {/* FAMILIES */}
+          {tab==="families" && (
+            <>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+                <h2 style={{ margin:0, color:OLIVE_DARK, fontSize:20, fontWeight:"normal" }}>
+                  👨‍👩‍👧 Families
+                  <span style={{ marginLeft:10, fontSize:14, color:"#888", fontWeight:"normal" }}>({families.length} famil{families.length===1?"y":"ies"})</span>
+                </h2>
+                <input
+                  value={familySearch}
+                  onChange={e => setFamilySearch(e.target.value)}
+                  placeholder="Search by last name or parent…"
+                  style={{ padding:"8px 12px", border:`1px solid ${CREAM_DARK}`, borderRadius:8, fontSize:13, fontFamily:"'Georgia',serif", width:240, outline:"none" }}
+                />
+              </div>
+
+              {families.length === 0 && (
+                <div style={{ textAlign:"center", padding:60, color:"#888" }}>No families found.</div>
+              )}
+
+              {families.map(family => {
+                const isOpen = expandedFamily === family.lastName.toLowerCase();
+                return (
+                  <div key={family.lastName} style={{ background:"#fff", borderRadius:12, border:`1px solid ${CREAM_DARK}`, marginBottom:12, overflow:"hidden" }}>
+                    {/* Family header — click to expand */}
+                    <div
+                      onClick={() => setExpandedFamily(isOpen ? null : family.lastName.toLowerCase())}
+                      style={{ padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", background: isOpen ? "#f0f4e8" : "#fff" }}
+                    >
+                      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                        <div style={{ width:40, height:40, borderRadius:"50%", background:OLIVE_DARK, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:16, fontWeight:"bold", flexShrink:0 }}>
+                          {family.lastName[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight:"bold", fontSize:16, color:OLIVE_DARK }}>
+                            {family.lastName} Family
+                          </div>
+                          <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
+                            {family.children.length} child{family.children.length !== 1 ? "ren" : ""}
+                            {family.parents.length > 0 && ` · ${family.parents.map(p => p.name).join(", ")}`}
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{ color:"#999", fontSize:18 }}>{isOpen ? "▲" : "▼"}</span>
+                    </div>
+
+                    {isOpen && (
+                      <div style={{ borderTop:`1px solid ${CREAM_DARK}` }}>
+
+                        {/* Parent info */}
+                        {family.parents.map((p, pi) => (
+                          <div key={pi} style={{ padding:"14px 20px", borderBottom:`1px solid ${CREAM_DARK}`, background:"#fafaf8" }}>
+                            <div style={{ fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", color:OLIVE, marginBottom:8 }}>
+                              Parent {family.parents.length > 1 ? pi + 1 : ""}
+                            </div>
+                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                              <div>
+                                <div style={{ fontSize:11, color:"#aaa", marginBottom:2 }}>Name</div>
+                                <div style={{ fontSize:14, color:"#333", fontWeight:"bold" }}>{p.name}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize:11, color:"#aaa", marginBottom:2 }}>Email</div>
+                                <a href={`mailto:${p.email}`} style={{ fontSize:14, color:OLIVE, textDecoration:"none" }}>{p.email}</a>
+                              </div>
+                              <div>
+                                <div style={{ fontSize:11, color:"#aaa", marginBottom:2 }}>Phone / WhatsApp</div>
+                                <div style={{ fontSize:14, color:"#333" }}>{p.phone}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Children */}
+                        <div style={{ padding:"12px 20px 4px" }}>
+                          <div style={{ fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", color:OLIVE, marginBottom:10 }}>Children</div>
+                          {family.children.map((ch, ci) => {
+                            const age = calcAge(ch.dob);
+                            return (
+                              <div key={ci} style={{ display:"grid", gridTemplateColumns:"2fr 0.8fr 1.5fr 2fr 2fr", gap:12, padding:"10px 0", borderTop: ci > 0 ? `1px solid ${CREAM_DARK}` : "none", alignItems:"start" }}>
+                                <div>
+                                  <div style={{ fontWeight:"bold", fontSize:14, color:OLIVE_DARK }}>{ch.firstName} {ch.lastName}</div>
+                                  {age !== "—" && <div style={{ fontSize:12, color:"#888", marginTop:2 }}>Age {age}</div>}
+                                </div>
+                                <div style={{ fontSize:13, color:"#555", paddingTop:2 }}>{ch.program || "—"}</div>
+                                <div>
+                                  <div style={{ fontSize:11, color:"#aaa", marginBottom:2 }}>Allergies</div>
+                                  <div style={{ fontSize:13, color:"#555", wordBreak:"break-word" }}>{ch.allergies || <span style={{ color:"#bbb" }}>None</span>}</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize:11, color:"#aaa", marginBottom:2 }}>Medical Notes</div>
+                                  <div style={{ fontSize:13, color:"#555", wordBreak:"break-word" }}>{ch.medicalNotes || <span style={{ color:"#bbb" }}>—</span>}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ height:8 }}/>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+        </div>
+      )}
+
         </div>
       )}
 
       {selectedReg && <RegModal reg={selectedReg} onClose={()=>setSelectedReg(null)} />}
       {selectedHarmony && <HarmonyModal booking={selectedHarmony} onClose={()=>setSelectedHarmony(null)} />}
       {selectedKid && <KidModal child={selectedKid} onClose={()=>setSelectedKid(null)} />}
+    </div>
     </div>
   );
 }
