@@ -636,7 +636,7 @@ export default function ParentPortal() {
         </div>
 
         {/* Main content */}
-        <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px", overflowY:"auto" }}>
+        <div className="portal-main" style={{ flex:1, padding:"28px 32px", minWidth:0, maxWidth:"700px", overflowY:"auto", position:"relative" }}>
 
           {/* ── Children ── */}
           {activeSection==="children"&&(
@@ -849,7 +849,7 @@ export default function ParentPortal() {
             </div>
           )}
 
-          {/* menu-weekly */}{activeSection==="menu"&&(<div><h2 style={{fontSize:"22px",fontWeight:400,marginBottom:"8px"}}>Weekly Menu</h2><p style={{fontSize:"13px",color:"#7a7a9a",marginBottom:"20px",fontFamily:"Georgia,serif"}}>Our chef prepares fresh, locally sourced meals every day. Natural electrolytes served Monday, Wednesday and Friday.</p><img src="/weekly-menu.jpg" alt="Weekly Menu" style={{width:"100%",borderRadius:"12px",border:"1px solid #e0d8c8",display:"block"}}/></div>)}{/* ── Payments ── */}
+          {/* menu-weekly */}{activeSection==="menu"&&(<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,padding:"28px 32px",overflowY:"auto",display:"flex",flexDirection:"column"}}><h2 style={{fontSize:"22px",fontWeight:400,marginBottom:"8px",fontFamily:"Georgia,serif",flexShrink:0}}>Weekly Menu</h2><p style={{fontSize:"13px",color:"#7a7a9a",marginBottom:"16px",fontFamily:"Georgia,serif",flexShrink:0}}>Fresh, locally sourced meals daily. Natural electrolytes Mon, Wed and Fri.</p><img src="/weekly-menu.jpg" alt="Weekly Menu" style={{width:"100%",borderRadius:"12px",border:"1px solid #e0d8c8",display:"block",flex:1,objectFit:"contain"}}/></div>)}{/* ── Payments ── */}
           {activeSection==="payments"&&(
             <div>
               <h2 style={{ fontSize:"22px", fontWeight:400, marginBottom:"20px" }}>Payments</h2>
