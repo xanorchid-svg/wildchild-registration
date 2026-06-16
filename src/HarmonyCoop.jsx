@@ -436,8 +436,8 @@ export default function HarmonyCoop() {
               <input style={S.input} value={child.allergies} onChange={(e) => updateChild(i, "allergies", e.target.value)} placeholder="Any food or environmental allergies…" />
             </div>
             <div style={{ marginTop: 10 }}>
-              <label style={S.label}>Additional medical notes (N/A if not applicable)</label>
-              <input style={S.input} value={child.medicalNotes} onChange={(e) => updateChild(i, "medicalNotes", e.target.value)} placeholder="e.g. asthma, epi-pen required — or N/A" />
+              <label style={S.label}>Additional medical notes (optional)</label>
+              <input style={S.input} value={child.medicalNotes} onChange={(e) => updateChild(i, "medicalNotes", e.target.value)} placeholder="e.g. asthma, epi-pen required, seizure history…" />
             </div>
           </div>
         ))}
