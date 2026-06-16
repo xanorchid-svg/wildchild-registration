@@ -839,7 +839,7 @@ export default function ParentPortal() {
                   </div>
                 </div>
                 <a
-                  href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
+                  href="https://www.tripadvisor.com/UserReviewEdit-g656474-d34133093-Wild_Child_Nosara-Nosara_Province_of_Guanacaste.html"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ display:"inline-block", background:"rgba(255,255,255,0.18)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:"8px", padding:"11px 20px", color:"#fff", fontSize:"13px", textDecoration:"none", fontFamily:"Georgia,serif" }}>
