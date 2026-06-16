@@ -192,7 +192,7 @@ export default function HarmonyCoop() {
       return false;
     }
     const table = tierId === "harmony" ? "harmony_member_codes" : tierId === "wildchild" ? "wildchild_discount_codes" : "costa_rican_local_codes";
-    const { data } = await supabase.from(table).select("*").eq("code", code.trim().toLowerCase()).eq("active", true).maybeSingle();
+    const { data } = await supabase.from(table).select("*").eq("code", code.trim().toLowerCase()).maybeSingle();
     if (!data) {
       setTierCodeError(tierId === "harmony" ? "Code not recognised. Please check with Harmony Co-Op staff." : tierId === "wildchild" ? "Code not recognised. Please check with Wild Child staff." : "Code not recognised. Please use code: localharmony");
       setTierCodeValid(false);
