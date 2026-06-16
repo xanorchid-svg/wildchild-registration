@@ -34,6 +34,16 @@ const TIERS = [
     badgeColor: OLIVE,
   },
   {
+    id: "local",
+    label: "Costa Rican Family",
+    price: 64,
+    description: "Local Costa Rican families — 20% community rate",
+    requiresCode: true,
+    codeTable: "costa_rican_local_codes",
+    badge: "$64",
+    badgeColor: TEAL,
+  },
+  {
     id: "general",
     label: "Open to All",
     price: 80,
@@ -181,10 +191,10 @@ export default function HarmonyCoop() {
       setTierCodeError("Please enter your code.");
       return false;
     }
-    const table = tierId === "harmony" ? "harmony_member_codes" : "wildchild_discount_codes";
+    const table = tierId === "harmony" ? "harmony_member_codes" : tierId === "wildchild" ? "wildchild_discount_codes" : "costa_rican_local_codes";
     const { data } = await supabase.from(table).select("*").eq("code", code.trim().toLowerCase()).eq("active", true).maybeSingle();
     if (!data) {
-      setTierCodeError(tierId === "harmony" ? "Code not recognised. Please check with Harmony Co-Op staff." : "Code not recognised. Please check with Wild Child staff.");
+      setTierCodeError(tierId === "harmony" ? "Code not recognised. Please check with Harmony Co-Op staff." : tierId === "wildchild" ? "Code not recognised. Please check with Wild Child staff." : "Code not recognised. Please use code: localharmony");
       setTierCodeValid(false);
       return false;
     }
@@ -375,8 +385,9 @@ export default function HarmonyCoop() {
           </div>
         ))}
         <div style={{ fontSize: 12, color: "#999", marginTop: 10, borderTop: `1px solid ${CREAM_DARK}`, paddingTop: 10 }}>
-          Ages 2–6 only · Codes required for Harmony Member and Wild Child Family tiers
+          Ages 2–6 only · Codes required for Harmony Member, Wild Child Family, and Costa Rican Family tiers
         </div>
+        <div style={{ fontSize: 11, color: "#bbb", marginTop: 6, fontStyle: "italic" }}>Our pricing tiers run on the honour system. Please be a truthful citizen when selecting your tier — gracias 🌱</div>
       </div>
       {error && <div style={S.error}>{error}</div>}
       <button style={S.btn} onClick={handleNext}>Continue →</button>
@@ -473,13 +484,13 @@ export default function HarmonyCoop() {
             </div>
             {tier === t.id && t.requiresCode && (
               <div style={{ marginBottom: 12, marginTop: -4 }}>
-                <label style={S.label}>{t.id === "harmony" ? "Member code" : "Wild Child family code"}</label>
+                <label style={S.label}>{t.id === "harmony" ? "Member code" : t.id === "wildchild" ? "Wild Child family code" : "Costa Rican local code"}</label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     style={{ ...S.input, borderColor: tierCodeValid ? GREEN : tierCodeError ? "#f87171" : CREAM_DARK }}
                     value={tierCode}
                     onChange={(e) => { setTierCode(e.target.value); setTierCodeError(""); setTierCodeValid(false); }}
-                    placeholder={t.id === "harmony" ? "e.g. harmonymember" : "Your Wild Child code"}
+                    placeholder={t.id === "harmony" ? "e.g. harmonymember" : t.id === "wildchild" ? "Your Wild Child code" : "localharmony"}
                   />
                   <button onClick={() => validateTierCode(t.id, tierCode)} style={{ padding: "11px 14px", background: OLIVE_DARK, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "'Georgia', serif", whiteSpace: "nowrap" }}>Verify</button>
                 </div>

@@ -68,9 +68,10 @@ function calcAge(dob) {
 }
 
 const TIER_LABELS = {
-  harmony:   { label:"Harmony Member",    color:GREEN  },
-  wildchild: { label:"Wild Child Family", color:OLIVE  },
-  general:   { label:"Open to All",       color:NAVY   },
+  harmony:   { label:"Harmony Member",       color:GREEN  },
+  wildchild: { label:"Wild Child Family",    color:OLIVE  },
+  local:     { label:"Costa Rican Family",   color:TEAL   },
+  general:   { label:"Open to All",          color:NAVY   },
 };
 
 const S = {
