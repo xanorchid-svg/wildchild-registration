@@ -259,7 +259,7 @@ export default function HarmonyCoop() {
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ amount: price * 100, currency: "usd" }),
+        body: JSON.stringify({ amount: price, currency: "usd" }),
       });
       const { error: fnError } = await res.json();
       if (fnError) throw new Error(fnError);
