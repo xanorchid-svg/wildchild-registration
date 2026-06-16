@@ -233,7 +233,7 @@ export default function HarmonyCoop() {
         if (!ok) return;
       }
       if (price === 0) {
-        setStep(waiverSkipped ? 4 : 3);
+        setStep(waiverSkipped ? 5 : 4);
       } else {
         setStep(3);
       }
