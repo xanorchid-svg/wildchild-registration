@@ -136,7 +136,7 @@ export default function HarmonyCoop() {
   const [session, setSession] = useState(null);
 
   const [selectedDate, setSelectedDate] = useState(null);
-  const [children, setChildren] = useState([{ name: "", dob: "" }]);
+  const [children, setChildren] = useState([{ name: "", dob: "", allergies: "", medicalNotes: "" }]);
   const [childErrors, setChildErrors] = useState([]);
   const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
@@ -247,7 +247,6 @@ export default function HarmonyCoop() {
       if (!waivers.liability) { setError("Please accept the liability waiver."); return; }
       if (!waivers.medical) { setError("Please accept the medical consent."); return; }
       if (mediaChoice === null) { setError("Please select your media preference."); return; }
-      if (excursionChoice === null) { setError("Please select your excursion preference."); return; }
       if (!signature.trim()) { setError("Please enter your digital signature."); return; }
       await handleSubmit();
     }
@@ -279,7 +278,7 @@ export default function HarmonyCoop() {
       const dateKey = localKey(selectedDate);
       const { data, error: dbErr } = await supabase.from("harmony_bookings").insert({
         session_date: dateKey,
-        children: children.filter((c) => c.name.trim()),
+        children: children.filter((c) => c.name.trim()).map(c => ({ name: c.name, dob: c.dob, allergies: c.allergies || null, medicalNotes: c.medicalNotes || null })),
         parent_name: parentName.trim(),
         parent_email: parentEmail.trim(),
         parent_phone: parentPhone.trim(),
@@ -289,7 +288,7 @@ export default function HarmonyCoop() {
         waiver_liability: waivers.liability,
         waiver_medical: waivers.medical,
         waiver_media: mediaChoice,
-        waiver_excursion: excursionChoice,
+        waiver_excursion: null,
         waiver_signature: signature.trim(),
         waiver_date: new Date().toISOString().split("T")[0],
         parent_user_id: session?.user?.id || null,
@@ -304,7 +303,7 @@ export default function HarmonyCoop() {
     }
   }
 
-  function addChild() { if (children.length < 5) setChildren([...children, { name: "", dob: "" }]); }
+  function addChild() { if (children.length < 5) setChildren([...children, { name: "", dob: "", allergies: "", medicalNotes: "" }]); }
   function removeChild(i) { setChildren(children.filter((_, idx) => idx !== i)); setChildErrors([]); }
   function updateChild(i, field, val) { setChildren(children.map((c, idx) => idx === i ? { ...c, [field]: val } : c)); setChildErrors([]); }
 
@@ -431,6 +430,14 @@ export default function HarmonyCoop() {
                 return <div style={{ fontSize: 12, color: GREEN, marginTop: 4 }}>✓ Age {age} — eligible</div>;
               })()}
               {childErrors[i] && !child.dob && <div style={S.fieldError}>{childErrors[i]}</div>}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <label style={S.label}>Allergies (optional)</label>
+              <input style={S.input} value={child.allergies} onChange={(e) => updateChild(i, "allergies", e.target.value)} placeholder="Any food or environmental allergies…" />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <label style={S.label}>Additional medical notes (N/A if not applicable)</label>
+              <input style={S.input} value={child.medicalNotes} onChange={(e) => updateChild(i, "medicalNotes", e.target.value)} placeholder="e.g. asthma, epi-pen required — or N/A" />
             </div>
           </div>
         ))}
@@ -584,13 +591,6 @@ export default function HarmonyCoop() {
         <label style={S.radioRow}><input type="radio" name="media" checked={mediaChoice === false} onChange={() => setMediaChoice(false)} style={{ accentColor: OLIVE }} /> NO – I do NOT grant permission.</label>
       </div>
 
-      {/* Excursion */}
-      <div style={S.card}>
-        <div style={{ fontWeight: "bold", marginBottom: 10, color: OLIVE_DARK, fontSize: 14 }}>4. Excursion & Community Outings Permission</div>
-        <div style={S.waiverText}>{WAIVER_SECTIONS[3].text}</div>
-        <label style={S.radioRow}><input type="radio" name="excursion" checked={excursionChoice === true} onChange={() => setExcursionChoice(true)} style={{ accentColor: OLIVE }} /> YES – I grant permission for supervised outings.</label>
-        <label style={S.radioRow}><input type="radio" name="excursion" checked={excursionChoice === false} onChange={() => setExcursionChoice(false)} style={{ accentColor: OLIVE }} /> NO – I do NOT grant permission.</label>
-      </div>
 
       {/* Signature */}
       <div style={S.card}>
