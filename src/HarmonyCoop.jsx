@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 
@@ -130,6 +134,69 @@ function StepBar({ step, total }) {
   );
 }
 
+
+function HarmonyPaymentStep({ price, selectedDate, selectedTier, childrenList, parentEmail,
+  nameOnCard, setNameOnCard, paying, payError, error, onBack, onPay }) {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  return (
+    <>
+      <div style={{ background: "#4d5a2c", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 100 }}>
+        <button style={{ color: "rgba(255,255,255,0.8)", background: "none", border: "none", cursor: "pointer", fontSize: 14, fontFamily: "'Georgia', serif", padding: 0 }} onClick={onBack}>← Back</button>
+        <span style={{ color: "#fff", fontSize: 15, fontWeight: "normal", letterSpacing: "0.04em" }}>Payment</span>
+        <div style={{ width: 60 }} />
+      </div>
+      <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px" }}>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 28 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{ height: 4, flex: 1, maxWidth: 60, borderRadius: 2, background: i < 3 ? "#6b7a3f" : i === 3 ? "#c4682a" : "#e0d8c8" }} />
+          ))}
+        </div>
+
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0d8c8", padding: 24, marginBottom: 16 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#6b7a3f", marginBottom: 16 }}>Order summary</div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span>Wild Child at Harmony Co-Op</span><span></span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{selectedDate && selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}, 8–11am</span><span></span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{Array.isArray(childrenList) ? childrenList.filter(c => c.name).map(c => c.name).join(", ") : ""}</span><span></span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{selectedTier?.label}</span><span></span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 12, fontSize: 17, fontWeight: "bold" }}>
+            <span>Total</span><span style={{ color: "#4d5a2c" }}>${price}</span>
+          </div>
+        </div>
+
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0d8c8", overflow: "hidden", marginBottom: 16 }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e0d8c8" }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Name on card</label>
+            <input
+              value={nameOnCard}
+              onChange={e => setNameOnCard(e.target.value)}
+              placeholder="Full name as it appears on card"
+              style={{ width: "100%", border: "none", outline: "none", fontSize: 16, color: "#333", background: "transparent", fontFamily: "Georgia,serif", boxSizing: "border-box" }}
+            />
+          </div>
+          <div style={{ padding: 16 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Card details</label>
+            <CardElement options={{ style: { base: { fontSize: "16px", color: "#333", fontFamily: "Georgia, serif" } } }} />
+          </div>
+        </div>
+
+        {payError && <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "12px 16px", color: "#b91c1c", fontSize: 14, marginBottom: 16 }}>{payError}</div>}
+        {error && <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "12px 16px", color: "#b91c1c", fontSize: 14, marginBottom: 16 }}>{error}</div>}
+
+        <button
+          style={{ width: "100%", padding: "15px", background: paying ? "#8fa88a" : "#4d5a2c", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontFamily: "'Georgia', serif", cursor: paying ? "default" : "pointer", letterSpacing: "0.08em" }}
+          onClick={() => onPay(stripe, elements)}
+          disabled={paying}
+        >
+          {paying ? "Processing…" : `Pay $${price} →`}
+        </button>
+        <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "#999" }}>🔒 Secure payment via Stripe</div>
+      </div>
+    </>
+  );
+}
+
 export default function HarmonyCoop() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -154,6 +221,8 @@ export default function HarmonyCoop() {
 
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
+  const [nameOnCard, setNameOnCard] = useState("");
+  const [stripePaymentIntentId, setStripePaymentIntentId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -239,7 +308,7 @@ export default function HarmonyCoop() {
       }
     } else if (step === 3) {
       if (price > 0) {
-        await handlePayment();
+        // payment handled by HarmonyPaymentStep component
       } else {
         setStep(waiverSkipped ? 4 : 3);
       }
@@ -252,7 +321,9 @@ export default function HarmonyCoop() {
     }
   }
 
-  async function handlePayment() {
+  async function handlePayment(stripe, elements) {
+    if (!stripe || !elements) { setPayError("Payment not ready. Please refresh."); return; }
+    if (!nameOnCard.trim()) { setPayError("Please enter the name on your card."); return; }
     setPaying(true);
     setPayError("");
     try {
@@ -261,8 +332,17 @@ export default function HarmonyCoop() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
         body: JSON.stringify({ amount: price, currency: "usd", customerName: parentName.trim(), customerEmail: parentEmail.trim(), saveCard: false }),
       });
-      const { error: fnError } = await res.json();
+      const { clientSecret, error: fnError } = await res.json();
       if (fnError) throw new Error(fnError);
+      if (!clientSecret) throw new Error("No client secret returned from payment server.");
+      const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: { name: nameOnCard.trim(), email: parentEmail.trim() },
+        },
+      });
+      if (stripeErr) throw new Error(stripeErr.message);
+      setStripePaymentIntentId(paymentIntent.id);
       setStep(waiverSkipped ? 5 : 4);
     } catch (e) {
       setPayError(e.message || "Payment failed. Please try again.");
@@ -292,7 +372,8 @@ export default function HarmonyCoop() {
         waiver_signature: signature.trim(),
         waiver_date: new Date().toISOString().split("T")[0],
         parent_user_id: session?.user?.id || null,
-        payment_status: price === 0 ? "free" : "pending",
+        payment_status: price === 0 ? "free" : "paid",
+        stripe_payment_intent_id: stripePaymentIntentId || null,
       }).select("id").single();
       if (dbErr) throw dbErr;
       setStep(5);
@@ -515,45 +596,23 @@ export default function HarmonyCoop() {
   </>);
 
   // ── Step 3: Payment ───────────────────────────────────────────────────────
-  if (step === 3 && price > 0) return wrap(<>
-    <div style={S.header}>
-      <button style={S.headerBack} onClick={() => setStep(2)}>← Back</button>
-      <span style={S.headerTitle}>Payment</span>
-      <div style={{ width: 60 }} />
-    </div>
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px" }}>
-      <StepBar step={3} total={5} />
-      <div style={S.card}>
-        <div style={S.sectionLabel}>Order summary</div>
-        <div style={S.summaryRow}><span>Wild Child at Harmony Co-Op</span><span></span></div>
-        <div style={S.summaryRow}><span style={{ color: "#777" }}>{selectedDate && formatDate(selectedDate)}, 8–11am</span><span></span></div>
-        <div style={S.summaryRow}><span style={{ color: "#777" }}>{children.filter(c => c.name).map(c => c.name).join(", ")}</span><span></span></div>
-        <div style={S.summaryRow}><span style={{ color: "#777" }}>{selectedTier?.label}</span><span></span></div>
-        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 12, fontSize: 17, fontWeight: "bold" }}>
-          <span>Total</span><span style={{ color: OLIVE_DARK }}>${price}</span>
-        </div>
-      </div>
-      <div style={S.card}>
-        <div style={S.sectionLabel}>Card details</div>
-        <div style={{ marginBottom: 14 }}>
-          <label style={S.label}>Card number</label>
-          <input style={S.input} placeholder="4242 4242 4242 4242" maxLength={19} />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div><label style={S.label}>Expiry</label><input style={S.input} placeholder="MM/YY" maxLength={5} /></div>
-          <div><label style={S.label}>CVC</label><input style={S.input} placeholder="123" maxLength={4} /></div>
-        </div>
-      </div>
-      {payError && <div style={S.error}>{payError}</div>}
-      {error && <div style={S.error}>{error}</div>}
-      <button style={{ ...S.btn, background: paying ? SAGE : OLIVE_DARK }} onClick={handleNext} disabled={paying}>
-        {paying ? "Processing…" : `Pay $${price} →`}
-      </button>
-      <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "#999" }}>🔒 Secure payment via Stripe</div>
-    </div>
-  </>);
-
-  // ── Step 4: Waiver ────────────────────────────────────────────────────────
+  if (step === 3 && price > 0) return (
+    <Elements stripe={stripePromise}>
+      <HarmonyPaymentStep
+        price={price}
+        selectedDate={selectedDate}
+        selectedTier={selectedTier}
+        childrenList={children}
+        nameOnCard={nameOnCard}
+        setNameOnCard={setNameOnCard}
+        paying={paying}
+        payError={payError}
+        error={error}
+        onBack={() => setStep(2)}
+        onPay={handlePayment}
+      />
+    </Elements>
+  );
   if (step === 4) return wrap(<>
     <div style={S.header}>
       <button style={S.headerBack} onClick={() => setStep(price > 0 ? 3 : 2)}>← Back</button>
