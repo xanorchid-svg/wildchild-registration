@@ -739,6 +739,46 @@ export default function Admin() {
                     <option value="program">Sort: Program</option>
                     <option value="weeks">Sort: Weeks (most first)</option>
                   </select>
+                  <button onClick={() => {
+                    const rows = [
+                      ["first_name","last_name","date_of_birth","homeroom","allergies","medications","notes","enrollment_status","contact_1_first_name","contact_1_last_name","contact_1_email","contact_1_phone"]
+                    ];
+                    filteredKids.forEach(child => {
+                      const nameParts = (child.parent_name || "").trim().split(" ");
+                      const parentFirst = nameParts[0] || "";
+                      const parentLast = nameParts.slice(1).join(" ") || "";
+                      // Find days from registrations for this child
+                      const matchedReg = registrations.find(r =>
+                        r.child_first_name?.toLowerCase() === child.first_name?.toLowerCase() &&
+                        r.child_last_name?.toLowerCase() === child.last_name?.toLowerCase()
+                      );
+                      const days = Array.isArray(matchedReg?.selected_days) ? matchedReg.selected_days.join(", ") : "";
+                      rows.push([
+                        child.first_name || "",
+                        child.last_name || "",
+                        child.dob || "",
+                        child.program_name || "",
+                        child.allergies || "",
+                        child.medical_notes || "",
+                        days ? `Enrolled days: ${days}` : "",
+                        "Active",
+                        parentFirst,
+                        parentLast,
+                        child.parent_email || "",
+                        "",
+                      ]);
+                    });
+                    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+                    const blob = new Blob([csv], { type:"text/csv" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `wildchild-brightwheel-roster-${new Date().toISOString().split("T")[0]}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }} style={{ padding:"8px 14px", background:TEAL, color:"#fff", border:"none", borderRadius:8, fontSize:13, fontFamily:"'Georgia',serif", cursor:"pointer", whiteSpace:"nowrap" }}>
+                    ⬇ Export for Brightwheel
+                  </button>
                 </div>
               </div>
 
