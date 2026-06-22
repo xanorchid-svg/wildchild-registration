@@ -885,6 +885,18 @@ export default function WildChildRegistration() {
                 </div>
               </div>
             )}
+            <div style={{ background:'#fff', border:`1px solid ${CREAM_DARK}`, borderRadius:10, padding:20, maxWidth:420, margin:'0 auto 24px', textAlign:'left' }}>
+              <div style={{ fontWeight:700, color:OLIVE_DARK, marginBottom:6, fontSize:15 }}>📋 One more step!</div>
+              <p style={{ fontSize:14, color:'#555', lineHeight:1.6, marginBottom:14 }}>
+                Please complete your child's profile in Brightwheel — this is how Wild Child manages attendance, daily updates, and communication for all families.
+              </p>
+              <a href="https://schools.mybrightwheel.com/sign-in?redirect_path=forms/ac2f43b8-f7d5-4624-b7af-c039f5e15fd0/self-service"
+                target="_blank" rel="noopener noreferrer"
+                style={{ display:'block', background:'#5463d6', color:'#fff', borderRadius:8,
+                  padding:'12px 20px', fontSize:14, fontWeight:700, textDecoration:'none', textAlign:'center' }}>
+                Complete Brightwheel Profile →
+              </a>
+            </div>
             <button onClick={() => navigate(user ? '/portal' : '/')} style={{
               background: OLIVE_DARK, color: CREAM, border: 'none', borderRadius: 6,
               padding: '14px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
