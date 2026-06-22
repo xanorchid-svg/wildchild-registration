@@ -448,6 +448,11 @@ export default function WildChildRegistration() {
 
   // ── Navigation ────────────────────────────────────────────────────────────
   function nextStep() {
+    if (step === PAYMENT_STEP - 1 && grandTotal === 0) {
+      // Free enrollment — skip payment, go straight to waiver or submit
+      if (waiverAlreadySigned) { submitRegistration(null); return; }
+      setStep(WAIVER_STEP); return;
+    }
     if (step === PAYMENT_STEP) {
       if (waiverAlreadySigned) { submitRegistration(null); return; }
       setStep(WAIVER_STEP); return;
@@ -793,7 +798,17 @@ export default function WildChildRegistration() {
         )}
 
         {/* ── PAYMENT STEP (both flows) ─────────────────────────────────────── */}
-        {step === PAYMENT_STEP && (
+        {step === PAYMENT_STEP && grandTotal === 0 && (
+          <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${CREAM_DARK}`, padding:32, textAlign:"center" }}>
+            <div style={{ fontSize:40, marginBottom:16 }}>🌿</div>
+            <h2 style={{ color:OLIVE_DARK, marginBottom:8 }}>No Payment Required</h2>
+            <p style={{ color:"#555", marginBottom:24 }}>Your discount code covers the full enrollment. Click below to continue to the waiver.</p>
+            <button onClick={nextStep} style={{ background:OLIVE, color:"#fff", border:"none", borderRadius:8, padding:"12px 32px", fontSize:15, fontFamily:"'Georgia',serif", cursor:"pointer" }}>
+              Continue to Waiver →
+            </button>
+          </div>
+        )}
+        {step === PAYMENT_STEP && grandTotal > 0 && (
           <Elements stripe={stripePromise}>
             <PaymentStep
               childTotals={childTotals} children={children} selectedDays={selectedDays}
