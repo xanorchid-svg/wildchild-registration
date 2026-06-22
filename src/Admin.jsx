@@ -274,6 +274,7 @@ export default function Admin() {
   const [crFilter, setCrFilter] = useState("pending");
   const [approvingId, setApprovingId] = useState(null);
   const [kidSearch, setKidSearch] = useState("");
+  const [selectedKidIds, setSelectedKidIds] = useState(new Set());
   const [kidSort, setKidSort] = useState("name");
   const [familySearch, setFamilySearch] = useState("");
   const [expandedFamily, setExpandedFamily] = useState(null);
@@ -740,10 +741,13 @@ export default function Admin() {
                     <option value="weeks">Sort: Weeks (most first)</option>
                   </select>
                   <button onClick={() => {
+                    const toExport = selectedKidIds.size > 0
+                      ? filteredKids.filter(c => selectedKidIds.has(c.id || c.first_name+c.last_name))
+                      : filteredKids;
                     const rows = [
                       ["first_name","last_name","date_of_birth","homeroom","allergies","medications","notes","enrollment_status","contact_1_first_name","contact_1_last_name","contact_1_email","contact_1_phone"]
                     ];
-                    filteredKids.forEach(child => {
+                    toExport.forEach(child => {
                       const nameParts = (child.parent_name || "").trim().split(" ");
                       const parentFirst = nameParts[0] || "";
                       const parentLast = nameParts.slice(1).join(" ") || "";
@@ -777,7 +781,7 @@ export default function Admin() {
                     a.click();
                     URL.revokeObjectURL(url);
                   }} style={{ padding:"8px 14px", background:TEAL, color:"#fff", border:"none", borderRadius:8, fontSize:13, fontFamily:"'Georgia',serif", cursor:"pointer", whiteSpace:"nowrap" }}>
-                    ⬇ Export for Brightwheel
+                    ⬇ {selectedKidIds.size > 0 ? `Export Selected (${selectedKidIds.size})` : "Export All for Brightwheel"}
                   </button>
                 </div>
               </div>
@@ -788,7 +792,19 @@ export default function Admin() {
 
               <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${CREAM_DARK}`, overflow:"hidden" }}>
                 {/* Table header */}
-                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1.5fr 0.7fr 2fr 2fr", gap:0, background:OLIVE_DARK, padding:"10px 16px" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"32px 2fr 1fr 1.5fr 0.7fr 2fr 2fr", gap:0, background:OLIVE_DARK, padding:"10px 16px", alignItems:"center" }}>
+                  <input type="checkbox"
+                    checked={filteredKids.length > 0 && filteredKids.every(c => selectedKidIds.has(c.id || c.first_name+c.last_name))}
+                    onChange={e => {
+                      const next = new Set(selectedKidIds);
+                      filteredKids.forEach(c => {
+                        const k = c.id || c.first_name+c.last_name;
+                        e.target.checked ? next.add(k) : next.delete(k);
+                      });
+                      setSelectedKidIds(next);
+                    }}
+                    style={{ cursor:"pointer", width:15, height:15 }}
+                  />
                   {["Name","Age","Program","Weeks","Allergies","Medical Notes"].map(h => (
                     <div key={h} style={{ fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", color:"rgba(255,255,255,0.8)", fontFamily:"'Georgia',serif" }}>{h}</div>
                   ))}
@@ -797,21 +813,33 @@ export default function Admin() {
                 {filteredKids.map((child, idx) => {
                   const age = calcAge(child.dob);
                   const isLast = idx === filteredKids.length - 1;
+                  const kidKey = child.id || child.first_name+child.last_name;
+                  const isChecked = selectedKidIds.has(kidKey);
                   return (
                     <div
                       key={child.id}
                       onClick={() => setSelectedKid(child)}
                       style={{
-                        display:"grid", gridTemplateColumns:"2fr 1fr 1.5fr 0.7fr 2fr 2fr",
+                        display:"grid", gridTemplateColumns:"32px 2fr 1fr 1.5fr 0.7fr 2fr 2fr",
                         gap:0, padding:"12px 16px", cursor:"pointer",
                         alignItems:"start",
                         borderBottom: isLast ? "none" : `1px solid ${CREAM_DARK}`,
-                        background: idx % 2 === 0 ? "#fff" : "#fdfcfa",
+                        background: isChecked ? "#f0f4e8" : idx % 2 === 0 ? "#fff" : "#fdfcfa",
                         transition:"background 0.1s",
                       }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f0f4e8"}
-                      onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "#fdfcfa"}
+                      onMouseLeave={e => e.currentTarget.style.background = isChecked ? "#f0f4e8" : idx % 2 === 0 ? "#fff" : "#fdfcfa"}
                     >
+                      <input type="checkbox"
+                        checked={isChecked}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => {
+                          const next = new Set(selectedKidIds);
+                          e.target.checked ? next.add(kidKey) : next.delete(kidKey);
+                          setSelectedKidIds(next);
+                        }}
+                        style={{ cursor:"pointer", width:15, height:15, marginTop:2 }}
+                      />
                       <div>
                         <div style={{ fontWeight:"bold", fontSize:14, color:OLIVE_DARK, wordBreak:"break-word" }}>{child.first_name} {child.last_name}</div>
                         <div style={{ fontSize:11, color:"#999", marginTop:2 }}>{child.parent_name}</div>
