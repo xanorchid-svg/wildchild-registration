@@ -419,6 +419,29 @@ export default function WildChildRegistration() {
       setStep(CONFIRM_STEP);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
+      // Safety net — log failed enrollment to DB so no one falls through the cracks
+      try {
+        await supabase.from('failed_enrollments').insert({
+          parent_name:              parentInfo.name,
+          parent_email:             parentInfo.email,
+          parent_phone:             parentInfo.phone,
+          stripe_payment_intent_id: paymentIntentId || null,
+          grand_total:              grandTotal || null,
+          error_message:            err.message || 'Unknown error',
+          enrollment_data: {
+            children,
+            selectedDays,
+            lunch,
+            paymentPlan,
+            childTotals,
+            waivers,
+            signature,
+            discountCode: hasLocalCode ? localCode.trim().toLowerCase() : null,
+          },
+        });
+      } catch (logErr) {
+        console.warn('Failed to log failed enrollment:', logErr);
+      }
     }
     setLoading(false);
   }
