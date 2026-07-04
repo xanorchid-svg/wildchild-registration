@@ -212,7 +212,7 @@ function HarmonyModal({ booking, onClose }) {
           <h3 style={{ margin:0, color:TEAL, fontSize:18 }}>🌿 Saturday Booking</h3>
           <button onClick={onClose} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#999" }}>×</button>
         </div>
-        <div style={S.modalLabel}>Date</div><div style={S.modalValue}>{formatSaturdayDate(booking.session_date)} · 8–11am</div>
+        <div style={S.modalLabel}>Date</div><div style={S.modalValue}>{formatSaturdayDate(booking.session_date)} · 8:30–11:30am</div>
         <div style={S.modalLabel}>Children</div><div style={S.modalValue}>{kids.map((c,i)=><div key={i}>{c.name}{c.age?`, age ${c.age}`:""}</div>)}</div>
         <div style={S.modalLabel}>Parent</div><div style={S.modalValue}>{booking.parent_name}<br/><span style={{ fontSize:13, color:"#888" }}>{booking.parent_email} · {booking.parent_phone}</span></div>
         <div style={S.modalLabel}>Tier</div><div style={{ marginBottom:16 }}><span style={{ ...S.badge(tierInfo.color), fontSize:13 }}>{tierInfo.label}</span></div>
@@ -624,7 +624,7 @@ export default function Admin() {
                     <div style={S.satHeader(isUpcoming)}>
                       <div>
                         <div style={{ fontWeight:"bold", fontSize:16, color:isUpcoming?TEAL:"#666" }}>{formatSaturdayDate(dateStr)}</div>
-                        <div style={{ fontSize:12, color:"#888", marginTop:2 }}>8:00 – 11:00 am · Harmony Co-Op Playground</div>
+                        <div style={{ fontSize:12, color:"#888", marginTop:2 }}>8:30 – 11:30 am · Harmony Co-Op Playground</div>
                       </div>
                       <div style={{ textAlign:"right" }}>
                         <div style={{ fontWeight:"bold", color:OLIVE_DARK, fontSize:16 }}>{bookings.length} booking{bookings.length!==1?"s":""}</div>

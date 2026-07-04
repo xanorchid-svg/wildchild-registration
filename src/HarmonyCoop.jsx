@@ -157,7 +157,7 @@ function HarmonyPaymentStep({ price, selectedDate, selectedTier, childrenList, p
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0d8c8", padding: 24, marginBottom: 16 }}>
           <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#6b7a3f", marginBottom: 16 }}>Order summary</div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span>Wild Child at Harmony Co-Op</span><span></span></div>
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{selectedDate && selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}, 8–11am</span><span></span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{selectedDate && selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}, 8:30–11:30am</span><span></span></div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{Array.isArray(childrenList) ? childrenList.filter(c => c.name).map(c => c.name).join(", ") : ""}</span><span></span></div>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0d8c8", fontSize: 14 }}><span style={{ color: "#777" }}>{selectedTier?.label}</span><span></span></div>
           <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 12, fontSize: 17, fontWeight: "bold" }}>
@@ -430,7 +430,7 @@ export default function HarmonyCoop() {
     <div style={S.hero}>
       <div style={S.heroEyebrow}>Wild Child Nosara</div>
       <h1 style={S.heroTitle}>Wild Child at<br />Harmony Co-Op</h1>
-      <p style={S.heroSub}>Saturday mornings in nature · 8:00 – 11:00 am</p>
+      <p style={S.heroSub}>Saturday mornings in nature · 8:30 – 11:30 am</p>
       <div style={S.heroPills}>
         <span style={S.pill}>Every Saturday</span>
         <span style={S.pill}>Ages 2–6</span>
@@ -447,7 +447,7 @@ export default function HarmonyCoop() {
             <div key={i} style={S.satCard(selected)} onClick={() => setSelectedDate(sat)}>
               <div>
                 <div style={{ fontWeight: "bold", fontSize: 15 }}>{formatDate(sat)}</div>
-                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>8:00 – 11:00 am · Harmony Co-Op Playground</div>
+                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>8:30 – 11:30 am · Harmony Co-Op Playground</div>
               </div>
               <div style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${selected ? ORANGE : CREAM_DARK}`, background: selected ? ORANGE : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {selected && <span style={{ color: "#fff", fontSize: 12 }}>✓</span>}
@@ -484,7 +484,7 @@ export default function HarmonyCoop() {
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px" }}>
       <StepBar step={1} total={5} />
       <div style={{ ...S.card, background: `${TEAL}10`, border: `1px solid ${TEAL}30`, marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: TEAL }}>📅 <strong>{selectedDate && formatDate(selectedDate)}</strong> · 8:00 – 11:00 am</div>
+        <div style={{ fontSize: 13, color: TEAL }}>📅 <strong>{selectedDate && formatDate(selectedDate)}</strong> · 8:30 – 11:30 am</div>
       </div>
       <div style={{ ...S.card, background: `${ORANGE}08`, border: `1px solid ${ORANGE}30`, marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: ORANGE }}>⚠️ Children must be between <strong>2 and 6 years old</strong> to attend.</div>
@@ -685,7 +685,7 @@ export default function HarmonyCoop() {
       <div style={{ ...S.card, textAlign: "left" }}>
         <div style={S.sectionLabel}>Booking details</div>
         <div style={S.summaryRow}><span style={{ color: "#777" }}>Date</span><span style={{ fontWeight: "bold" }}>{selectedDate && formatDate(selectedDate)}</span></div>
-        <div style={S.summaryRow}><span style={{ color: "#777" }}>Time</span><span>8:00 – 11:00 am</span></div>
+        <div style={S.summaryRow}><span style={{ color: "#777" }}>Time</span><span>8:30 – 11:30 am</span></div>
         <div style={S.summaryRow}><span style={{ color: "#777" }}>Location</span><span>Harmony Co-Op Playground, Nosara</span></div>
         <div style={S.summaryRow}><span style={{ color: "#777" }}>Children</span><span>{children.filter(c => c.name).map(c => c.name).join(", ")}</span></div>
         <div style={S.summaryRow}><span style={{ color: "#777" }}>Tier</span><span>{selectedTier?.label}</span></div>
