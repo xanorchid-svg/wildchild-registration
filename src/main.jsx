@@ -1,24 +1,28 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import WelcomePage from "./WelcomePage";
-import WildChildRegistration from "./WildChildRegistration";
+import SitePaused from "./SitePaused";
 import AdminLogin from "./AdminLogin";
 import Admin from "./Admin";
 import ParentPortal from "./ParentPortal";
-import ScheduleView from "./ScheduleView";
-import HarmonyCoop from "./HarmonyCoop";
 import ProtectedRoute from "./ProtectedRoute";
+
+// ⚠️ SITE PAUSED — public pages (/, /register, /harmony, /schedule) show the
+// renovation notice instead of the normal flow. Existing families/staff can
+// still reach /login, /portal, and /admin directly.
+// To restore the live site: swap these four routes back to WelcomePage,
+// WildChildRegistration, HarmonyCoop, and ScheduleView (see git history for
+// the previous version of this file).
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/register" element={<WildChildRegistration />} />
-        <Route path="/harmony" element={<HarmonyCoop />} />
+        <Route path="/" element={<SitePaused />} />
+        <Route path="/register" element={<SitePaused />} />
+        <Route path="/harmony" element={<SitePaused />} />
+        <Route path="/schedule" element={<SitePaused />} />
         <Route path="/login" element={<AdminLogin />} />
-        <Route path="/schedule" element={<ScheduleView />} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         <Route path="/portal" element={<ParentPortal />} />
       </Routes>
