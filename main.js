@@ -1,11 +1,11 @@
 
 (function(){
   var h=document.querySelector('header');
-  function onScroll(){h.classList.toggle('solid',window.scrollY>40)}
+  function onScroll(){var mm=document.querySelector('.menu');h.classList.toggle('solid',window.scrollY>40||(mm&&mm.classList.contains('open')))}
   onScroll();window.addEventListener('scroll',onScroll,{passive:true});
 
   var b=document.querySelector('.burger'),m=document.querySelector('.menu');
-  b.addEventListener('click',function(){var o=m.classList.toggle('open');b.setAttribute('aria-expanded',o)});
+  b.addEventListener('click',function(){var o=m.classList.toggle('open');b.setAttribute('aria-expanded',o);onScroll()});
   m.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#'){m.classList.remove('open')}});
 
   if('IntersectionObserver' in window){
