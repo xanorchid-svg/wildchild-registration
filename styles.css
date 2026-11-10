@@ -349,3 +349,11 @@ footer::before{content:"";position:absolute;inset:0;background:linear-gradient(1
 @media (max-width:860px){#contact-wrap,#register-wrap{grid-template-columns:1fr!important}}
 .chips span{min-width:0;max-width:100%}
 h1,h2,h3{overflow-wrap:break-word}
+/* header over photo heroes */
+.has-hero header:not(.solid) .menu>li>a:not(.btn){color:var(--cream);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.has-hero header:not(.solid) .logo img{filter:brightness(0) invert(1) drop-shadow(0 1px 6px rgba(0,0,0,.35))}
+.has-hero header:not(.solid) .burger span{background:var(--cream)}
+.has-hero header:not(.solid){background:linear-gradient(180deg,rgba(20,16,10,.45),rgba(20,16,10,0))}
+.hero-def{background:rgba(25,20,12,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:22px 26px;border-radius:18px}
+.hero-def p,.hero h1,.page-hero h1,.page-hero p.sub{text-shadow:0 2px 16px rgba(0,0,0,.35)}
+@media (max-width:900px){.has-hero header:not(.solid) .menu.open a{color:var(--brown);text-shadow:none}}

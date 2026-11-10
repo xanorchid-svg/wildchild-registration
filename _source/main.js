@@ -44,3 +44,4 @@
     });
   });
 })();
+(function(){if(document.querySelector('main>section.hero, main>section.page-hero:not(.plain)'))document.body.classList.add('has-hero')})();
