@@ -25,13 +25,14 @@
     window.addEventListener('scroll',function(){if(!tick){requestAnimationFrame(run);tick=true}},{passive:true});run();
   }
 
-  // newsletter: replace with Flodesk/Resend endpoint when deployed
-  var su=document.getElementById('signup');if(su)su.addEventListener('submit',function(e){
-    e.preventDefault();var v=this.email.value.trim(),msg=document.getElementById('signup-msg');
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){msg.textContent='Please enter a valid email address.';return}
-    // TODO: post to Flodesk / Resend. Until then, hand off to email so no signup is lost.
-    location.href='mailto:info@dandelionwildschooling.org?subject='+encodeURIComponent('Subscribe me to Wild Child\'s Letter')+'&body='+encodeURIComponent('Please add '+v+' to the Wild Child letter.');
-    msg.textContent='Opening your email app to confirm your signup…';
+  // upcoming Harmony Saturdays (links to the Wix booking calendar)
+  document.querySelectorAll('[data-saturdays]').forEach(function(box){
+    var n=+box.dataset.saturdays||6,d=new Date(),url='https://www.wildchildnosara.com/booking-calendar/wild-child-at-harmony-co-op-playground';
+    var cr=new Date(d.toLocaleString('en-US',{timeZone:'America/Costa_Rica'}));
+    var add=(6-cr.getDay()+7)%7;if(add===0&&cr.getHours()>=11)add=7;cr.setDate(cr.getDate()+add);
+    var html='';for(var i=0;i<n;i++){var x=new Date(cr);x.setDate(cr.getDate()+7*i);
+      html+='<a class="sat" href="'+url+'"><b>'+x.toLocaleDateString('en-US',{weekday:'short'})+'</b><span>'+x.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</span><small>8:30 am</small></a>'}
+    box.innerHTML=html;
   });
 
   // inquiry pop-up (same form as the Wix site's "Send us a note")
@@ -45,21 +46,38 @@
     dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close()});
   }
 
-  document.querySelectorAll('form[data-mailto]').forEach(function(f){
+  // forms → wildchild-forms /api/site (Resend email to Lili + Flodesk "Website inquiries")
+  var ENDPOINT='https://wildchild-forms.vercel.app/api/site';
+  var THANKS='Thank you for your message. We will be in contact soon.';
+  var FALLBACK=' Please email <a href="mailto:info@dandelionwildschooling.org">info@dandelionwildschooling.org</a> or WhatsApp <a href="https://wa.me/50661640827">+506 6164 0827</a>.';
+  document.querySelectorAll('form[data-form]').forEach(function(f){
     f.addEventListener('submit',function(e){
       e.preventDefault();
-      var m=f.querySelector('.msg'),grp=f.querySelector('[data-required-group]');
-      if(grp&&!grp.querySelector('input:checked')){if(m)m.textContent='Please choose at least one program (or "Not sure yet").';grp.querySelector('input').focus();return}
+      var m=f.querySelector('.msg'),btn=f.querySelector('button[type=submit]'),grp=f.querySelector('[data-required-group]');
+      function say(t,ok){if(m){m.innerHTML=t;m.className='msg'+(ok?' ok':' err')}}
+      if(grp&&!grp.querySelector('input:checked')){say('Please choose at least one program (or “Not sure yet”).');grp.querySelector('input').focus();return}
       if(!f.checkValidity()){f.reportValidity();return}
-      var rows={},order=[];
+      var rows={},order=[],data={form:f.dataset.form,page:location.pathname,company:(f.elements.company||{}).value||''};
       [].forEach.call(f.elements,function(el){
-        if(!el.name||!el.value)return;
+        if(!el.name||el.name==='company'||!el.value.trim())return;
         if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
-        var k=el.dataset.label||el.name;if(!(k in rows)){rows[k]=[];order.push(k)}rows[k].push(el.value);
+        if(el.name==='email')data.email=el.value.trim();
+        if(el.name==='first_name')data.first_name=el.value.trim();
+        if(el.name==='last_name')data.last_name=el.value.trim();
+        if(el.name==='name'){var p=el.value.trim().split(/\s+/);data.first_name=p.shift();data.last_name=p.join(' ')}
+        var k=el.dataset.label||el.getAttribute('aria-label')||el.name;if(!(k in rows)){rows[k]=[];order.push(k)}rows[k].push(el.value.trim());
       });
-      var body=order.map(function(k){return k+': '+rows[k].join(', ')}).join('\n');
-      location.href='mailto:'+f.dataset.mailto+'?subject='+encodeURIComponent(f.dataset.subject||'Website inquiry')+'&body='+encodeURIComponent(body);
-      if(m)m.textContent='Opening your email app with your message ready to send. If nothing opens, email info@dandelionwildschooling.org or WhatsApp +506 6164 0827.';
+      data.fields=order.map(function(k){return [k,rows[k].join(', ')]});
+      btn.disabled=true;var old=btn.textContent;btn.textContent='Sending…';say('');
+      fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+        .then(function(r){return r.json().catch(function(){return {ok:false}}).then(function(j){if(!r.ok||!j.ok)throw new Error(j.error||'');return j})})
+        .then(function(){
+          f.reset();
+          if(f.dataset.form==='newsletter'){say('Thank you — you’re subscribed to Wild Child’s Letter.',true)}
+          else{f.classList.add('sent');var d=document.createElement('div');d.className='sent-note';d.innerHTML='<h3>Thank you</h3><p>'+THANKS+'</p><p>For anything urgent, WhatsApp us at <a href="https://wa.me/50661640827">+506 6164 0827</a>.</p>';f.parentNode.insertBefore(d,f.nextSibling);d.scrollIntoView({block:'nearest',behavior:'smooth'})}
+        })
+        .catch(function(err){say((err.message&&err.message.length<160?err.message:'Something went wrong sending your message.')+(/email info@/.test(err.message)?'':FALLBACK))})
+        .then(function(){btn.disabled=false;btn.textContent=old});
     });
   });
 })();

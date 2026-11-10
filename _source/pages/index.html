@@ -220,11 +220,12 @@
   <div class="text reveal">
     <h2>Subscribe to Wild Child's Letter</h2>
     <p>Sign up with your email address to receive news and updates.</p>
-    <form id="signup" novalidate>
+    <form id="signup" data-form="newsletter" novalidate>
+<div class="hp" aria-hidden="true"><label>Company<input name="company" tabindex="-1" autocomplete="off"></label></div>
       <input type="email" name="email" placeholder="Email" aria-label="Email" required>
       <button class="btn" type="submit">Sign Up</button>
+      <div class="msg" role="status" style="flex-basis:100%"></div>
     </form>
-    <div class="msg" id="signup-msg" role="status"></div>
   </div>
   <figure>{{IMG d5e4c3_712eb937418241ada51114b348450848~mv2.jpg|1200|Wild Child Nosara| sizes="(max-width:820px) 100vw, 50vw"}}</figure>
 </section>

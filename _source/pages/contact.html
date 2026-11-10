@@ -8,7 +8,8 @@
   <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px)" id="contact-wrap">
     <div class="reveal">
       <h2 class="title">Reach Out</h2>
-      <form class="form" data-mailto="info@dandelionwildschooling.org" data-subject="Wild Child website inquiry" novalidate>
+      <form class="form" data-form="contact" novalidate>
+        <div class="hp" aria-hidden="true"><label>Company<input name="company" tabindex="-1" autocomplete="off"></label></div>
         <div class="row">
           <div><label for="c-name">Name</label><input id="c-name" name="name" data-label="Name" required></div>
           <div><label for="c-email">Email</label><input id="c-email" type="email" name="email" data-label="Email" required></div>
