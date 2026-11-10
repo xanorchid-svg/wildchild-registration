@@ -357,3 +357,17 @@ h1,h2,h3{overflow-wrap:break-word}
 .hero-def{background:rgba(25,20,12,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:22px 26px;border-radius:18px}
 .hero-def p,.hero h1,.page-hero h1,.page-hero p.sub{text-shadow:0 2px 16px rgba(0,0,0,.35)}
 @media (max-width:900px){.has-hero header:not(.solid) .menu.open a{color:var(--brown);text-shadow:none}}
+/* logo: same visual size as the Wix header */
+.nav{height:96px}
+.logo img{height:48px;width:auto}
+@media (max-width:900px){.nav{height:76px}.logo img{height:34px}.menu{inset:76px 0 auto 0;max-height:calc(100vh - 76px)}}
+.foot .flogo{height:44px}
+/* dictionary-style definition */
+.hero-def{max-width:470px;margin-left:0;padding:26px 30px 24px;border-left:3px solid rgba(240,235,222,.7);border-radius:4px 18px 18px 4px}
+.hero-def .display{font-size:clamp(58px,6.6vw,88px)}
+.dict-meta{display:flex;align-items:baseline;gap:14px;margin:4px 0 14px;padding-bottom:12px;border-bottom:1px solid rgba(240,235,222,.35);font-family:var(--serif);font-size:20px}
+.dict-meta .ipa{letter-spacing:.02em;opacity:.95}
+.dict-meta .pos{font-style:italic;opacity:.85}
+.dict-def{margin:0;padding-left:1.5em;font-family:var(--serif);font-size:clamp(19px,1.6vw,22px);line-height:1.5}
+.dict-def li{padding-left:.2em}
+.dict-def li::marker{font-weight:600}
