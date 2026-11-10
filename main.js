@@ -34,14 +34,32 @@
     msg.textContent='Opening your email app to confirm your signup…';
   });
 
+  // inquiry pop-up (same form as the Wix site's "Send us a note")
+  var dlg=document.getElementById('inquiry');
+  if(dlg&&dlg.showModal){
+    document.addEventListener('click',function(e){
+      var a=e.target.closest&&e.target.closest('[data-inquiry]');
+      if(a){e.preventDefault();dlg.showModal();var f=dlg.querySelector('input');if(f)f.focus()}
+    });
+    dlg.querySelector('.dialog-close').addEventListener('click',function(){dlg.close()});
+    dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close()});
+  }
+
   document.querySelectorAll('form[data-mailto]').forEach(function(f){
     f.addEventListener('submit',function(e){
       e.preventDefault();
+      var m=f.querySelector('.msg'),grp=f.querySelector('[data-required-group]');
+      if(grp&&!grp.querySelector('input:checked')){if(m)m.textContent='Please choose at least one program (or "Not sure yet").';grp.querySelector('input').focus();return}
       if(!f.checkValidity()){f.reportValidity();return}
-      var lines=[];[].forEach.call(f.elements,function(el){if(el.name&&el.value)lines.push((el.dataset.label||el.name)+': '+el.value)});
-      location.href='mailto:'+f.dataset.mailto+'?subject='+encodeURIComponent(f.dataset.subject||'Website inquiry')+'&body='+encodeURIComponent(lines.join('\n'));
-      var m=f.querySelector('.msg');if(m)m.textContent='Opening your email app with your message ready to send…';
+      var rows={},order=[];
+      [].forEach.call(f.elements,function(el){
+        if(!el.name||!el.value)return;
+        if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+        var k=el.dataset.label||el.name;if(!(k in rows)){rows[k]=[];order.push(k)}rows[k].push(el.value);
+      });
+      var body=order.map(function(k){return k+': '+rows[k].join(', ')}).join('\n');
+      location.href='mailto:'+f.dataset.mailto+'?subject='+encodeURIComponent(f.dataset.subject||'Website inquiry')+'&body='+encodeURIComponent(body);
+      if(m)m.textContent='Opening your email app with your message ready to send. If nothing opens, email info@dandelionwildschooling.org or WhatsApp +506 6164 0827.';
     });
   });
 })();
-(function(){if(document.querySelector('main>section.hero, main>section.page-hero:not(.plain)'))document.body.classList.add('has-hero')})();

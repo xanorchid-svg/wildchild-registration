@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=dab105c9">
+<link rel="stylesheet" href="/styles.css?v=724ee47b">
 </head>
 <body class="page-calendarandrhythm">
 <header id="top">
@@ -162,7 +162,7 @@
 <section class="cta-band" style="position:relative;overflow:hidden">
   <h2>Contact Us</h2>
   <p>WhatsApp: +506 6164 0827 · Email: info@dandelionwildschooling.org<br>Wild Child Playgarden &amp; Wildschooling</p>
-  <div class="ctas"><a class="btn" href="/register">Register</a><a class="btn ghost" href="https://wa.me/50661640827">WhatsApp us</a></div>
+  <div class="ctas"><a class="btn" href="/register" data-inquiry>Register</a><a class="btn ghost" href="https://wa.me/50661640827">WhatsApp us</a></div>
 </section>
 <div class="bleed" style="height:clamp(260px,40vw,560px)"><img src="https://static.wixstatic.com/media/b80b05_7a9d6235211e4894b1c5a1bc7ad95ca9~mv2.jpeg/v1/fit/w_1920,h_3840,q_85,enc_auto/b80b05_7a9d6235211e4894b1c5a1bc7ad95ca9~mv2.jpeg" srcset="https://static.wixstatic.com/media/b80b05_7a9d6235211e4894b1c5a1bc7ad95ca9~mv2.jpeg/v1/fit/w_960,h_1920,q_85,enc_auto/b80b05_7a9d6235211e4894b1c5a1bc7ad95ca9~mv2.jpeg 960w, https://static.wixstatic.com/media/b80b05_7a9d6235211e4894b1c5a1bc7ad95ca9~mv2.jpeg/v1/fit/w_1920,h_3840,q_85,enc_auto/b80b05_7a9d6235211e4894b1c5a1bc7ad95ca9~mv2.jpeg 1920w" alt="Wild Child Nosara" loading="lazy" decoding="async" sizes="100vw" data-parallax></div>
 
@@ -205,7 +205,49 @@
   </div>
 </footer>
 
+<dialog id="inquiry" aria-labelledby="inquiry-title">
+  <button class="dialog-close" type="button" aria-label="Close">×</button>
+  <span class="eyebrow">Curious about joining us?</span>
+  <h2 id="inquiry-title">Send us a note</h2>
+  <p class="dialog-sub">Tell us about your family and we'll reply with the complete program information and next steps.</p>
+  <form class="form inquiry-form" data-mailto="info@dandelionwildschooling.org" data-subject="Wild Child inquiry" novalidate>
+  <div class="row">
+    <div><label for="m-first">First name *</label><input id="m-first" name="first_name" data-label="First name" autocomplete="given-name" required></div>
+    <div><label for="m-last">Last name</label><input id="m-last" name="last_name" data-label="Last name" autocomplete="family-name"></div>
+  </div>
+  <div class="row">
+    <div><label for="m-email">Email *</label><input id="m-email" type="email" name="email" data-label="Email" autocomplete="email" required></div>
+    <div><label for="m-wa">WhatsApp</label><input id="m-wa" type="tel" name="whatsapp" data-label="WhatsApp" autocomplete="tel" placeholder="+506 …"></div>
+  </div>
+  <fieldset class="choices" data-required-group>
+    <legend>Which program are you interested in? *</legend>
+    <label><input type="checkbox" name="program" value="Ages 1–5" data-label="Program"> Ages 1–5 (Mon–Fri, 8 AM–2 PM)</label>
+    <label><input type="checkbox" name="program" value="Ages 6–9" data-label="Program"> Ages 6–9 (Mon–Fri, 8 AM–2 PM)</label>
+    <label><input type="checkbox" name="program" value="Ages 10–13" data-label="Program"> Ages 10–13 (Mon–Fri, 8 AM–2 PM, starts Nov 23)</label>
+    <label><input type="checkbox" name="program" value="Saturdays at Harmony Co-Op" data-label="Program"> Saturdays at Harmony Co-Op Playground (ages 3+, 8:30–11:30 AM)</label>
+    <label><input type="checkbox" name="program" value="Not sure yet" data-label="Program"> Not sure yet</label>
+  </fieldset>
+  <div><label for="m-child">Child's name and age</label><input id="m-child" name="child" data-label="Child's name and age"></div>
+  <div><label for="m-about">Tell us a little about your child *</label><textarea id="m-about" name="about_child" data-label="About the child" required></textarea></div>
+  <div><label for="m-family">A little about your family</label><textarea id="m-family" name="about_family" data-label="About the family"></textarea></div>
+  <div class="row">
+    <div><label for="m-stay">How long will you be in Nosara?</label><select id="m-stay" name="stay" data-label="Time in Nosara"><option value="">Choose…</option><option>A few weeks</option><option>1–2 months</option><option>The whole season (to March 19)</option><option>We live in Nosara</option><option>Still deciding</option></select></div>
+    <fieldset class="choices inline"><legend>How many days per week?</legend>
+      <label><input type="radio" name="days" value="3 days" data-label="Days per week"> 3 days</label>
+      <label><input type="radio" name="days" value="4 days" data-label="Days per week"> 4 days</label>
+      <label><input type="radio" name="days" value="5 days" data-label="Days per week"> 5 days</label>
+      <label><input type="radio" name="days" value="Not sure yet" data-label="Days per week"> Not sure yet</label>
+    </fieldset>
+  </div>
+  <div><label for="m-heard">How did you hear about us?</label><input id="m-heard" name="heard" data-label="Heard about us"></div>
+  <div><label for="m-else">Anything else? Questions welcome</label><textarea id="m-else" name="anything_else" data-label="Anything else"></textarea></div>
+  <div><button class="btn" type="submit">Submit</button></div>
+  <div class="msg" role="status"></div>
+</form>
+
+</dialog>
+
 <a class="wa" href="https://wa.me/50661640827" aria-label="Message us on WhatsApp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.7-.3-1.6-.8-2.4-1.9-.6-.8-.4-.8.3-1.8.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2 .7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.4z"/></svg></a>
-<script src="/main.js?v=dab105c9" defer></script>
+<script src="/main.js?v=724ee47b" defer></script>
 </body>
 </html>

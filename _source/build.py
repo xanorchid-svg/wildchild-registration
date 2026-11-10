@@ -8,7 +8,9 @@ def img(m):
     i, w, alt, extra = m.group(1), int(m.group(2)), m.group(3), m.group(4) or ''
     lazy = '' if 'loading=' in extra else ' loading="lazy"'
     return f'<img src="{src(i,w)}" srcset="{src(i,w//2)} {w//2}w, {src(i,w)} {w}w" alt="{alt}"{lazy} decoding="async"{extra}>'
+INQ = open(f'{SRC}/_inquiry.html').read()
 def macros(s):
+    s = re.sub(r'\{\{INQUIRY (\w+)\}\}', lambda m: INQ.replace('{{P}}', m.group(1)), s)
     s = re.sub(r"\{\{IMG ([^|]+)\|(\d+)\|([^|}]*)(?:\|([^}]*))?\}\}", img, s)
     return re.sub(r"\{\{URL ([^|]+)\|(\d+)\}\}", lambda m: src(m.group(1), int(m.group(2))), s)
 

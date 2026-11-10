@@ -1,0 +1,34 @@
+<form class="form inquiry-form" data-mailto="info@dandelionwildschooling.org" data-subject="Wild Child inquiry" novalidate>
+  <div class="row">
+    <div><label for="{{P}}-first">First name *</label><input id="{{P}}-first" name="first_name" data-label="First name" autocomplete="given-name" required></div>
+    <div><label for="{{P}}-last">Last name</label><input id="{{P}}-last" name="last_name" data-label="Last name" autocomplete="family-name"></div>
+  </div>
+  <div class="row">
+    <div><label for="{{P}}-email">Email *</label><input id="{{P}}-email" type="email" name="email" data-label="Email" autocomplete="email" required></div>
+    <div><label for="{{P}}-wa">WhatsApp</label><input id="{{P}}-wa" type="tel" name="whatsapp" data-label="WhatsApp" autocomplete="tel" placeholder="+506 …"></div>
+  </div>
+  <fieldset class="choices" data-required-group>
+    <legend>Which program are you interested in? *</legend>
+    <label><input type="checkbox" name="program" value="Ages 1–5" data-label="Program"> Ages 1–5 (Mon–Fri, 8 AM–2 PM)</label>
+    <label><input type="checkbox" name="program" value="Ages 6–9" data-label="Program"> Ages 6–9 (Mon–Fri, 8 AM–2 PM)</label>
+    <label><input type="checkbox" name="program" value="Ages 10–13" data-label="Program"> Ages 10–13 (Mon–Fri, 8 AM–2 PM, starts Nov 23)</label>
+    <label><input type="checkbox" name="program" value="Saturdays at Harmony Co-Op" data-label="Program"> Saturdays at Harmony Co-Op Playground (ages 3+, 8:30–11:30 AM)</label>
+    <label><input type="checkbox" name="program" value="Not sure yet" data-label="Program"> Not sure yet</label>
+  </fieldset>
+  <div><label for="{{P}}-child">Child's name and age</label><input id="{{P}}-child" name="child" data-label="Child's name and age"></div>
+  <div><label for="{{P}}-about">Tell us a little about your child *</label><textarea id="{{P}}-about" name="about_child" data-label="About the child" required></textarea></div>
+  <div><label for="{{P}}-family">A little about your family</label><textarea id="{{P}}-family" name="about_family" data-label="About the family"></textarea></div>
+  <div class="row">
+    <div><label for="{{P}}-stay">How long will you be in Nosara?</label><select id="{{P}}-stay" name="stay" data-label="Time in Nosara"><option value="">Choose…</option><option>A few weeks</option><option>1–2 months</option><option>The whole season (to March 19)</option><option>We live in Nosara</option><option>Still deciding</option></select></div>
+    <fieldset class="choices inline"><legend>How many days per week?</legend>
+      <label><input type="radio" name="days" value="3 days" data-label="Days per week"> 3 days</label>
+      <label><input type="radio" name="days" value="4 days" data-label="Days per week"> 4 days</label>
+      <label><input type="radio" name="days" value="5 days" data-label="Days per week"> 5 days</label>
+      <label><input type="radio" name="days" value="Not sure yet" data-label="Days per week"> Not sure yet</label>
+    </fieldset>
+  </div>
+  <div><label for="{{P}}-heard">How did you hear about us?</label><input id="{{P}}-heard" name="heard" data-label="Heard about us"></div>
+  <div><label for="{{P}}-else">Anything else? Questions welcome</label><textarea id="{{P}}-else" name="anything_else" data-label="Anything else"></textarea></div>
+  <div><button class="btn" type="submit">Submit</button></div>
+  <div class="msg" role="status"></div>
+</form>
