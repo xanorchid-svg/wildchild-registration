@@ -467,3 +467,40 @@ button[disabled]{opacity:.7;cursor:wait}
 .menu a{white-space:nowrap}
 @media (max-width:1180px){.nav{height:84px}.menu{inset:84px 0 auto 0;max-height:calc(100vh - 84px)}}
 @media (max-width:900px){.nav{height:76px}.menu{inset:76px 0 auto 0;max-height:calc(100vh - 76px)}}
+/* royal blue (brand) accents, matching the Wix header/Programs page */
+:root{--royal:#25318D;--royal-dk:#1B2470}
+.btn-royal{background:var(--royal);border-color:var(--royal);color:#fff}
+.btn-royal:hover{background:var(--royal-dk);border-color:var(--royal-dk)}
+.menu .nav-enroll{letter-spacing:.16em;text-transform:uppercase;font-size:13px;padding:12px 26px;color:#fff}
+.menu .nav-enroll span{font-size:16px;margin-left:4px}
+@media (max-width:1180px){.menu>li:last-child{padding-top:18px}.menu>li:last-child .nav-enroll{flex:1;justify-content:center}}
+/* programs hero (royal band) */
+.programs-hero{position:relative;background:var(--royal);color:#fff;text-align:center;padding:clamp(150px,18vw,200px) 0 clamp(70px,9vw,110px);overflow:hidden}
+.programs-hero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.programs-hero .wrap{position:relative}
+.programs-hero .eyebrow{color:rgba(255,255,255,.85)}
+.programs-hero h1{font-family:var(--display);font-weight:400;color:#fff;font-size:clamp(52px,7vw,96px);letter-spacing:.02em;margin:10px 0 6px}
+.programs-hero .sub{font-family:var(--serif);font-size:clamp(20px,2vw,26px);margin-bottom:28px}
+.flyer-pair{display:grid;grid-template-columns:1fr 1fr;background:var(--royal)}
+.flyer-pair figure{overflow:hidden}
+.flyer-pair img{width:100%;height:100%;object-fit:cover;aspect-ratio:715/397}
+@media (max-width:760px){.flyer-pair{grid-template-columns:1fr}}
+.special-weeks{background:var(--royal);color:#fff;padding:clamp(60px,7vw,100px) 0}
+.special-weeks h2{font-family:var(--display);font-weight:400;color:#fff;text-align:center;font-size:clamp(46px,5.5vw,72px);margin-bottom:clamp(30px,4vw,50px)}
+.sw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,26px);margin-bottom:40px}
+.sw-grid figure{background:rgba(255,255,255,.06);border-radius:16px;overflow:hidden}
+.sw-grid img{width:100%;height:auto;aspect-ratio:436/603;object-fit:cover}
+.sw-grid figcaption{padding:14px 16px;font-size:15px;display:flex;justify-content:space-between;gap:10px}
+.sw-grid figcaption b{font-weight:500}
+@media (max-width:760px){.sw-grid{grid-template-columns:1fr;max-width:420px;margin-left:auto;margin-right:auto}}
+.special-weeks .btn.light{color:var(--royal)}
+/* home pop-up */
+.promo{border:0;padding:0;margin:auto;position:fixed;inset:0;width:min(440px,92vw);max-height:94vh;overflow:auto;background:#a8662f;border-radius:18px;box-shadow:0 40px 80px rgba(0,0,0,.35)}
+.promo::backdrop{background:rgba(30,25,15,.6);backdrop-filter:blur(3px)}
+.promo .dialog-close{position:absolute;top:10px;right:10px;margin:0;z-index:2;background:rgba(240,235,222,.92)}
+.promo-img img{width:100%;height:auto;display:block}
+.promo-form{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:#a8662f}
+.promo-form input[type=email]{flex:1 1 200px;font:inherit;font-size:16px;padding:12px 18px;border-radius:50px;border:0;background:var(--cream);color:var(--brown-dk);outline:none}
+.promo-form .msg{flex-basis:100%;color:var(--cream);font-size:14px;min-height:0}
+.promo-form .msg.err{color:#ffd9cc}
+@media (max-width:640px){.programs-hero{padding:120px 0 64px}.special-weeks .btn,.programs-hero .btn{width:100%;max-width:340px;justify-content:center}}

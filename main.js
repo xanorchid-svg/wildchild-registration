@@ -35,6 +35,15 @@
     box.innerHTML=html;
   });
 
+  // new-chapter pop-up (home page, once per visit, like the Wix site)
+  var promo=document.getElementById('chapter-popup');
+  if(promo&&promo.showModal){
+    var seen=false;try{seen=sessionStorage.getItem('wc_promo')==='1'}catch(e){}
+    if(!seen)setTimeout(function(){if(!document.querySelector('dialog[open]')){promo.showModal();try{sessionStorage.setItem('wc_promo','1')}catch(e){}}},3500);
+    promo.querySelector('.dialog-close').addEventListener('click',function(){promo.close()});
+    promo.addEventListener('click',function(e){if(e.target===promo)promo.close()});
+  }
+
   // inquiry pop-up (same form as the Wix site's "Send us a note")
   var dlg=document.getElementById('inquiry');
   if(dlg&&dlg.showModal){
@@ -68,12 +77,14 @@
         var k=el.dataset.label||el.getAttribute('aria-label')||el.name;if(!(k in rows)){rows[k]=[];order.push(k)}rows[k].push(el.value.trim());
       });
       data.fields=order.map(function(k){return [k,rows[k].join(', ')]});
+      if(f.dataset.source)data.fields.unshift(['Source',f.dataset.source]);
       btn.disabled=true;var old=btn.textContent;btn.textContent='Sending…';say('');
       fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
         .then(function(r){return r.json().catch(function(){return {ok:false}}).then(function(j){if(!r.ok||!j.ok)throw new Error(j.error||'');return j})})
         .then(function(){
           f.reset();
-          if(f.dataset.form==='newsletter'){say('Thank you — you’re subscribed to Wild Child’s Letter.',true)}
+          if(f.dataset.source){say('Thank you! We’ll be in touch with the new programs soon.',true);setTimeout(function(){var dd=f.closest('dialog');if(dd)dd.close()},2600)}
+          else if(f.dataset.form==='newsletter'){say('Thank you — you’re subscribed to Wild Child’s Letter.',true)}
           else{f.classList.add('sent');var d=document.createElement('div');d.className='sent-note';d.innerHTML='<h3>Thank you</h3><p>'+THANKS+'</p><p>For anything urgent, WhatsApp us at <a href="https://wa.me/50661640827">+506 6164 0827</a>.</p>';f.parentNode.insertBefore(d,f.nextSibling);d.scrollIntoView({block:'nearest',behavior:'smooth'})}
         })
         .catch(function(err){say((err.message&&err.message.length<160?err.message:'Something went wrong sending your message.')+(/email info@/.test(err.message)?'':FALLBACK))})
