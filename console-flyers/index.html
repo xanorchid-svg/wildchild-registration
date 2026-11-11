@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lili's Wild Console</title>
+<link rel="icon" href="https://static.wixstatic.com/media/d5e4c3_c8e585fbe47440ebb070e2f649fddca7~mv2.png/v1/fill/w_192,h_192,lg_1/d5e4c3_c8e585fbe47440ebb070e2f649fddca7~mv2.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f5fb;
+  --surface: #ffffff;
+  --ink: #1b1f3a;
+  --muted: #5b6080;
+  --line: #dcdff0;
+  --accent: #25318d;
+  --accent-2: #3346c4;
+  --accent-soft: #e9ebf8;
+  --logo: #25318d;
+  --new: #c2621a;
+  --new-soft: #fbeadd;
+  --done: #3c7a3f;
+  --done-soft: #e2f0e2;
+  --off: #7a7f7c;
+  --off-soft: #eceeed;
+  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11132a; --surface: #1a1d3a; --ink: #e8eaf8; --muted: #a4a9cc; --line: #2d3260;
+    --accent: #8d9bff; --accent-2: #a9b4ff; --accent-soft: #232852; --logo: #c3caff;
+    --new: #f0a060; --new-soft: #3a2a1c; --done: #84c987; --done-soft: #1f3321; --off: #9aa29e; --off-soft: #262e2a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; display: grid; gap: 22px; }
+.logo { display: block; width: min(300px, 100%); aspect-ratio: 500 / 69; background: var(--logo);
+  -webkit-mask: url("https://static.wixstatic.com/media/b80b05_b468f9ac18b44924a95eabf5101283b5~mv2.png/v1/crop/x_0,y_40,w_500,h_69/fill/w_500,h_69,al_c,lg_1,q_85/2.png") center / contain no-repeat;
+          mask: url("https://static.wixstatic.com/media/b80b05_b468f9ac18b44924a95eabf5101283b5~mv2.png/v1/crop/x_0,y_40,w_500,h_69/fill/w_500,h_69,al_c,lg_1,q_85/2.png") center / contain no-repeat; }
+.brandbar { border-bottom: 3px solid var(--accent); padding-bottom: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+h1 { font: 700 clamp(1.6rem, 3.5vw, 2.2rem)/1.1 var(--font-display); margin: 0; text-wrap: balance; color: var(--accent); }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: .95rem; }
+.sync { color: var(--muted); font-size: .85rem; }
+.counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.count { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.count[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.count b { display: block; font: 700 1.6rem/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--accent); }
+.count span { color: var(--muted); font-size: .85rem; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tools input { flex: 1 1 240px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.list { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; }
+.card.s-new { border-left-color: var(--new); }
+.card.s-emailed, .card.s-visit { border-left-color: var(--accent-2); }
+.card.s-enrolled { border-left-color: var(--done); }
+.card.s-notfit { border-left-color: var(--off); }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
+.who { font: 700 1.15rem/1.2 var(--font-display); }
+.handle { color: var(--muted); font-size: .9rem; margin-left: 6px; }
+.when { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 18px; }
+.fact small { display: block; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.fact .val { word-break: break-word; }
+.missing { color: var(--new); font-style: italic; }
+.msg { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; max-height: 220px; overflow: auto; }
+.pill { display: inline-block; font-size: .75rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-left: 8px; vertical-align: middle; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+select, textarea, button.btn { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+textarea { width: 100%; min-height: 44px; resize: vertical; }
+button.btn { cursor: pointer; }
+button.btn:hover { border-color: var(--accent); }
+a { color: var(--accent-2); }
+:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.empty, .note { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 22px; color: var(--muted); }
+.saved { color: var(--done); font-size: .85rem; }
+.login { max-width: 380px; margin: 12vh auto 0; background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); border-radius: 14px; padding: 26px; display: grid; gap: 14px; }
+.login .logo { width: 100%; }
+.login input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+.login button { padding: 10px 12px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: 700 1rem var(--font-body); cursor: pointer; }
+@media (prefers-color-scheme: dark) { .login button { color: #11132a; } }
+.err { color: var(--new); font-size: .9rem; min-height: 1.2em; }
+.linkbtn { background: none; border: 0; color: var(--accent-2); text-decoration: underline; cursor: pointer; font: inherit; padding: 0; }
+.msgs { display: grid; gap: 14px; }
+.msgs h2 { font: 700 1.4rem/1.2 var(--font-display); margin: 0; }
+.mcat { font: 700 1.1rem/1.2 var(--font-display); margin: 14px 0 0; color: var(--accent); scroll-margin-top: 16px; }
+.tw { overflow-x: auto; } .sched { border-collapse: collapse; width: 100%; min-width: 520px; font-size: .9rem; }
+.sched th, .sched td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.mjump { display: flex; flex-wrap: wrap; gap: 6px; } .mjump a { font-size: .85rem; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; text-decoration: none; background: var(--surface); }
+.mcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: minmax(0,1fr) 180px; gap: 16px; align-items: start; }
+.mcard > div { min-width: 0; }
+.mhead { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.mmeta, .msend { color: var(--muted); font-size: .85rem; }
+.mtext { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; margin: 8px 0; max-height: 260px; overflow: auto; overflow-wrap: anywhere; }
+.mimg { display: grid; gap: 6px; font-size: .85rem; } .mimg img { width: 100%; border-radius: 6px; display: block; }
+.mimg.none { color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; padding: 12px; }
+@media (max-width: 640px) { .mcard { grid-template-columns: 1fr; } .mimg { max-width: 220px; } }
+.teachers { display: grid; gap: 14px; }
+.teachers h2 { font: 700 1.4rem/1.2 var(--font-display); margin: 0; }
+.tcard { display: grid; grid-template-columns: 220px 1fr; gap: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; align-items: start; }
+.tcard > a img { width: 100%; aspect-ratio: .8; object-fit: cover; border-radius: 10px; display: block; }
+.tcard h3 { font: 700 1.25rem/1.2 var(--font-display); margin: 0; }
+.tcard h4 { font: 700 1rem/1.2 var(--font-display); margin: 16px 0 4px; }
+.tcard p { margin: 0 0 10px; }
+.trole { color: var(--accent); font-weight: 700; font-size: .92rem; }
+.tnote { color: var(--muted); font-size: .88rem; }
+.tlinks a { font-size: .9rem; font-weight: 700; }
+.twork { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.twork img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; }
+@media (max-width: 640px) { .tcard { grid-template-columns: 1fr; } .tcard > a img { max-width: 260px; } }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; background: var(--bg); padding-top: 6px; }
+.tabs a { padding: 10px 16px; text-decoration: none; color: var(--muted); font-weight: 700; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.tabs a:hover { color: var(--ink); }
+.tabs a[aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent); }
+.page { display: grid; gap: 22px; }
+.page:not(.on) { display: none !important; }
+.mjump { position: sticky; top: 52px; z-index: 4; background: var(--bg); padding: 8px 0; }
+.flyers { display: grid; gap: 14px; }
+.flyers h2 { font: 700 1.4rem/1.2 var(--font-display); margin: 0; }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.fcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 8px; align-content: start; }
+.fcard img { width: 100%; border-radius: 6px; display: block; background: var(--accent-soft); }
+.fcard b { font-family: var(--font-display); }
+.fcard span { color: var(--muted); font-size: .85rem; }
+.jumpf { font-size: .9rem; font-weight: 700; }
+.mimg.pending, .fpend { color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; padding: 12px; font-size: .85rem; }
+.tcard .tph { aspect-ratio: .8; border: 1px dashed var(--line); border-radius: 10px; display: grid; place-items: center; color: var(--muted); font-size: .85rem; text-align: center; padding: 10px; }
+</style>
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <span class="logo" role="img" aria-label="Wild Child Nosara"></span>
+  <h1>Lili's Wild Console</h1>
+  <p class="sub">Enter the console password to open your console.</p>
+  <form id="loginForm">
+    <div style="display:grid;gap:10px">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button type="submit">Sign in</button>
+      <div class="err" id="loginErr" role="alert"></div>
+    </div>
+  </form>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="brandbar"><span class="logo" role="img" aria-label="Wild Child Nosara"></span></div>
+  <header>
+    <div>
+      <h1>Lili's Wild Console</h1>
+      <p class="sub">Families who messaged @wildchild.nosara or the Facebook page, with the email they shared.</p>
+    </div>
+    <div class="sync"><span id="sync">Inbox not checked yet</span> · <button class="linkbtn" id="logout">Sign out</button></div>
+  </header>
+<nav class="tabs" id="tabs" aria-label="Console pages">
+    <a href="#inquiries" data-p="inquiries">Inquiries</a>
+    <a href="#messages" data-p="messages">Messages to send</a>
+    <a href="#flyers" data-p="flyers">Flyers</a>
+    <a href="#teachers" data-p="teachers">New teachers</a>
+  </nav>
+  <div class="page" id="inquiries">
+  <div class="counts" id="counts" role="group" aria-label="Filter by status"></div>
+  <div class="tools">
+    <label for="q" class="sync">Search</label>
+    <input id="q" type="search" placeholder="Name, email, program or message">
+  </div>
+  <div id="status" class="note" hidden></div>
+  <div class="list" id="list"></div>
+  </div>
+<section class="msgs page" id="messages">
+    <h2>Messages to send</h2>
+    <p class="sub">Written in Lili's voice. Copy the text, then send it with the flyer beside it.</p>
+    <div class="tw"><table class="sched"><tr><th>Day</th><th>Groups</th><th>Send with</th></tr>
+<tr><td><b>Monday</b></td><td>Kids of Nosara, Homeschoolers Nosara</td><td>Launch flyer</td></tr>
+<tr><td><b>Tuesday</b></td><td>Women&#x27;s groups</td><td>Launch flyer / photo of little ones</td></tr>
+<tr><td><b>Thursday</b></td><td>Wild Child Nosara, Nosara Magica Collective, Homeschoolers Nosara, Kids of Nosara</td><td>Photo from the week / launch flyer</td></tr>
+<tr><td><b>Friday</b></td><td>Harmony Co-Op group</td><td>Harmony flyer / Harmony photo</td></tr>
+</table></div>
+    <div class="mjump"><a href="#mcl">Season launch</a><a href="#mc0">Monday · Kids of Nosara and Homeschoolers Nosara</a><a href="#mc1">Tuesday · women&#x27;s groups</a><a href="#mc2">Thursday · all four groups</a><a href="#mc3">Friday · Harmony Co-Op Saturdays</a><a href="#mc4">Thanksgiving · Ocean Connection Days</a><a href="#mc5">En español</a><a href="#mc6">Instagram captions</a><a href="#mc7">Other places to post</a><a href="#mc8">Current families</a><a href="#mc9">Local groups</a><a href="#mc10">Holiday</a><a href="#mc11">Replies</a></div>
+    <h3 class="mcat" id="mcl">Season launch · all groups</h3>
+    <article class="mcard"><div><div class="mhead"><b>A new chapter + special weeks</b><span class="mmeta">All groups, every two weeks. Also Instagram and Facebook</span></div><div class="msend">Send with the A new chapter poster. Thanksgiving, Christmas and Easter flyers can follow as separate images</div><div class="mtext" id="mt-sl1">WILD CHILD NOSARA | A NEW CHAPTER
+
+What if education could develop not only what a child knows, but who they are becoming?
+
+This season, we are welcoming families into small, committed learning communities of 8 to 15 children, rooted in nature, meaningful relationships, creativity, academic depth and stewardship.
+
+Our learning communities:
+Ages 1–3 &amp; 4–5 | Early years, full Spanish immersion
+Ages 6–9 | In session, join us anytime
+Ages 10–13 | Begins November 23
+Monday–Friday | 8am–2pm
+
+Our teachers are practitioners first. This season, new mentors join us from permaculture, sculpture, ocean awareness, movement and Cosmic Education.
+
+Enrollment that fits your family:
+3, 4 or 5 days a week
+Weekly, monthly, seasonal or yearly
+
+SPECIAL WEEKS THIS SEASON
+For children ages 6–9 and 10–13 | 8am–2pm
+Come for a special week, or let it be the beginning of a longer stay.
+
+THANKSGIVING WEEK | November 23–27
+Ocean Connection Days, November 24–26, with Dr. Anand Patel, marine biologist and oceanographer, alongside our Wild Child educators.
+On the water. In the water. In the lab.
+Small groups: a maximum of 8 children per age group.
+
+CHRISTMAS WEEKS | December 21–January 1
+Earth, Ocean, Arts &amp; Play
+Experiential ocean learning, theatre, sports, mindfulness, clay, weaving and herbalism.
+
+EASTER WEEKS | March 22–April 2
+Natural Dyes &amp; Cacao Making
+A creative, embodied, ocean-inspired holiday program, with theatre, mindfulness, sports, clay and weaving.
+
+An education for life. Nature as teacher. Community as classroom.
+
+If this speaks to your family, or someone you know, we&#x27;d love to connect.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+wildchildnosara.com
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-sl1">Copy message</button></div><div class="mimg"><img src="web-flyer-new-chapter.jpg" alt="A new chapter poster" loading="lazy"><a href="flyer-new-chapter.jpg" target="_blank" rel="noopener">Open A new chapter poster</a></div></article>
+    <h3 class="mcat" id="mc0">Monday · Kids of Nosara and Homeschoolers Nosara</h3>
+    <article class="mcard"><div><div class="mhead"><b>Week A: A new chapter</b><span class="mmeta">Kids of Nosara, Homeschoolers Nosara</span></div><div class="msend">Send with the launch flyer</div><div class="mtext" id="mt-m1">WILD CHILD NOSARA | A NEW CHAPTER
+
+What if education could develop not only what a child knows, but who they are becoming?
+
+This season, we are welcoming families into small, committed learning communities of 8 to 15 children—rooted in nature, meaningful relationships, creativity, academic depth and stewardship.
+
+Our learning communities:
+Ages 1–3 &amp; 4–5 | Early years, full Spanish immersion
+Ages 6–9 | In session, join us anytime
+Ages 10–13 | Begins November 23
+
+Our teachers are practitioners first. This season, new mentors join us from permaculture, sculpture, ocean awareness, movement and Cosmic Education:
+Permaculture | soil, seeds and the living systems that feed us
+Sculpture | clay, stone and wood, and the patience of the hand
+Ocean awareness | tides, currents and reef life, and how to be safe and at home in the water
+Movement | the body as a way of knowing
+Cosmic Education | the great story of the universe, and our place within it
+
+Enrollment that fits your family:
+3, 4 or 5 days a week
+Weekly, monthly, seasonal or yearly
+
+Ages 6–13 | Monday–Friday | 8am–2pm
+
+An education for life. Nature as teacher. Community as classroom.
+
+Curious about joining us? Send us a message—we&#x27;d love to share our enrollment guide.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+wildchildnosara.com
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-m1">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Week B: For homeschool families</b><span class="mmeta">Kids of Nosara, Homeschoolers Nosara</span></div><div class="msend">Send with the launch flyer</div><div class="mtext" id="mt-m2">HOMESCHOOLING IN NOSARA THIS SEASON?
+
+Looking for a small, steady learning community to share the journey?
+
+Wild Child welcomes children ages 6–9 and 10–13 into Nature-Rooted Bilingual Mentorship, where reading, writing, mathematics and science grow out of real questions.
+
+Our days include:
+Literacy, numeracy &amp; Cosmic Education
+Garden, kitchen &amp; Earth and Ocean Stewardship
+Clay, textiles, woodwork &amp; natural pigments
+Music, theatre &amp; movement
+Ocean awareness, movement and sculpture with new mentors who are practitioners first
+
+Monday–Friday | 8am–2pm | Ages 6–13
+Join us 3, 4 or 5 days a week, by the week, month, season or year. Younger siblings are welcome in our early years (ages 1–3 &amp; 4–5).
+
+If this speaks to your family, we&#x27;d love to connect.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-m2">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <h3 class="mcat" id="mc1">Tuesday · women&#x27;s groups</h3>
+    <article class="mcard"><div><div class="mhead"><b>Week A: A place to grow</b><span class="mmeta">Women&#x27;s groups</span></div><div class="msend">Send with the launch flyer</div><div class="mtext" id="mt-t1">WILD CHILD NOSARA
+
+Mamas, looking for a place where your child can simply be a child—and grow?
+
+Wild Child is a small, bilingual learning community in Nosara, where children learn through nature, creativity and meaningful relationships.
+
+Ages 1–3 &amp; 4–5 | Gentle days of play, rhythm and connection, in full Spanish immersion
+Ages 6–9 &amp; 10–13 | Nature-Rooted Bilingual Mentorship, Monday–Friday, 8am–2pm
+
+Three, four or five days a week. A week, a month, the season or the whole year. There is a rhythm for every family.
+
+And this season, new mentors join us from permaculture, sculpture, ocean awareness, movement and Cosmic Education.
+
+Come grow with us.
+
+Curious about joining us? Send me a message.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-t1">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Week B: Early years</b><span class="mmeta">Women&#x27;s groups</span></div><div class="msend">Send with a real photo of the little ones (no early years flyer yet)</div><div class="mtext" id="mt-t2">EARLY YEARS AT WILD CHILD
+
+Looking for a loving, unhurried place for your little one?
+
+Our early years communities, ages 1–3 &amp; 4–5, unfold in full Spanish immersion—through play, rhythm and connection to the outdoors.
+
+Our days include:
+Songs, music &amp; movement
+Storytelling
+Art with natural materials
+Nature exploration and open-ended play
+Gentle rhythm, rest and care
+
+Part or full-time | Small groups | Caring guides
+
+Childhood is not preparation for life. Childhood is life.
+
+Curious about joining us? Send us a message—we&#x27;d love to welcome your family.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-t2">Copy message</button></div><div class="mimg none">Send with a real photo of the little ones (no early years flyer yet)</div></article>
+    <h3 class="mcat" id="mc2">Thursday · all four groups</h3>
+    <article class="mcard"><div><div class="mhead"><b>Week A: A day at Wild Child</b><span class="mmeta">Wild Child Nosara, Nosara Magica Collective, Homeschoolers Nosara, Kids of Nosara</span></div><div class="msend">Send with a real photo from this week</div><div class="mtext" id="mt-th1">A DAY AT WILD CHILD
+
+Not taught. Absorbed.
+
+Mornings begin in circle. Stories, numbers and writing grow out of real questions. Midday belongs to the garden, the kitchen or the beach. Afternoons, to clay, music, theatre and wood.
+
+Just hands, soil, color, sound, and wonder.
+
+Ages 1–3 &amp; 4–5 | Early years
+Ages 6–9 | In session
+Ages 10–13 | Begins November 23
+
+Join us 3, 4 or 5 days a week, by the week, month, season or year. Come grow with us.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+
+And on Saturdays, join us at Harmony Co-Op (Campo Nosara) for ages 3+. Register at wildchildnosara.com/harmony
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-th1">Copy message</button></div><div class="mimg none">Send with a real photo from this week</div></article>
+    <article class="mcard"><div><div class="mhead"><b>Week B: Ages 10–13 begins Nov 23</b><span class="mmeta">Wild Child Nosara, Nosara Magica Collective, Homeschoolers Nosara, Kids of Nosara</span></div><div class="msend">Send with the launch flyer</div><div class="mtext" id="mt-th2">AGES 10–13 | BEGINS NOVEMBER 23
+
+What if education could develop not only what a child knows, but who they are becoming?
+
+On November 23, Wild Child Nosara welcomes children ages 10–13 into a small, immersive bilingual learning community, with close individual mentoring.
+
+Our days include:
+Philosophy &amp; cultural history
+Earth &amp; Ocean Stewardship
+Entrepreneurship &amp; real-world projects
+Theatre, music &amp; creative expression
+Leadership, voice and the courage to contribute
+
+Guided by mentors who are practitioners first, from permaculture, sculpture, ocean awareness, movement and Cosmic Education.
+
+Enrollment that fits your family:
+3, 4 or 5 days a week
+Weekly, monthly, seasonal or yearly
+
+Monday–Friday | 8am–2pm | Nosara
+
+If this speaks to your family, or someone you know, I&#x27;d love to connect.
+Lili
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-th2">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <h3 class="mcat" id="mc3">Friday · Harmony Co-Op Saturdays</h3>
+    <article class="mcard"><div><div class="mhead"><b>Week A: Wild Child x Harmony Co-Op Saturdays</b><span class="mmeta">Harmony Co-Op group</span></div><div class="msend">Send with the Harmony flyer</div><div class="mtext" id="mt-f1">WILD CHILD X HARMONY CO-OP SATURDAYS
+
+Looking for a meaningful Saturday morning for your child?
+
+Join us each Saturday at Harmony Co-Op (Campo Nosara), behind La Ventanita, for a nature-based program where children are free to explore, create, move, and connect through play—in Spanish and English.
+
+Our mornings include:
+Art with natural materials
+Songs, music &amp; movement
+Storytelling
+Swimming &amp; water play
+Nature exploration and open-ended play
+
+Saturdays | 8:30–11:30am | Ages 3+
+
+Harmony Members: FREE
+Wild Child Families: $45
+Community Families: $75
+Message us for discount codes.
+
+Please bring: water bottle, snack, floaties, swimsuit &amp; a smile
+
+This is a space where childhood unfolds naturally—through curiosity, creativity, friendship, and connection to the outdoors.
+
+Come play with us.
+
+Register online:
+wildchildnosara.com/harmony
+
+Questions? Send us a message—we&#x27;d love to welcome your family.
+WhatsApp: wa.me/50661640827
+Email: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-f1">Copy message</button></div><div class="mimg"><img src="web-flyer-harmony.jpg" alt="Harmony Co-Op flyer" loading="lazy"><a href="flyer-harmony.jpg" target="_blank" rel="noopener">Open Harmony Co-Op flyer</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Week B: Saturday mornings at Harmony</b><span class="mmeta">Harmony Co-Op group</span></div><div class="msend">Send with the Harmony photo</div><div class="mtext" id="mt-f2">SATURDAY MORNINGS AT HARMONY CO-OP
+
+Bare feet in the sand. Songs in two languages. Hands in clay and water.
+
+Tomorrow and every Saturday, Wild Child gathers at Harmony Co-Op (Campo Nosara), behind La Ventanita, for a gentle morning of play, art, stories and swimming.
+
+Our morning flow:
+Arrival &amp; opening circle
+Free play &amp; loose parts
+Snack &amp; rest
+Art stations &amp; swim play
+Closing circle
+
+Saturdays | 8:30–11:30am | Ages 3+
+
+Harmony Members: FREE
+Wild Child Families: $45
+Community Families: $75
+Message us for discount codes.
+
+Please bring: water bottle, snack, floaties, swimsuit &amp; a smile
+
+Childhood is not preparation for life. Childhood is life.
+
+Register online:
+wildchildnosara.com/harmony
+
+Questions? Send us a message—we&#x27;d love to welcome your family.
+WhatsApp: wa.me/50661640827
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-f2">Copy message</button></div><div class="mimg"><img src="web-flyer-harmony-photo.jpg" alt="Harmony Co-Op photo" loading="lazy"><a href="flyer-harmony-photo.jpg" target="_blank" rel="noopener">Open Harmony Co-Op photo</a></div></article>
+    <h3 class="mcat" id="mc4">Thanksgiving · Ocean Connection Days</h3>
+    <article class="mcard"><div><div class="mhead"><b>Ocean Connection Days</b><span class="mmeta">All four groups · send Nov 9 and Nov 18</span></div><div class="msend">Send with the Ocean Connection Days poster</div><div class="mtext" id="mt-tg1">THANKSGIVING WEEK AT WILD CHILD NOSARA
+November 23–27 | 8 AM–2 PM
+
+Join us for a special week of ocean exploration, mindfulness, scientific discovery, creativity, and connection with nature!
+
+This week marks the beginning of our immersive learning journey for children ages 6–9 and 10–13, rooted in our Four Schools: Wonder, Presence, Performance &amp; Stewardship.
+
+SPECIAL OCEAN CONNECTION DAYS
+November 24–26
+
+Three extraordinary days of ocean education with Dr. Anand Patel, marine biologist and oceanographer, alongside our Wild Child educators.
+
+Feeling the ocean&#x27;s energy &amp; listening deeply to the sea.
+
+On the water — Exploring waves, currents, and the movement of the ocean.
+
+In the water — Snorkeling, ocean awareness, and connecting with marine life.
+
+In the lab — Hands-on scientific experiments, discoveries, and investigations.
+
+Mindfulness &amp; Ocean Connection — Exploring breath, presence, deep listening, and our relationship with the sea through mindful movement, observation, and sensory awareness.
+
+Throughout the week, children will explore the relationship between science, mindfulness, nature, creativity, and our responsibility to care for the Earth.
+
+Ages: 6–9 and 10–13
+Full immersion week: November 23–27
+Hours: 8 AM–2 PM
+Ocean Connection Days: November 24–26
+Small groups: Maximum 8 children per age group for the special ocean experience.
+
+A week to awaken wonder, cultivate presence, deepen our connection with the ocean, and inspire the next generation of Earth stewards.
+
+Limited spaces available! Join us for this special week or begin your longer Wild Child immersion.
+
+Register: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-tg1">Copy message</button></div><div class="mimg"><img src="web-flyer-thanksgiving.jpg" alt="Thanksgiving Week poster" loading="lazy"><a href="flyer-thanksgiving.jpg" target="_blank" rel="noopener">Open Thanksgiving Week poster</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>In Nosara for Thanksgiving?</b><span class="mmeta">Nosara Magica Collective, Kids of Nosara, women&#x27;s groups · send Nov 13</span></div><div class="msend">Send with the Ocean Connection Days poster</div><div class="mtext" id="mt-tg2">IN NOSARA FOR THANKSGIVING?
+
+Join us for a special week of ocean exploration, mindfulness, scientific discovery, creativity, and connection with nature.
+
+Thanksgiving Week at Wild Child Nosara
+November 23–27 | 8 AM–2 PM | Ages 6–9 and 10–13
+
+From November 24–26, Dr. Anand Patel, marine biologist and oceanographer, leads three Ocean Connection Days alongside our Wild Child educators.
+
+On the water — Exploring waves, currents, and the movement of the ocean.
+In the water — Snorkeling, ocean awareness, and connecting with marine life.
+In the lab — Hands-on scientific experiments, discoveries, and investigations.
+
+Small groups: a maximum of 8 children per age group.
+
+Join us for this special week or begin your longer Wild Child immersion.
+
+Register: info@dandelionwildschooling.org
+WhatsApp: wa.me/50661640827
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-tg2">Copy message</button></div><div class="mimg"><img src="web-flyer-thanksgiving.jpg" alt="Thanksgiving Week poster" loading="lazy"><a href="flyer-thanksgiving.jpg" target="_blank" rel="noopener">Open Thanksgiving Week poster</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Meet Dr. Anand Patel</b><span class="mmeta">All four groups · send Nov 20</span></div><div class="msend">Send with the poster, or a photo of Dr. Patel once Lili shares one</div><div class="mtext" id="mt-tg3">MEET DR. ANAND PATEL
+
+Marine biologist and oceanographer Dr. Anand Patel joins our Wild Child educators for three Ocean Connection Days, November 24–26.
+
+Together, children will feel the ocean&#x27;s energy and listen deeply to the sea: on the water, in the water and in the lab, with time for breath, presence and mindful movement.
+
+Thanksgiving Week at Wild Child Nosara
+November 23–27 | 8 AM–2 PM | Ages 6–9 and 10–13
+Maximum 8 children per age group for the ocean experience.
+
+Register: info@dandelionwildschooling.org
+WhatsApp: wa.me/50661640827
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-tg3">Copy message</button></div><div class="mimg"><img src="web-flyer-thanksgiving.jpg" alt="Thanksgiving Week poster" loading="lazy"><a href="flyer-thanksgiving.jpg" target="_blank" rel="noopener">Open Thanksgiving Week poster</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Días de Conexión con el Océano</b><span class="mmeta">Spanish-speaking groups · send Nov 9 and Nov 18</span></div><div class="msend">Send with the poster · have a native speaker read it first</div><div class="mtext" id="mt-tg4">SEMANA DE ACCIÓN DE GRACIAS EN WILD CHILD NOSARA
+23–27 de noviembre | 8 a.m.–2 p.m.
+
+¡Acompáñanos en una semana especial de exploración oceánica, atención plena, descubrimiento científico, creatividad y conexión con la naturaleza!
+
+Esta semana marca el inicio de nuestro viaje de aprendizaje inmersivo para niños de 6 a 9 y de 10 a 13 años, arraigado en nuestras Cuatro Escuelas: Asombro, Presencia, Expresión y Cuidado.
+
+DÍAS ESPECIALES DE CONEXIÓN CON EL OCÉANO
+24–26 de noviembre
+
+Tres días de educación oceánica con el Dr. Anand Patel, biólogo marino y oceanógrafo, junto a nuestros educadores de Wild Child.
+
+Sobre el agua — Explorando las olas, las corrientes y el movimiento del océano.
+
+En el agua — Snorkel, conciencia oceánica y conexión con la vida marina.
+
+En el laboratorio — Experimentos científicos, descubrimientos e investigaciones prácticas.
+
+Atención plena y conexión con el océano — Respiración, presencia, escucha profunda y nuestra relación con el mar, a través del movimiento consciente, la observación y la conciencia sensorial.
+
+Edades: 6–9 y 10–13 años
+Semana completa de inmersión: 23–27 de noviembre
+Horario: 8 a.m.–2 p.m.
+Días de Conexión con el Océano: 24–26 de noviembre
+Grupos pequeños: máximo 8 niños por grupo de edad.
+
+¡Cupos limitados! Acompáñanos esta semana especial o comienza tu inmersión más larga en Wild Child.
+
+Inscripción: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-tg4">Copy message</button></div><div class="mimg"><img src="web-flyer-thanksgiving.jpg" alt="Thanksgiving Week poster" loading="lazy"><a href="flyer-thanksgiving.jpg" target="_blank" rel="noopener">Open Thanksgiving Week poster</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Instagram caption</b><span class="mmeta">Carousel: poster, then ocean photos</span></div><div class="msend">Post the poster first, then real ocean and lab photos</div><div class="mtext" id="mt-tg5">Thanksgiving Week at Wild Child Nosara 🌀
+
+November 23–27 | 8 AM–2 PM | Ages 6–9 and 10–13
+
+A special week of ocean exploration, mindfulness, scientific discovery, creativity, and connection with nature, rooted in our Four Schools: Wonder, Presence, Performance &amp; Stewardship.
+
+Special Ocean Connection Days, November 24–26, with Dr. Anand Patel, marine biologist and oceanographer, alongside our Wild Child educators.
+
+On the water. In the water. In the lab.
+
+Small groups: maximum 8 children per age group.
+
+Join us for this special week or begin your longer Wild Child immersion.
+
+Register: info@dandelionwildschooling.org
+
+#WildChildNosara #OceanConnectionDays #NosaraFamilies #OceanEducation #EarthAndOceanStewardship</div><button class="btn" data-mcopy="mt-tg5">Copy message</button></div><div class="mimg"><img src="web-flyer-thanksgiving.jpg" alt="Thanksgiving Week poster" loading="lazy"><a href="flyer-thanksgiving.jpg" target="_blank" rel="noopener">Open Thanksgiving Week poster</a></div></article>
+    <h3 class="mcat" id="mc5">En español</h3>
+    <article class="mcard"><div><div class="mhead"><b>Un nuevo capítulo</b><span class="mmeta">Kids of Nosara, Homeschoolers Nosara, Spanish speakers</span></div><div class="msend">Send with the launch flyer · have a native speaker read it first</div><div class="mtext" id="mt-es1">WILD CHILD NOSARA | UN NUEVO CAPÍTULO
+
+¿Y si la educación pudiera desarrollar no solo lo que un niño sabe, sino también quién está llegando a ser?
+
+Esta temporada damos la bienvenida a familias en comunidades de aprendizaje pequeñas y comprometidas, de 8 a 15 niños, arraigadas en la naturaleza, las relaciones significativas, la creatividad, la profundidad académica y el cuidado de la Tierra.
+
+Nuestras comunidades:
+De 1 a 3 y de 4 a 5 años | Primeros años, inmersión total en español
+De 6 a 9 años | En curso, únete cuando quieras
+De 10 a 13 años | Inicia el 23 de noviembre
+
+Nuestros maestros son, ante todo, practicantes. Esta temporada se unen nuevos mentores de permacultura, escultura, conciencia oceánica, movimiento y Educación Cósmica.
+
+Inscripción a la medida de tu familia:
+3, 4 o 5 días por semana
+Por semana, mes, temporada o año
+
+De 6 a 13 años | Lunes a viernes | 8am–2pm
+
+Una educación para la vida.
+
+¿Te gustaría acompañarnos? Escríbenos y te compartimos nuestra guía de inscripción.
+WhatsApp: wa.me/50661640827
+Correo: info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-es1">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Sábados en Harmony Co-Op</b><span class="mmeta">Harmony Co-Op group</span></div><div class="msend">Send with the Harmony flyer · have a native speaker read it first</div><div class="mtext" id="mt-es2">SÁBADOS DE WILD CHILD X HARMONY CO-OP
+
+¿Buscas una mañana de sábado significativa para tu hijo o hija?
+
+Acompáñanos cada sábado en Harmony Co-Op (Campo Nosara), detrás de La Ventanita, en un programa en la naturaleza donde los niños son libres de explorar, crear, moverse y conectar a través del juego, en español e inglés.
+
+Nuestras mañanas incluyen:
+Arte con materiales naturales
+Canciones, música y movimiento
+Cuentos
+Natación y juego en el agua
+Exploración de la naturaleza y juego libre
+
+Sábados | 8:30–11:30am | Desde los 3 años
+
+Miembros de Harmony: GRATIS
+Familias Wild Child: $45
+Familias de la comunidad: $75
+Escríbenos para códigos de descuento.
+
+Traer: botella de agua, merienda, flotadores, traje de baño y una sonrisa
+
+Un espacio donde la infancia florece de forma natural, a través de la curiosidad, la creatividad, la amistad y la conexión con la naturaleza.
+
+¡Ven a jugar con nosotros!
+
+Inscríbete en línea:
+wildchildnosara.com/harmony
+
+¿Preguntas? Escríbenos, nos encantaría recibir a tu familia.
+WhatsApp: wa.me/50661640827
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-es2">Copy message</button></div><div class="mimg"><img src="web-flyer-harmony.jpg" alt="Harmony Co-Op flyer" loading="lazy"><a href="flyer-harmony.jpg" target="_blank" rel="noopener">Open Harmony Co-Op flyer</a></div></article>
+    <h3 class="mcat" id="mc6">Instagram captions</h3>
+    <article class="mcard"><div><div class="mhead"><b>Harmony Co-Op post</b><span class="mmeta">Post every Friday</span></div><div class="msend">Post the flyer and photo together as a carousel</div><div class="mtext" id="mt-ig1">WILD CHILD X HARMONY CO-OP SATURDAYS 🌀
+
+A meaningful Saturday morning, where children are free to explore, create, move, and connect through play—in Spanish and English.
+
+Art with natural materials
+Songs, music &amp; movement
+Storytelling
+Swimming &amp; water play
+Nature exploration and open-ended play
+
+Saturdays | 8:30–11:30am | Ages 3+
+Harmony Co-Op (Campo Nosara), behind La Ventanita
+
+Harmony Members: FREE
+Wild Child Families: $45
+Community Families: $75
+DM us for discount codes.
+
+Bring a water bottle, snack, floaties, swimsuit &amp; a smile.
+
+Come play with us.
+Register: wildchildnosara.com/harmony (link in bio)
+
+#WildChildNosara #NosaraFamilies #NatureBasedPlay #HarmonyCoOp #CampoNosara</div><button class="btn" data-mcopy="mt-ig1">Copy message</button></div><div class="mimg"><img src="web-flyer-harmony.jpg" alt="Harmony Co-Op flyer" loading="lazy"><a href="flyer-harmony.jpg" target="_blank" rel="noopener">Open Harmony Co-Op flyer</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Season launch post</b><span class="mmeta">Carousel or flyer</span></div><div class="msend">Post with the launch flyer or a carousel</div><div class="mtext" id="mt-ig2">AN EDUCATION FOR LIFE.
+
+We remember how to listen. To children. To nature. To curiosity.
+
+This season, Wild Child Nosara welcomes families into small, bilingual learning communities—where children learn to think deeply, feel fully, express themselves courageously and contribute meaningfully to the world around them.
+
+Our four Schools: Wonder, Presence, Performance and Stewardship.
+
+Ages 1–3 &amp; 4–5 | Early years, full Spanish immersion
+Ages 6–9 | In session
+Ages 10–13 | Begins November 23
+Saturdays at Harmony Co-Op | Ages 3+
+
+New this season: mentors from permaculture, sculpture, ocean awareness, movement and Cosmic Education. Our teachers are practitioners first.
+
+3, 4 or 5 days a week
+Weekly, monthly, seasonal or yearly
+
+Curious about joining us? DM us, WhatsApp +506 6164 0827 or email info@dandelionwildschooling.org
+
+Come grow with us. 🌀
+
+#WildChildNosara #NosaraFamilies #NatureBasedEducation #BilingualEducation #Worldschooling</div><button class="btn" data-mcopy="mt-ig2">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Meet our new mentors</b><span class="mmeta">Carousel: one slide per mentor</span></div><div class="msend">Post with one real photo of each mentor at work. Add names once Lili shares bios</div><div class="mtext" id="mt-ig3">OUR TEACHERS ARE PRACTITIONERS FIRST. 🌀
+
+This season, new mentors join the Wild Child community, each bringing a living craft:
+
+Permaculture | soil, seeds and the living systems that feed us
+Sculpture | clay, stone and wood, and the patience of the hand
+Ocean awareness | tides, currents and reef life, and how to be at home in the water
+Movement | the body as a way of knowing
+Cosmic Education | the great story of the universe, and our place within it
+
+Children learn alongside people who live what they teach. Not taught. Absorbed.
+
+Enroll 3, 4 or 5 days a week, by the week, month, season or year.
+
+Curious about joining us? DM us or WhatsApp +506 6164 0827
+
+#WildChildNosara #NosaraFamilies #NatureBasedEducation #Permaculture #CosmicEducation</div><button class="btn" data-mcopy="mt-ig3">Copy message</button></div><div class="mimg none">Post with one real photo of each mentor at work. Add names once Lili shares bios</div></article>
+    <h3 class="mcat" id="mc7">Other places to post</h3>
+    <article class="mcard"><div><div class="mhead"><b>Nosara community calendar</b><span class="mmeta">Event listings</span></div><div class="msend">Use the Harmony flyer for the Saturday listing, the launch flyer for enrollment</div><div class="mtext" id="mt-o1">Wild Child x Harmony Co-Op Saturdays
+Saturdays, 8:30–11:30am · Harmony Co-Op (Campo Nosara), behind La Ventanita · Ages 3+
+A nature-based morning where children explore, create, move and connect through play, in Spanish and English: art with natural materials, songs and movement, storytelling, swimming and open-ended play.
+Harmony Members: free · Wild Child Families: $45 · Community Families: $75. Message us for discount codes.
+Register: wildchildnosara.com/harmony
+
+Wild Child Nosara | Enrollment Open, Ages 1–13
+Small, bilingual, nature-rooted learning communities. Early years (ages 1–3 &amp; 4–5) in full Spanish immersion. Ages 6–9 and 10–13, Monday–Friday, 8am–2pm, November 2026–March 2027. New mentors this season in permaculture, sculpture, ocean awareness, movement and Cosmic Education. Enroll 3, 4 or 5 days a week, by the week, month, season or year.
+
+WhatsApp +506 6164 0827 · info@dandelionwildschooling.org · wildchildnosara.com
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-o1">Copy message</button></div><div class="mimg"><img src="web-flyer-harmony.jpg" alt="Harmony Co-Op flyer" loading="lazy"><a href="flyer-harmony.jpg" target="_blank" rel="noopener">Open Harmony Co-Op flyer</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Hotels, villas and relocation agents</b><span class="mmeta">Message to the manager or concierge</span></div><div class="msend">Attach the launch flyer and the Harmony flyer</div><div class="mtext" id="mt-o2">Hi [Name], I&#x27;m Lili from Wild Child Nosara.
+
+This season, we&#x27;re welcoming visiting families with children ages 1–13 into our small, bilingual, nature-rooted learning communities, with flexible enrollment: 3, 4 or 5 days a week, by the week, month, season or year. Our new mentors bring permaculture, sculpture, ocean awareness, movement and Cosmic Education. On Saturday mornings, we also gather at Harmony Co-Op for children ages 3+.
+
+Many of your guests may be looking for a place where their children can learn and belong while they&#x27;re here. Would you be open to sharing our flyers with them? I&#x27;d be happy to drop some off.
+
+Thank you, and I&#x27;d love to connect.
+WhatsApp +506 6164 0827 · info@dandelionwildschooling.org
+
+Wild Child Nosara 🌀</div><button class="btn" data-mcopy="mt-o2">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <h3 class="mcat" id="mc8">Current families</h3>
+    <article class="mcard"><div><div class="mhead"><b>Letter from Lili</b></div><div class="msend">Send first</div><div class="mtext" id="mt-w1">Dear Wild Child families,
+
+We are excited to share that our new learning communities are forming, and we want to grow with families who wish to reimagine education with us.
+
+We hope to welcome 8 to 15 children in each group. Please share this invitation with friends and families who you feel might belong at Wild Child.
+
+If you already know you&#x27;d like Wild Child to be part of your family&#x27;s year, now is the time to enroll. The longer you enroll, the lower the tuition becomes.
+
+Thank you for helping us grow this community.
+
+Lili</div><button class="btn" data-mcopy="mt-w1">Copy message</button></div><div class="mimg none">Send first</div></article>
+    <article class="mcard"><div><div class="mhead"><b>To forward</b></div><div class="msend">Parent adds one line of their own</div><div class="mtext" id="mt-w2">Thought of you. This is the school our kids go to in Nosara. They&#x27;re opening small groups for ages 0–13, bilingual and nature-rooted.
+
+[One line from you about your child]
+
+Message Lili: wa.me/50661640827</div><button class="btn" data-mcopy="mt-w2">Copy message</button></div><div class="mimg none">Parent adds one line of their own</div></article>
+    <h3 class="mcat" id="mc9">Local groups</h3>
+    <article class="mcard"><div><div class="mhead"><b>Season launch</b></div><div class="msend">Attach launch flyer</div><div class="mtext" id="mt-w3">WILD CHILD NOSARA: A NEW CHAPTER
+
+We are welcoming families into small, committed learning communities, rooted in nature, meaningful relationships, creativity, academic depth, mentorship and stewardship.
+
+Ages 0–3: Parent &amp; Child Together
+Ages 1–3 and 4–5: Early years, full Spanish immersion, part or full-time
+Ages 6–9 and 10–13: Nature-Rooted Bilingual Mentorship
+
+If you know a family who believes it&#x27;s time to reimagine education, invite them to reimagine it with us.
+
+www.wildchildnosara.com
+WhatsApp: +506 6164 0827</div><button class="btn" data-mcopy="mt-w3">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Lanzamiento en español</b></div><div class="msend">Have a native speaker read it first</div><div class="mtext" id="mt-w4">WILD CHILD NOSARA: UN NUEVO CAPÍTULO
+
+Damos la bienvenida a familias en comunidades de aprendizaje pequeñas y comprometidas, arraigadas en la naturaleza, las relaciones significativas, la creatividad, la profundidad académica, la mentoría y el cuidado de la Tierra.
+
+De 0 a 3 años: madres, padres y niños juntos
+De 1 a 3 y de 4 a 5 años: primeros años, inmersión total en español, tiempo parcial o completo
+De 6 a 9 y de 10 a 13 años: mentoría bilingüe arraigada en la naturaleza
+
+Si conoces a una familia que cree que es hora de reimaginar la educación, invítala a reimaginarla con nosotros.
+
+www.wildchildnosara.com
+WhatsApp: +506 6164 0827</div><button class="btn" data-mcopy="mt-w4">Copy message</button></div><div class="mimg none">Have a native speaker read it first</div></article>
+    <article class="mcard"><div><div class="mhead"><b>Ages 10–13</b></div><div class="msend">Attach launch flyer</div><div class="mtext" id="mt-w5">What if education could develop not only what a child knows, but who they are becoming?
+
+On November 23, Wild Child Nosara welcomes children ages 10–13 into a small, immersive bilingual learning community.
+
+Children are invited to question, create, investigate, contribute, develop their own voice, and build a meaningful relationship with the world around them.
+
+If this speaks to your family, or someone you know, I&#x27;d love to connect.
+
+Lili
+WhatsApp: +506 6164 0827</div><button class="btn" data-mcopy="mt-w5">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Ages 6–9</b></div><div class="msend">Attach launch flyer</div><div class="mtext" id="mt-w6">For children ages 6–9, the world is alive with possibility.
+
+They learn to read the world as they develop the skills to read, write, reason and work confidently with numbers, woven with Cosmic Education, mythology, gardening, clay, music and the ocean.
+
+Monday to Friday, 8 am – 2 pm, in English and Spanish.
+
+Curious about joining us? Send us a note.
+WhatsApp: +506 6164 0827</div><button class="btn" data-mcopy="mt-w6">Copy message</button></div><div class="mimg"><img src="web-flyer-launch.jpg" alt="New season launch" loading="lazy"><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open New season launch</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Early years</b></div><div class="msend">No flyer for this group yet</div><div class="mtext" id="mt-w7">No desks. No screens.
+Just hands, soil, color, sound and wonder.
+
+Our nature-based early childhood community welcomes children ages 1–3 and 4–5, with full Spanish immersion, part or full-time.
+
+For our littlest ones, ages 0–3, Parent &amp; Child Together is an invitation to slow down and connect. Monday, Wednesday and Friday, 9:00–10:30, with a parent or caregiver.
+
+WhatsApp: +506 6164 0827</div><button class="btn" data-mcopy="mt-w7">Copy message</button></div><div class="mimg none">No flyer for this group yet</div></article>
+    <h3 class="mcat" id="mc10">Holiday</h3>
+    <article class="mcard"><div><div class="mhead"><b>Christmas Weeks</b></div><div class="msend">Attach Lili&#x27;s flyer. Send from Nov 27</div><div class="mtext" id="mt-w9">Earth, Ocean, Arts &amp; Play
+
+This Christmas, December 21 – January 1, we invite children ages 6–9 and 10–13 into a creative, embodied, ocean-inspired holiday program: theatre, sports, mindfulness, clay, weaving and herbalism.
+
+8 am – 2 pm in Nosara. Curious about joining us? Send us a note: +506 6164 0827</div><button class="btn" data-mcopy="mt-w9">Copy message</button></div><div class="mimg"><img src="web-flyer-christmas.jpg" alt="Christmas Weeks flyer" loading="lazy"><a href="flyer-christmas.jpg" target="_blank" rel="noopener">Open Christmas Weeks flyer</a></div></article>
+    <article class="mcard"><div><div class="mhead"><b>Easter Weeks</b></div><div class="msend">Attach Lili&#x27;s flyer. Send from Feb 22</div><div class="mtext" id="mt-w10">Natural Dyes &amp; Cacao Making
+
+March 22 – April 2, we invite children ages 6–9 and 10–13 into a creative, embodied, ocean-inspired holiday program, with theatre, mindfulness, sports, clay and weaving.
+
+8 am – 2 pm in Nosara. Curious about joining us? Send us a note: +506 6164 0827</div><button class="btn" data-mcopy="mt-w10">Copy message</button></div><div class="mimg"><img src="web-flyer-easter.jpg" alt="Easter Weeks flyer" loading="lazy"><a href="flyer-easter.jpg" target="_blank" rel="noopener">Open Easter Weeks flyer</a></div></article>
+    <h3 class="mcat" id="mc11">Replies</h3>
+    <article class="mcard"><div><div class="mhead"><b>First reply</b></div><div class="msend">Save as a quick reply</div><div class="mtext" id="mt-w11">Thank you for reaching out to Wild Child
+
+How old is your child, and how long will your family be in Nosara?
+
+I&#x27;d love to share the program that fits and find a time for you to visit.</div><button class="btn" data-mcopy="mt-w11">Copy message</button></div><div class="mimg none">Save as a quick reply</div></article>
+    <article class="mcard"><div><div class="mhead"><b>Program and visit</b></div><div class="msend">Fill tuition once confirmed</div><div class="mtext" id="mt-w12">Here is the program for ages [ ]: [program sheet]
+
+Monday to Friday, [hours], in English and Spanish. Tuition is [confirmed rate], and it lowers the longer you enroll.
+
+Would you like to visit on [day] or [day]?</div><button class="btn" data-mcopy="mt-w12">Copy message</button></div><div class="mimg none">Fill tuition once confirmed</div></article>
+    <article class="mcard"><div><div class="mhead"><b>Gentle follow-up</b></div><div class="msend">Two days later, once only</div><div class="mtext" id="mt-w13">Here&#x27;s a little of what this morning looked like. [short video]
+
+No rush at all. I&#x27;m happy to answer any questions whenever you&#x27;re ready.</div><button class="btn" data-mcopy="mt-w13">Copy message</button></div><div class="mimg none">Two days later, once only</div></article>
+    <article class="mcard"><div><div class="mhead"><b>After a visit</b></div><div class="msend">Personal note first</div><div class="mtext" id="mt-w14">It was so good to meet you and [child&#x27;s name] today. [One real thing you noticed.]
+
+If this feels right for your family, here is the registration form: [link]
+
+We would love to grow with you.</div><button class="btn" data-mcopy="mt-w14">Copy message</button></div><div class="mimg none">Personal note first</div></article>
+  </section>
+  <section class="teachers page" id="teachers">
+    <h2>New teachers</h2>
+    <p class="sub">Photos and bios for posts, newsletters and replies to families. These are also on the website’s Team page. Open a photo to save it at full size.</p>
+      <article class="tcard"><a href="teacher-ben-cecchini.jpg" target="_blank" rel="noopener"><img src="web-teacher-ben-cecchini.jpg" alt="Ben Cecchini" loading="lazy"></a><div><h3>Ben Cecchini</h3><p class="trole">Life coach, breathwork facilitator &amp; musician · Music, movement &amp; mindfulness</p><p>Ben Cecchini is a certified life coach, motivational speaker, breathwork facilitator, athlete, musician, and entrepreneur who has spent years traveling the world inspiring young people to be their best.</p><p>As Founder and Executive Director of Give N’ Grow, Ben has delivered mental health and social-emotional learning programs to over 60,000 youth across the U.S. in partnership with NBA teams, players, sports psychologists, and schools. He’s impacted thousands of teens through school keynotes, team mental-performance trainings, and his work as a group therapy facilitator with Charlie Health.</p><p>Before shifting into holistic wellness, Ben worked in the Atlanta Hawks front office and as a footwear developer at Under Armour, helping create custom shoes for NBA players including Steph Curry. His work has taken him around the world—from mentoring young athletes in Ghana to his current home in Costa Rica, where he teaches a unique blend of music, movement, and mindfulness.</p><p class="tlinks"><a href="teacher-ben-cecchini.jpg" target="_blank" rel="noopener">Open photo full size</a></p></div></article>
+      <article class="tcard"><a href="teacher-florencia-figueroa.jpg" target="_blank" rel="noopener"><img src="web-teacher-florencia-figueroa.jpg" alt="Florencia Figueroa" loading="lazy"></a><div><h3>Florencia Figueroa</h3><p class="trole">Artist, sculptor &amp; art teacher</p><p>Florencia is an Argentine artist and art teacher who has made her home in Costa Rica. She holds a degree in Fine Arts with an emphasis in Sculpture from the Universidad de Costa Rica, where she graduated with distinction, and first trained as a drawing teacher at the Escuela Nacional de Bellas Artes Manuel Belgrano in Buenos Aires.</p><p>She has taught in the Sculpture Department of the Universidad de Costa Rica and as an art teacher at Saint Mary School in Escazú and Tree of Life International School in Santa Ana. Here in Nosara, she teaches art at Casa de las Estrellas and Playhouse.</p><p>Florencia directed the commissioning of fourteen sculptures for the Museo del Jade de Costa Rica, assisted with restoration at the university’s School of Visual Arts, and for twelve years co-ran Onírica Art Shop in La Fortuna. Alongside her studio practice she has trained in transpersonal art therapy, art therapy, and creativity coaching, bringing a gentle, process-centered approach to working with clay, wood, wax and metal—from the first idea and sketch to the finished piece.</p><p class="tnote">Bio drafted from her resume. Please check it with Florencia before it goes public.</p><h4>Florencia at work</h4><p class="tnote">From past schools, with other schools’ students in them. Use them to get to know her work, not for public posts.</p><div class="twork"><a href="florencia-work-1.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-1.jpg" alt="Florencia teaching art, photo 1" loading="lazy"></a><a href="florencia-work-2.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-2.jpg" alt="Florencia teaching art, photo 2" loading="lazy"></a><a href="florencia-work-3.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-3.jpg" alt="Florencia teaching art, photo 3" loading="lazy"></a><a href="florencia-work-4.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-4.jpg" alt="Florencia teaching art, photo 4" loading="lazy"></a><a href="florencia-work-5.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-5.jpg" alt="Florencia teaching art, photo 5" loading="lazy"></a><a href="florencia-work-6.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-6.jpg" alt="Florencia teaching art, photo 6" loading="lazy"></a><a href="florencia-work-7.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-7.jpg" alt="Florencia teaching art, photo 7" loading="lazy"></a><a href="florencia-work-8.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-8.jpg" alt="Florencia teaching art, photo 8" loading="lazy"></a><a href="florencia-work-9.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-9.jpg" alt="Florencia teaching art, photo 9" loading="lazy"></a><a href="florencia-work-10.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-10.jpg" alt="Florencia teaching art, photo 10" loading="lazy"></a></div><p class="tlinks"><a href="teacher-florencia-figueroa.jpg" target="_blank" rel="noopener">Open photo full size</a></p></div></article>
+  </section>
+  <section class="flyers page" id="flyers">
+    <h2>Flyers to send families</h2>
+    <p class="sub">Attach the one that fits when you reply. Open a flyer to save it at full size.</p>
+    <div class="fgrid">
+      <div class="fcard"><img src="web-flyer-new-chapter.jpg" alt="A new chapter poster flyer" loading="lazy"><b>A new chapter poster</b><span>Ages 1–3, 4–5, 6–9 and 10–13</span><a href="flyer-new-chapter.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-programs.jpg" alt="Programs banner flyer" loading="lazy"><b>Programs banner</b><span>Wide version for Facebook, email and the website</span><a href="flyer-programs.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-launch.jpg" alt="New season launch flyer" loading="lazy"><b>New season launch</b><span>Ages 6–9 and 10–13, starting Nov 23</span><a href="flyer-launch.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-harmony.jpg" alt="Harmony Co-Op Saturdays flyer" loading="lazy"><b>Harmony Co-Op Saturdays</b><span>Ages 3+, Saturdays 8:30–11:30am</span><a href="flyer-harmony.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-harmony-photo.jpg" alt="Harmony Co-Op photo flyer" loading="lazy"><b>Harmony Co-Op photo</b><span>Saturdays at the playground</span><a href="flyer-harmony-photo.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-thanksgiving.jpg" alt="Thanksgiving Week flyer" loading="lazy"><b>Thanksgiving Week</b><span>Ocean Connection Days, Nov 23–27</span><a href="flyer-thanksgiving.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-christmas.jpg" alt="Christmas Weeks flyer" loading="lazy"><b>Christmas Weeks</b><span>Earth, Ocean, Arts &amp; Play, Dec 21–Jan 1</span><a href="flyer-christmas.jpg" target="_blank" rel="noopener">Open full size</a></div>
+      <div class="fcard"><img src="web-flyer-easter.jpg" alt="Easter Weeks flyer" loading="lazy"><b>Easter Weeks</b><span>Natural Dyes &amp; Cacao Making, Mar 22–Apr 2</span><a href="flyer-easter.jpg" target="_blank" rel="noopener">Open full size</a></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const STATUSES = [
+  { key: "new", label: "New, needs reply" },
+  { key: "emailed", label: "Emailed" },
+  { key: "visit", label: "Visit booked" },
+  { key: "enrolled", label: "Enrolled" },
+  { key: "notfit", label: "Not a fit" },
+];
+let rows = [], filter = "all", query = "";
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
+function showNote(t) { const n = el("status"); n.textContent = t; n.hidden = !t; }
+
+async function load() {
+  const r = await fetch("/api/inquiries", { credentials: "same-origin" });
+  if (r.status === 401) { el("app").hidden = true; el("login").hidden = false; return; }
+  if (!r.ok) { el("app").hidden = false; showNote("The inquiries couldn't be loaded. Reload the page to try again."); return; }
+  const j = await r.json();
+  rows = j.inquiries || [];
+  el("sync").textContent = j.lastCheckedAt ? `Inbox last checked ${fmt(j.lastCheckedAt)}` : "Inbox not checked yet";
+  el("login").hidden = true; el("app").hidden = false; showNote(""); render();
+}
+
+el("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  el("loginErr").textContent = "";
+  const r = await fetch("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: el("pw").value }) });
+  if (r.ok) { el("pw").value = ""; load(); }
+  else { const j = await r.json().catch(() => ({})); el("loginErr").textContent = j.error || "Sign in failed. Try again."; }
+});
+el("logout").onclick = async () => { await fetch("/api/logout", { method: "POST" }); location.reload(); };
+el("q").addEventListener("input", (e) => { query = e.target.value; render(); });
+
+function renderCounts() {
+  const tally = Object.fromEntries(STATUSES.map(s => [s.key, 0]));
+  rows.forEach(r => { tally[r.status || "new"]++; });
+  const items = [{ key: "all", label: "All inquiries", n: rows.length }, ...STATUSES.map(s => ({ ...s, n: tally[s.key] }))];
+  el("counts").innerHTML = items.map(i => `<button class="count" data-f="${i.key}" aria-pressed="${filter === i.key}"><b>${i.n}</b><span>${esc(i.label)}</span></button>`).join("");
+  el("counts").querySelectorAll("button").forEach(b => b.onclick = () => { filter = b.dataset.f; render(); });
+}
+
+function render() {
+  renderCounts();
+  const q = query.trim().toLowerCase();
+  const shown = rows.filter(r => (filter === "all" || (r.status || "new") === filter) &&
+    (!q || [r.name, r.handle, r.email, r.program, r.message, r.notes].join(" ").toLowerCase().includes(q)));
+  const list = el("list");
+  if (!rows.length) { list.innerHTML = `<div class="empty">No inquiries yet. New Instagram and Messenger conversations are added here when the inbox is checked.</div>`; return; }
+  if (!shown.length) { list.innerHTML = `<div class="empty">Nothing matches this filter.</div>`; return; }
+  list.innerHTML = shown.map(r => {
+    const st = r.status || "new";
+    const opts = STATUSES.map(s => `<option value="${s.key}" ${s.key === st ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    const email = r.email ? `<span class="val">${esc(r.email)}</span> <button class="btn" data-copy="${esc(r.email)}">Copy</button>` : `<span class="missing">Not shared yet</span>`;
+    const h = (r.handle || "").replace(/^@/, "");
+    const link = r.threadUrl ? `<a href="${esc(r.threadUrl)}" target="_blank" rel="noopener">Open conversation</a>` : (h ? `<a href="https://www.instagram.com/${esc(h)}/" target="_blank" rel="noopener">View profile</a>` : "");
+    return `<article class="card s-${st}" data-id="${esc(r.id)}">
+      <div class="top">
+        <div><span class="who">${esc(r.name || h || "Unknown")}</span>${h ? `<span class="handle">@${esc(h)}</span>` : ""}<span class="pill">${esc(r.channel || "Instagram")}</span>${r.program ? `<span class="pill">${esc(r.program)}</span>` : ""}</div>
+        <div class="when">Messaged ${fmt(r.receivedAt)}</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><small>Email</small>${email}</div>
+        <div class="fact"><small>Child's age</small><span class="val">${r.childAge ? esc(r.childAge) : '<span class="missing">Unknown</span>'}</span></div>
+        <div class="fact"><small>Time in Nosara</small><span class="val">${r.stay ? esc(r.stay) : '<span class="missing">Unknown</span>'}</span></div>
+      </div>
+      <div class="msg">${esc(r.message || "")}</div>
+      <div class="row">
+        <label class="sync" for="st-${esc(r.id)}">Status</label>
+        <select id="st-${esc(r.id)}" data-field="status">${opts}</select>
+        ${link}
+        <span class="saved" data-saved hidden>Saved</span>
+      </div>
+      <div><label class="sync" for="nt-${esc(r.id)}">Notes</label>
+      <textarea id="nt-${esc(r.id)}" data-field="notes" placeholder="Add a note, e.g. emailed program info on Nov 7">${esc(r.notes || "")}</textarea></div>
+    </article>`;
+  }).join("");
+  list.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch { b.textContent = "Select and copy"; }
+    setTimeout(() => b.textContent = "Copy", 1500);
+  });
+  list.querySelectorAll("select[data-field]").forEach(s => s.onchange = () => save(s.closest(".card"), { status: s.value }));
+  list.querySelectorAll("textarea[data-field]").forEach(t => t.onchange = () => save(t.closest(".card"), { notes: t.value }));
+}
+
+async function save(card, patch) {
+  const id = card.dataset.id;
+  const r = await fetch("/api/update", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, ...patch }) });
+  if (r.status === 401) { el("app").hidden = true; el("login").hidden = false; return; }
+  if (!r.ok) { showNote("That change didn't save. Check your connection and try again."); return; }
+  const row = rows.find(x => x.id === id); Object.assign(row, patch);
+  if (patch.status) render();
+  else { const s = card.querySelector("[data-saved]"); s.hidden = false; setTimeout(() => s.hidden = true, 1500); }
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-mcopy]"); if (!b) return;
+  const node = el(b.dataset.mcopy);
+  try { await navigator.clipboard.writeText(node.textContent); b.textContent = "Copied"; }
+  catch { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Text selected, copy it"; }
+  setTimeout(() => b.textContent = "Copy message", 1600);
+});
+load();
+</script>
+<script>
+(function(){
+  const pages=[...document.querySelectorAll('.page')].map(p=>p.id);
+  function show(){
+    const h=decodeURIComponent(location.hash.slice(1));
+    let pid=pages.includes(h)?h:null, target=null;
+    if(!pid&&h){target=document.getElementById(h);const pg=target&&target.closest('.page');pid=pg?pg.id:null;}
+    pid=pid||'inquiries';
+    pages.forEach(id=>document.getElementById(id).classList.toggle('on',id===pid));
+    document.querySelectorAll('#tabs a').forEach(a=>{if(a.dataset.p===pid)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+    if(target&&!pages.includes(h)){target.scrollIntoView({block:'start'});window.scrollBy(0,-100);}else{window.scrollTo(0,0);}
+  }
+  addEventListener('hashchange',show);show();
+})();
+</script>
+<script>
+document.querySelectorAll('.mimg img, .fcard img, .tcard img').forEach(img => {
+  let done = false;
+  const swap = () => {
+    if (done) return; done = true;
+    const tw = img.closest('.twork'), m = img.closest('.mimg'), f = img.closest('.fcard'), t = img.closest('.tcard');
+    if (tw) { tw.innerHTML = '<p class="tnote">Photos are being added.</p>'; return; }
+    if (m) { m.className = 'mimg pending'; m.textContent = (img.alt || 'Image') + ' (image being added)'; return; }
+    if (f) { const a = f.querySelector('a'); if (a) a.remove(); const d = document.createElement('div'); d.className = 'fpend'; d.textContent = 'Image being added'; img.replaceWith(d); return; }
+    if (t) { const d = document.createElement('div'); d.className = 'tph'; d.textContent = (img.alt || '') + ' photo being added'; const link = img.closest('a'); (link || img).replaceWith(d); const tl = t.querySelector('.tlinks'); if (tl) tl.remove(); }
+  };
+  if (img.complete && img.naturalWidth === 0) swap(); else img.addEventListener('error', swap);
+});
+</script>
+
+</body>
+</html>
