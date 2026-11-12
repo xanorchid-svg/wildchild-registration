@@ -56,19 +56,23 @@ html:has(body.team),body.team{background:#25318D}
 (function(){
 const W='https://static.wixstatic.com/media/';
 const img=id=>W+id+'/v1/fill/w_480,h_440,al_c,q_85,enc_auto/t.jpg';
+const U='https://www.wildchildnosara.com/team#';
 const T=[
- {n:'Dunnia',p:'b80b05_3bb220337e794061a428d6c57c3955c9~mv2.jpg',w:'Lead guide, ages 1–5',s:'<b>Mon–Fri</b> · 8am–2pm',a:'Ages 1–3 &amp; 4–5'},
- {n:'Jennifer (Jenne)',p:'d5e4c3_0f36f8250a6a44babc16e29a512d8b1e~mv2.png',w:'Permaculture, gardening, nutrition &amp; movement',s:'<b>Mon, Wed, Thu, Fri</b> · 8am–12:30pm',a:'All ages'},
- {n:'Karen',p:'d5e4c3_f1b7f31bfa6445aea40367a0c9859f4c~mv2.png',w:'Cosmic Education &amp; Indigenous ways of knowing',s:'<b>Mon, Wed, Thu</b> · 9am–12pm',a:'Ages 6–9 &amp; 10–13'},
- {n:'Benjamin',p:'d5e4c3_5646594e24ef4bcfa953482004e5d2a1~mv2.jpeg',w:'Wonder, presence &amp; performance · Drumming',s:'<b>Mon–Thu</b> · 9am–12pm<br><b>Fri</b> drumming 9–10am (all ages), 11am–2pm',a:'Ages 6–9 &amp; 10–13',b:'One month only'},
- {n:'Ben',p:'b80b05_320ee6183b7e48ed8b4c2410e3fa4418~mv2.jpg',w:'Mindfulness, movement &amp; team sports',s:'<b>Wed</b> · 8–9am',a:'All ages'},
- {n:'Mitchell',p:'b80b05_c2d613d37d5645b9a0466ae36cea7d37~mv2.jpg',w:'Ocean awareness, surf &amp; breathwork',s:'<b>Tue</b> · 8–10am at Playa Garza<br>Meet 7:45am at Estrellitas Café',a:'Ages 6–9 &amp; 10–13'},
- {n:'Daniel',p:'b80b05_ea83eeaf15c94fc8bd3394f815689df6~mv2.jpg',w:'Functional clay &amp; pottery',s:'<b>Wednesdays</b>',a:'Pottery class'},
- {n:'Tefi',p:'b80b05_f48da285d4514d9d879683c47913277c~mv2.jpg',w:'Clay, beauty &amp; artistic expression',s:'<b>Thursdays</b>',a:'Pottery class'},
- {n:'Florencia (Flor)',p:'b80b05_78ec0159ea6e446c9f0d068e7c440897~mv2.jpg',w:'Art &amp; sculpture',s:'<b>Fri</b> · 10–11:30am',a:'Ages 6–9 &amp; 10–13'}
-];
+ {n:'Lili',p:'d5e4c3_af5050d95939410cbbf147d1110307ff~mv2.png',w:'Founder &amp; educational vision holder',s:'Guides the school, its families &amp; educators',a:'Founder',id:'comp-mo0i86ed',t:1},
+ {n:'Dunnia',p:'b80b05_3bb220337e794061a428d6c57c3955c9~mv2.jpg',w:'Lead guide, ages 1–5',s:'<b>Mon–Fri</b> · 8am–2pm',a:'Ages 1–3 &amp; 4–5',id:'comp-mo0i93id'},
+ {n:'Jennifer (Jenne)',p:'d5e4c3_0f36f8250a6a44babc16e29a512d8b1e~mv2.png',w:'Permaculture, gardening, nutrition &amp; movement',s:'<b>Mon, Wed, Thu, Fri</b> · 8am–12:30pm',a:'All ages',id:'comp-mo1uv0z1'},
+ {n:'Karen',p:'d5e4c3_f1b7f31bfa6445aea40367a0c9859f4c~mv2.png',w:'Cosmic Education &amp; Indigenous ways of knowing',s:'<b>Mon, Wed, Thu</b> · 9am–12pm',a:'Ages 6–9 &amp; 10–13',id:'comp-mt53bjhe'},
+ {n:'Benjamin',p:'b80b05_e9bf87a942ef48b08fba85a0eb4ebccb~mv2.jpg',w:'Wonder, presence &amp; performance · Drumming',s:'<b>Mon–Thu</b> · 9am–12pm<br><b>Fri</b> drumming 9–10am (all ages), 11am–2pm',a:'Ages 6–9 &amp; 10–13',b:'One month only',id:'comp-mt14jr5h'},
+ {n:'Ben',p:'b80b05_320ee6183b7e48ed8b4c2410e3fa4418~mv2.jpg',w:'Mindfulness, movement &amp; team sports',s:'<b>Wed</b> · 8–9am',a:'All ages',id:'comp-mwcbjvfu'},
+ {n:'Mitchell',p:'b80b05_c2d613d37d5645b9a0466ae36cea7d37~mv2.jpg',w:'Ocean awareness, surf &amp; breathwork',s:'<b>Tue</b> · 8–10am at Playa Garza<br>Meet 7:45am at Estrellitas Café',a:'Ages 6–9 &amp; 10–13',id:'comp-mwcmj1d1'},
+ {n:'Daniel',p:'b80b05_ea83eeaf15c94fc8bd3394f815689df6~mv2.jpg',w:'Functional clay &amp; pottery',s:'<b>Wednesdays</b>',a:'Pottery class',id:'comp-mwdu1kg3'},
+ {n:'Tefi',p:'b80b05_f48da285d4514d9d879683c47913277c~mv2.jpg',w:'Clay, beauty &amp; artistic expression',s:'<b>Thursdays</b>',a:'Pottery class',id:'comp-mwdu14k1'},
+ {n:'Florencia (Flor)',p:'b80b05_78ec0159ea6e446c9f0d068e7c440897~mv2.jpg',w:'Art &amp; sculpture',s:'<b>Fri</b> · 10–11:30am',a:'Ages 6–9 &amp; 10–13',id:'comp-mwcbqu3g'},
+ {n:'Alexandra',p:'b80b05_ae22e25df3774b2ab6e0a2075f56778d~mv2.jpeg',w:'Marketing, outreach &amp; running the school with Lili',s:'<b>After school</b> · Digital Learning: ethics of technology &amp; AI',a:'Team',id:'comp-mo1uwfta',t:1},
+ {n:'Lizeth',p:'d5e4c3_f00b9b0554c144ecaa2758c38305da3d~mv2.jpg',w:'Financial coordinator',s:'Finances, family accounts &amp; school administration',a:'Team',id:'comp-mo1y1ast',t:1}
+].filter(t=>document.body.classList.contains('team')||!t.t);
 const tr=document.getElementById('track'),dots=document.getElementById('dots');
-tr.innerHTML=T.map(t=>`<a class="card" href="https://www.wildchildnosara.com/team" target="_top"><div class="ph" style="background-image:url('${img(t.p)}')">${t.b?`<span class="badge">${t.b}</span>`:''}</div><div class="body"><div class="name">${t.n}</div><div class="what">${t.w}</div><div class="when">${t.s}</div><div class="ages">${t.a}</div></div></a>`).join('');
+tr.innerHTML=T.map(t=>`<a class="card" href="${U+t.id}" target="_top"><div class="ph" style="background-image:url('${img(t.p)}')">${t.b?`<span class="badge">${t.b}</span>`:''}</div><div class="body"><div class="name">${t.n}</div><div class="what">${t.w}</div><div class="when">${t.s}</div><div class="ages">${t.a}</div></div></a>`).join('');
 dots.innerHTML=T.map(()=>'<i></i>').join('');
 const prev=document.querySelector('.prev'),next=document.querySelector('.next');
 const step=()=>{const c=tr.querySelector('.card');return c.offsetWidth+parseFloat(getComputedStyle(tr).gap)};
