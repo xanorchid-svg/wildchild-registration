@@ -42,6 +42,7 @@ html,body{background:#F0EBDE;font-family:Jost,"Brandon Grotesque",sans-serif;col
  <div class="dots" id="dots"></div>
 </div>
 <script>
+(function(){
 const W='https://static.wixstatic.com/media/';
 const img=id=>W+id+'/v1/fill/w_480,h_440,al_c,q_85,enc_auto/t.jpg';
 const T=[
@@ -64,5 +65,6 @@ prev.onclick=()=>tr.scrollBy({left:-step()*Math.max(1,Math.floor(tr.clientWidth/
 next.onclick=()=>tr.scrollBy({left:step()*Math.max(1,Math.floor(tr.clientWidth/step())-1),behavior:'smooth'});
 const upd=()=>{const i=Math.round(tr.scrollLeft/step());[...dots.children].forEach((d,j)=>d.classList.toggle('on',j===Math.min(i,T.length-1)));prev.disabled=tr.scrollLeft<5;next.disabled=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-5;};
 tr.addEventListener('scroll',upd,{passive:true});window.addEventListener('resize',upd);upd();
+})();
 </script>
 </body></html>
