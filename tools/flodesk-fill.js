@@ -12,7 +12,7 @@ window.__findRow=(re)=>__rowsNow().findIndex(r=>re.test(r.innerText));
 window.__fillText=async(key)=>{
   const m=window.__EMAILS.find(x=>x.key===key); const log=[];
   // title block (row with NEWSLETTER kicker)
-  let i=__findRow(/Ocean Connection Days|NEWSLETTER/); await __act(i);
+  let i=__rowsNow().findIndex((r,k)=>k>0&&r.querySelector('[data-paragraph]')); await __act(i);
   __set([[[m.kicker,0]],[[m.title,1]],[[m.subtitle,2]]]); log.push('title');
   // letter block
   i=__findRow(/^\s*Dear /); await __act(i);
@@ -37,4 +37,5 @@ window.__fillText=async(key)=>{
 window.__heroFile=async(name)=>{const b=await (await fetch('https://raw.githubusercontent.com/xanorchid-svg/wildchild-registration/console-flyers/console-flyers/web-'+name+'.jpg')).blob(); return new File([b],name+'.jpg',{type:'image/jpeg'});};
 window.__upload=async(name)=>{const inp=document.querySelector('[data-testid="upload-area__input"]'); if(!inp) return 'no input'; const dt=new DataTransfer(); dt.items.add(await __heroFile(name)); inp.files=dt.files; inp.dispatchEvent(new Event('change',{bubbles:true})); await __sleep(6000); return [...__fd().images].map(i=>i.src.split('/').pop()).join(' ');};
 window.__setLink=async(url)=>{const ta=[...document.querySelectorAll('textarea,input[type=text],input[type=url]')].find(t=>/^https?:|wa\.me/.test(t.value)||/url|link/i.test(t.placeholder||'')); if(!ta) return 'no link field'; const set=Object.getOwnPropertyDescriptor(ta.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set; set.call(ta,url); ta.dispatchEvent(new Event('input',{bubbles:true})); ta.dispatchEvent(new Event('change',{bubbles:true})); ta.dispatchEvent(new Event('blur',{bubbles:true})); await __sleep(800); return ta.value;};
+window.__subject=(t)=>{const eds=[...document.querySelectorAll('[contenteditable=true]')].filter(e=>e.ckeditorInstance); const ed=eds[0].ckeditorInstance; ed.model.change(w=>{const root=ed.model.document.getRoot(); w.remove(w.createRangeIn(root)); const p=w.createElement('paragraph'); w.append(w.createText(t),p); w.append(p,root);}); return eds.map(e=>e.innerText);};
 'fill helpers loaded';
