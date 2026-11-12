@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#F0EBDE;font-family:Jost,"Brandon Grotesque",sans-serif;color:#765F37;overflow:hidden}
+.wrap{padding:18px 0 10px;position:relative}
+.head{text-align:center;padding:0 16px 14px}
+.head h2{font-family:"Amatic SC",cursive;font-weight:700;font-size:44px;line-height:1;color:#25318D;letter-spacing:.5px}
+.head p{font-size:15px;font-weight:300;margin-top:6px}
+.track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 48px;padding:6px 48px 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.track::-webkit-scrollbar{display:none}
+.card{flex:0 0 236px;scroll-snap-align:start;background:#fff;border-radius:18px;overflow:hidden;text-decoration:none;color:inherit;box-shadow:0 2px 10px rgba(37,49,141,.08);display:flex;flex-direction:column;height:404px;transition:transform .2s}
+.card:hover{transform:translateY(-3px)}
+.ph{height:210px;flex-shrink:0;background:#e6decb center/cover no-repeat;position:relative}
+.badge{position:absolute;top:10px;left:10px;background:#25318D;color:#F0EBDE;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:20px}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;flex:1}
+.name{font-family:Georgia,serif;font-size:23px;color:#765F37;line-height:1.1}
+.what{font-size:14.5px;font-weight:500;color:#25318D;margin-top:6px;line-height:1.3}
+.when{margin-top:10px;font-size:13px;font-weight:300;line-height:1.45;color:#5c4a2b}
+.when b{font-weight:500}
+.ages{margin-top:auto;padding-top:10px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#765F37;border-top:1px solid #efe6d3}
+.nav{position:absolute;top:50%;width:40px;height:40px;border-radius:50%;border:0;background:#25318D;color:#F0EBDE;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:2}
+.nav:disabled{opacity:.25;cursor:default}
+.prev{left:4px}.next{right:4px}
+.dots{display:flex;justify-content:center;gap:7px;margin-top:2px}
+.dots i{width:7px;height:7px;border-radius:50%;background:#d6c9ac;display:block}
+.dots i.on{background:#25318D}
+.cta{text-align:center;margin-top:16px}
+.cta a{display:inline-block;background:#25318D;color:#F0EBDE;text-decoration:none;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:12px 28px;border-radius:30px;transition:opacity .2s}
+.cta a:hover{opacity:.85}
+html:has(body.team),body.team{background:#25318D}
+.team .head,.team .cta{display:none}
+.team .wrap{padding-top:6px}
+.team .card{box-shadow:0 4px 16px rgba(0,0,0,.18)}
+.team .nav{background:#F0EBDE;color:#25318D}
+.team .dots i{background:rgba(240,235,222,.35)}
+.team .dots i.on{background:#F0EBDE}
+@media (max-width:600px){
+ .head h2{font-size:38px}
+ .head p{font-size:14px}
+ .track{padding:6px 22px 16px;scroll-padding:0 22px;gap:12px}
+ .card{flex-basis:calc(100% - 44px)}
+ .nav{display:none}
+}
+</style></head><body class="team">
+<div class="wrap">
+ <div class="head"><h2>Meet Our Teachers</h2><p>The guides your child will learn with this season</p></div>
+ <button class="nav prev" aria-label="Previous">&#8249;</button>
+ <div class="track" id="track"></div>
+ <button class="nav next" aria-label="Next">&#8250;</button>
+ <div class="dots" id="dots"></div>
+ <div class="cta"><a href="https://www.wildchildnosara.com/team" target="_top">Read more about our team</a></div>
+</div>
+<script>
+(function(){
+const W='https://static.wixstatic.com/media/';
+const img=id=>W+id+'/v1/fill/w_480,h_440,al_c,q_85,enc_auto/t.jpg';
+const T=[
+ {n:'Dunnia',p:'b80b05_3bb220337e794061a428d6c57c3955c9~mv2.jpg',w:'Lead guide, ages 1–5',s:'<b>Mon–Fri</b> · 8am–2pm',a:'Ages 1–3 &amp; 4–5'},
+ {n:'Jennifer (Jenne)',p:'d5e4c3_0f36f8250a6a44babc16e29a512d8b1e~mv2.png',w:'Permaculture, gardening, nutrition &amp; movement',s:'<b>Mon, Wed, Thu, Fri</b> · 8am–12:30pm',a:'All ages'},
+ {n:'Karen',p:'d5e4c3_f1b7f31bfa6445aea40367a0c9859f4c~mv2.png',w:'Cosmic Education &amp; Indigenous ways of knowing',s:'<b>Mon, Wed, Thu</b> · 9am–12pm',a:'Ages 6–9 &amp; 10–13'},
+ {n:'Benjamin',p:'d5e4c3_5646594e24ef4bcfa953482004e5d2a1~mv2.jpeg',w:'Wonder, presence &amp; performance · Drumming',s:'<b>Mon–Thu</b> · 9am–12pm<br><b>Fri</b> drumming 9–10am (all ages), 11am–2pm',a:'Ages 6–9 &amp; 10–13',b:'One month only'},
+ {n:'Ben',p:'b80b05_320ee6183b7e48ed8b4c2410e3fa4418~mv2.jpg',w:'Mindfulness, movement &amp; team sports',s:'<b>Wed</b> · 8–9am',a:'All ages'},
+ {n:'Mitchell',p:'b80b05_c2d613d37d5645b9a0466ae36cea7d37~mv2.jpg',w:'Ocean awareness, surf &amp; breathwork',s:'<b>Tue</b> · 8–10am at Playa Garza<br>Meet 7:45am at Estrellitas Café',a:'Ages 6–9 &amp; 10–13'},
+ {n:'Daniel',p:'b80b05_ea83eeaf15c94fc8bd3394f815689df6~mv2.jpg',w:'Functional clay &amp; pottery',s:'<b>Wednesdays</b>',a:'Pottery class'},
+ {n:'Tefi',p:'b80b05_f48da285d4514d9d879683c47913277c~mv2.jpg',w:'Clay, beauty &amp; artistic expression',s:'<b>Thursdays</b>',a:'Pottery class'},
+ {n:'Florencia (Flor)',p:'b80b05_78ec0159ea6e446c9f0d068e7c440897~mv2.jpg',w:'Art &amp; sculpture',s:'<b>Fri</b> · 10–11:30am',a:'Ages 6–9 &amp; 10–13'}
+];
+const tr=document.getElementById('track'),dots=document.getElementById('dots');
+tr.innerHTML=T.map(t=>`<a class="card" href="https://www.wildchildnosara.com/team" target="_top"><div class="ph" style="background-image:url('${img(t.p)}')">${t.b?`<span class="badge">${t.b}</span>`:''}</div><div class="body"><div class="name">${t.n}</div><div class="what">${t.w}</div><div class="when">${t.s}</div><div class="ages">${t.a}</div></div></a>`).join('');
+dots.innerHTML=T.map(()=>'<i></i>').join('');
+const prev=document.querySelector('.prev'),next=document.querySelector('.next');
+const step=()=>{const c=tr.querySelector('.card');return c.offsetWidth+parseFloat(getComputedStyle(tr).gap)};
+prev.onclick=()=>tr.scrollBy({left:-step()*Math.max(1,Math.floor(tr.clientWidth/step())-1),behavior:'smooth'});
+next.onclick=()=>tr.scrollBy({left:step()*Math.max(1,Math.floor(tr.clientWidth/step())-1),behavior:'smooth'});
+const upd=()=>{const i=Math.round(tr.scrollLeft/step());[...dots.children].forEach((d,j)=>d.classList.toggle('on',j===Math.min(i,T.length-1)));prev.disabled=tr.scrollLeft<5;next.disabled=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-5;};
+tr.addEventListener('scroll',upd,{passive:true});window.addEventListener('resize',upd);upd();
+})();
+</script>
+</body></html>
