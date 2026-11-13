@@ -133,6 +133,15 @@ a { color: var(--accent-2); }
 .jumpf { font-size: .9rem; font-weight: 700; }
 .mimg.pending, .fpend { color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; padding: 12px; font-size: .85rem; }
 .tcard .tph { aspect-ratio: .8; border: 1px dashed var(--line); border-radius: 10px; display: grid; place-items: center; color: var(--muted); font-size: .85rem; text-align: center; padding: 10px; }
+.todo { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; padding: 16px 18px; margin: 18px 0 20px; }
+.todo h2 { margin: 0 0 4px; font-size: 1.15rem; }
+.todo .sub { margin: 0 0 10px; }
+.todo label { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.todo label:first-of-type { border-top: 0; }
+.todo input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.todo .t b { display: block; }
+.todo .t span { color: var(--muted); font-size: .95em; }
+.todo label.done .t b { text-decoration: line-through; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -166,6 +175,11 @@ a { color: var(--accent-2); }
     <a href="#teachers" data-p="teachers">New teachers</a>
   </nav>
   <div class="page" id="inquiries">
+  <section class="todo" aria-labelledby="todoh">
+    <h2 id="todoh">Lili's checklist</h2>
+    <p class="sub">Tick each one when it's done. Xan sees your ticks too.</p>
+    <div id="todo"></div>
+  </section>
   <div class="counts" id="counts" role="group" aria-label="Filter by status"></div>
   <div class="tools">
     <label for="q" class="sync">Search</label>
@@ -842,6 +856,30 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<"
 const fmt = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
 function showNote(t) { const n = el("status"); n.textContent = t; n.hidden = !t; }
 
+
+const TODO = [
+  ["schedule", "Finish the schedule and send it to Xan", "So it can go on the website and in the messages"],
+  ["flodesk", "Review the Flodesk emails", "Make sure each one is correct, and make any changes"],
+  ["pricing", "Review pricing and details", "Rates, days, times and programs, so families get the right information"],
+];
+let todo = {};
+try { todo = JSON.parse(localStorage.getItem("wc_todo") || "{}"); } catch {}
+const tOn = (k) => !!(todo[k] && todo[k].v);
+function renderTodo() {
+  el("todo").innerHTML = TODO.map(([k, t, s]) => `<label class="${tOn(k) ? "done" : ""}"><input type="checkbox" data-todo="${k}"${tOn(k) ? " checked" : ""}><span class="t"><b>${t}</b><span>${s}</span></span></label>`).join("");
+}
+function mergeTodo(a, b) { const o = { ...a }; for (const k in b || {}) if (!o[k] || (b[k].t || 0) >= (o[k].t || 0)) o[k] = b[k]; return o; }
+async function loadTodo() {
+  renderTodo();
+  try { const r = await fetch("/api/todo", { credentials: "same-origin" }); if (r.ok) { const j = await r.json(); todo = mergeTodo(todo, j.checks || {}); renderTodo(); } } catch {}
+}
+el("todo").addEventListener("change", async (e) => {
+  const k = e.target.dataset.todo; if (!k) return;
+  todo[k] = { v: e.target.checked, t: Date.now() };
+  try { localStorage.setItem("wc_todo", JSON.stringify(todo)); } catch {}
+  renderTodo();
+  try { await fetch("/api/todo", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: k, v: todo[k].v, t: todo[k].t }) }); } catch {}
+});
 async function load() {
   const r = await fetch("/api/inquiries", { credentials: "same-origin" });
   if (r.status === 401) { el("app").hidden = true; el("login").hidden = false; return; }
@@ -849,7 +887,7 @@ async function load() {
   const j = await r.json();
   rows = j.inquiries || [];
   el("sync").textContent = j.lastCheckedAt ? `Inbox last checked ${fmt(j.lastCheckedAt)}` : "Inbox not checked yet";
-  el("login").hidden = true; el("app").hidden = false; showNote(""); render();
+  el("login").hidden = true; el("app").hidden = false; showNote(""); render(); loadTodo();
 }
 
 el("loginForm").addEventListener("submit", async (e) => {
