@@ -2,9 +2,8 @@
 // Called by the Wix automations "Registration form → Lili email + Flodesk" (source=register)
 // and "Email signup pop-up → Lili email + Flodesk" (source=popup) via "Send HTTP request".
 // Lili's email notice comes from Wix's own "Get an Email when a form is submitted" automation.
-// Adds the family to Flodesk "Website Inquiries" plus the program segment(s) they chose;
-// each program segment triggers its "Info · …" workflow, which sends that program's email.
-// Env: FLODESK_API_KEY, WIX_WEBHOOK_KEY (must match ?key= in the Wix automation URL).
+// Records the family via the console intake (see below).
+// Env: FLODESK_API_KEY, WIX_WEBHOOK_KEY (must match ?key= in the Wix automation URL), INTAKE_KEY (console intake).
 
 const FD = 'https://api.flodesk.com/v1';
 const EMAIL_RE = /[^\s@"<>]+@[^\s@"<>]+\.[^\s@"<>]{2,}/;
@@ -71,6 +70,27 @@ function programSegments(programText, childText) {
   return [...new Set(segs)];
 }
 
+// Since Nov 17, 2026 the single path for every channel is the console's /api/intake: it records the family
+// in Lili's console and adds them to Flodesk "Website Inquiries" + "New inquiries" (the one Welcome
+// workflow; never twice). Program segments are no longer added here: families pick their program from
+// the buttons in the welcome email (Flodesk link actions), which sends the program email.
+// If the console can't be reached, the family is added to Flodesk directly with the same rules.
+const crypto = require('crypto');
+const DOOR = 'New inquiries';
+
+async function direct(email, first, last) {
+  const map = await segments();
+  const base = map[BASE.toLowerCase()], door = map[DOOR.toLowerCase()];
+  let existing = null;
+  try { existing = await fd('/subscribers/' + encodeURIComponent(email).replace(/%40/g, '@')); } catch { existing = null; }
+  if (existing && existing.status && existing.status !== 'active') return { skipped: existing.status };
+  const inDoor = existing && (existing.segments || []).some(s => s.id === door);
+  const ids = [base, inDoor ? null : door].filter(Boolean);
+  const sub = await fd('/subscribers', { method: 'POST', body: JSON.stringify({ email, first_name: existing ? undefined : (first || undefined), last_name: existing ? undefined : (last || undefined), segment_ids: ids }) });
+  if (ids.length && sub && sub.id) await fd(`/subscribers/${sub.id}/segments`, { method: 'POST', body: JSON.stringify({ segment_ids: ids }) });
+  return { segments: ids.length, welcome: inDoor ? 'already' : (door ? 'queued' : 'no door segment') };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Use POST.' });
@@ -79,25 +99,28 @@ module.exports = async function handler(req, res) {
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   const o = { pairs: [], keyed: [] }; collect(b, o);
   const source = String(req.query.source || 'register');
-
   const emailRaw = pick(o, /^email$|e-?mail/i) || (o.keyed.map(([, v]) => v).find(v => EMAIL_RE.test(v)) || '');
   const email = (emailRaw.match(EMAIL_RE) || [''])[0].toLowerCase();
   if (!email) { console.log('no email in payload', JSON.stringify(b).slice(0, 1500)); return res.status(200).json({ ok: false, error: 'no email' }); }
   const first = pick(o, /first[ _]?name/i).slice(0, 80);
   const last = pick(o, /last[ _]?name/i).slice(0, 80);
-  const program = pick(o, /program|interested/i);
-  const child = pick(o, /child/i);
-  const wanted = [BASE, ...programSegments(program, child)];
-
+  const program = pick(o, /program|interested/i).slice(0, 200);
+  const child = pick(o, /child/i).slice(0, 200);
+  const phone = pick(o, /phone|whats/i).slice(0, 60);
+  const message = pick(o, /message|question|comment|notes?/i).slice(0, 3000);
+  const id = 'wx-' + crypto.createHash('sha1').update(email).digest('hex').slice(0, 12);
+  const row = { id, channel: 'Website', notify: false, name: [first, last].filter(Boolean).join(' '), email, phone, program, childAge: child,
+    message: [source === 'popup' ? 'Signed up with the website pop-up.' : 'Website registration form.', program ? `Program: ${program}` : '', child ? `Child: ${child}` : '', message].filter(Boolean).join('\n') };
   try {
-    const map = await segments();
-    const ids = wanted.map(n => map[n.toLowerCase()]).filter(Boolean);
-    const missing = wanted.filter(n => !map[n.toLowerCase()]);
-    const sub = await fd('/subscribers', { method: 'POST', body: JSON.stringify({ email, first_name: first || undefined, last_name: last || undefined, segment_ids: ids }) });
-    // Upsert does not always add an existing subscriber to new segments, so add explicitly by id too.
-    if (ids.length && sub && sub.id) await fd(`/subscribers/${sub.id}/segments`, { method: 'POST', body: JSON.stringify({ segment_ids: ids }) });
-    console.log(JSON.stringify({ source, email: email.replace(/^(.).*@/, '$1***@'), program, child: child.slice(0, 40), segments: wanted, missing }));
-    return res.status(200).json({ ok: true, segments: wanted, missing });
+    const r = await fetch('https://wildchild-console.vercel.app/api/intake', { method: 'POST', headers: { 'content-type': 'application/json', 'x-intake-key': process.env.INTAKE_KEY || '' }, body: JSON.stringify(row) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) { console.log(JSON.stringify({ source, via: 'console', id, flodesk: j.flodesk })); return res.status(200).json({ ok: true, via: 'console' }); }
+    console.error('console intake failed', r.status, JSON.stringify(j).slice(0, 300));
+  } catch (e) { console.error('console intake error', String(e)); }
+  try {
+    const d = await direct(email, first, last);
+    console.log(JSON.stringify({ source, via: 'direct', id, d }));
+    return res.status(200).json({ ok: true, via: 'direct' });
   } catch (e) {
     console.error(String(e));
     return res.status(502).json({ ok: false, error: 'flodesk' });
