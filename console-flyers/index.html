@@ -60,7 +60,11 @@ h1 { font: 700 clamp(1.6rem, 3.5vw, 2.2rem)/1.1 var(--font-display); margin: 0; 
 .list { display: grid; gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; }
 .card.s-new { border-left-color: var(--new); }
-.card.s-emailed, .card.s-visit { border-left-color: var(--accent-2); }
+.card.s-emailed, .card.s-visit, .card.s-registered, .card.s-invoiced { border-left-color: var(--accent-2); }
+.addfam { margin: 14px 0; } .addfam summary { cursor: pointer; font-weight: bold; color: var(--accent); }
+.addfam form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-top: 10px; }
+.addfam form textarea, .addfam form .full { grid-column: 1 / -1; }
+.addfam input, .addfam select, .addfam textarea { font: inherit; padding: 7px 9px; border: 1px solid #ccd; border-radius: 8px; }
 .card.s-enrolled { border-left-color: var(--done); }
 .card.s-notfit { border-left-color: var(--off); }
 .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
@@ -202,6 +206,20 @@ a { color: var(--accent-2); }
     <div id="todo"></div>
   </section>
   <div class="counts" id="counts" role="group" aria-label="Filter by status"></div>
+  <details class="addfam" id="addfam">
+    <summary>+ Add a family (WhatsApp, email, phone call, in person)</summary>
+    <form id="addForm">
+      <input name="name" placeholder="Parent's name" required>
+      <select name="channel"><option>WhatsApp</option><option>Email</option><option>Instagram</option><option>Other</option></select>
+      <input name="email" type="email" placeholder="Email (they get the welcome email once)">
+      <input name="phone" placeholder="Phone / WhatsApp">
+      <input name="childAge" placeholder="Child's age">
+      <input name="program" placeholder="Program (e.g. Ages 4–5)">
+      <input name="stay" placeholder="Dates in Nosara / start date">
+      <textarea name="message" rows="3" placeholder="What they asked"></textarea>
+      <div class="full"><button class="btn" type="submit">Add family</button> <span id="addNote" class="sync"></span></div>
+    </form>
+  </details>
   <div class="tools">
     <label for="q" class="sync">Search</label>
     <input id="q" type="search" placeholder="Name, email, program or message">
@@ -1182,7 +1200,9 @@ const STATUSES = [
   { key: "new", label: "New, needs reply" },
   { key: "emailed", label: "Emailed" },
   { key: "visit", label: "Visit booked" },
-  { key: "enrolled", label: "Enrolled" },
+  { key: "registered", label: "On Brightwheel" },
+  { key: "invoiced", label: "Invoice sent" },
+  { key: "enrolled", label: "Paid & enrolled" },
   { key: "notfit", label: "Not a fit" },
 ];
 let rows = [], filter = "all", query = "";
@@ -1248,9 +1268,9 @@ function render() {
   renderCounts();
   const q = query.trim().toLowerCase();
   const shown = rows.filter(r => (filter === "all" || (r.status || "new") === filter) &&
-    (!q || [r.name, r.handle, r.email, r.program, r.message, r.notes].join(" ").toLowerCase().includes(q)));
+    (!q || [r.name, r.handle, r.email, r.phone, r.channel, r.program, r.message, r.notes].join(" ").toLowerCase().includes(q)));
   const list = el("list");
-  if (!rows.length) { list.innerHTML = `<div class="empty">No inquiries yet. New Instagram and Messenger conversations are added here when the inbox is checked.</div>`; return; }
+  if (!rows.length) { list.innerHTML = `<div class="empty">No inquiries yet. New Instagram, WhatsApp and email inquiries are added here when the inbox is checked, and website registrations are emailed to info@.</div>`; return; }
   if (!shown.length) { list.innerHTML = `<div class="empty">Nothing matches this filter.</div>`; return; }
   list.innerHTML = shown.map(r => {
     const st = r.status || "new";
@@ -1265,6 +1285,7 @@ function render() {
       </div>
       <div class="facts">
         <div class="fact"><small>Email</small>${email}</div>
+        ${r.phone ? `<div class="fact"><small>Phone</small><span class="val"><a href="https://wa.me/${esc(String(r.phone).replace(/[^0-9]/g, ""))}" target="_blank" rel="noopener">${esc(r.phone)}</a></span></div>` : ""}
         <div class="fact"><small>Child's age</small><span class="val">${r.childAge ? esc(r.childAge) : '<span class="missing">Unknown</span>'}</span></div>
         <div class="fact"><small>Time in Nosara</small><span class="val">${r.stay ? esc(r.stay) : '<span class="missing">Unknown</span>'}</span></div>
       </div>
@@ -1302,6 +1323,20 @@ document.addEventListener("click", async (e) => {
   try { await navigator.clipboard.writeText(node.textContent); b.textContent = "Copied"; }
   catch { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Text selected, copy it"; }
   setTimeout(() => b.textContent = "Copy message", 1600);
+});
+el("addForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target); const body = Object.fromEntries(f.entries());
+  body.id = (body.channel || "other").slice(0, 2).toLowerCase() + "-" + Date.now().toString(36);
+  el("addNote").textContent = "Adding…";
+  try {
+    const r = await fetch("/api/intake", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { el("addNote").textContent = j.error || "That didn't save. Try again."; return; }
+    const fl = j.flodesk && j.flodesk.result ? " Flodesk: " + j.flodesk.result.join("; ") : (body.email ? "" : " (no email, so no welcome email)");
+    el("addNote").textContent = "Added." + fl;
+    e.target.reset(); load();
+  } catch { el("addNote").textContent = "That didn't save. Check your connection and try again."; }
 });
 load();
 </script>

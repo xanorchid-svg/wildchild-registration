@@ -1,0 +1,14 @@
+# Lili's Wild Console (Vercel project `wildchild-console`)
+
+Deployed with the Vercel API. The live deployment contains index.html, package.json, api/*, scripts/*.
+Files here are the ones changed on Nov 17, 2026 (the rest are only in the deployment: api/_auth.js, _data.js,
+login.js, logins.js, logout.js, todo.js, scripts/fetch-flyers.mjs, flodesk-sync.mjs, notify-lili.mjs).
+
+- `index.html` here is the patched page. The deployment keeps the older index.html and applies
+  `scripts/patch-index.mjs` at build time (same result).
+- `api/intake.js`: one entry point for every channel (Instagram, WhatsApp, Email, Website, Other).
+  Auth: console session cookie or `x-intake-key` (env INTAKE_KEY). Saves `intake/<id>.json` in Vercel Blob,
+  adds the family to Flodesk "<Channel> inquiries" + "New inquiries" once (marker `flodesk/<id>.json`),
+  emails Lili for Instagram/Other (marker `notified/<id>.json`).
+- `api/inquiries.js` merges `_data.js` (legacy) with `intake/` blobs; `api/update.js` accepts both.
+- `api/checked.js`: inbox check heartbeat (`meta/last-checked.json`).

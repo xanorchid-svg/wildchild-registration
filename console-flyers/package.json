@@ -1,0 +1,11 @@
+{
+  "name": "wildchild-console",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/flodesk-sync.mjs && node scripts/notify-lili.mjs && mkdir -p public && cp index.html public/index.html && node scripts/patch-index.mjs && node scripts/fetch-flyers.mjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "latest"
+  }
+}
