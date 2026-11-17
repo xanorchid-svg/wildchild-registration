@@ -27,11 +27,20 @@ async function readPrefix(prefix) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (!isAuthed(req)) return res.status(401).json({ error: 'Sign in' });
-  const [edits, intake, meta] = await Promise.all([readPrefix('edits/'), readPrefix('intake/'), readPrefix('meta/')]);
+  const [edits, intake, meta, fl] = await Promise.all([readPrefix('edits/'), readPrefix('intake/'), readPrefix('meta/'), readPrefix('flodesk/')]);
   const byId = {};
   for (const r of INQUIRIES) byId[r.id] = r;
   for (const [id, r] of Object.entries(intake)) byId[id] = { ...(byId[id] || {}), ...r, id };
-  const rows = Object.values(byId).map(r => ({ status: 'new', notes: '', ...r, ...(edits[r.id] || {}) }))
+  const welcomeOf = (r) => {
+    if (!String(r.email || '').includes('@')) return 'none';
+    if (r.welcome === false) return 'skipped';
+    const res = ((fl[r.id] && fl[r.id].result) || []).join(' ');
+    if (/no welcome/.test(res)) return 'skipped';
+    if (/unsubscribed|bounced|not added/.test(res)) return 'unsub';
+    if (/already/.test(res)) return 'already';
+    return 'queued';
+  };
+  const rows = Object.values(byId).map(r => { const e = edits[r.id] || {}; return { status: 'new', notes: '', ...r, ...e, welcome: e.welcome || welcomeOf(r) }; })
     .sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
   const checked = [LAST_CHECKED, meta['last-checked'] && meta['last-checked'].at].filter(Boolean).sort().pop();
   return res.status(200).json({ lastCheckedAt: checked, inquiries: rows });

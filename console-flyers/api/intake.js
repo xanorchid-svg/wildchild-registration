@@ -66,14 +66,14 @@ async function flodesk(row) {
     const status = exists ? String(g.j.status || '') : 'new';
     if (exists && status !== 'active') { out.push(`${addr}: ${status}, not added`); continue; }
     const inDoor = exists && (g.j.segments || []).some(s => s.id === door);
-    const ids = [chan, inDoor ? null : door].filter(Boolean);
+    const ids = [chan, (inDoor || row.welcome === false) ? null : door].filter(Boolean);
     const body = { email: addr, segment_ids: ids };
     if (!exists && parts[0]) { body.first_name = parts[0]; body.last_name = parts.slice(1).join(' ') || undefined; }
     const p = await fd('/subscribers', { method: 'POST', body: JSON.stringify(body) });
     if (!p.ok) { out.push(`${addr}: add failed ${p.status}`); continue; }
     const id = (p.j && p.j.id) || (exists && g.j.id);
     if (id && ids.length) await fd(`/subscribers/${id}/segments`, { method: 'POST', body: JSON.stringify({ segment_ids: ids }) });
-    out.push(`${addr}: ${inDoor ? 'already welcomed' : (door ? 'welcome queued' : 'no "New inquiries" segment yet')}${chan ? '' : ', channel segment missing'}`);
+    out.push(`${addr}: ${inDoor ? 'already welcomed' : row.welcome === false ? 'no welcome (Lili wrote directly)' : (door ? 'welcome queued' : 'no "New inquiries" segment yet')}${chan ? '' : ', channel segment missing'}`);
   }
   return { ok: true, result: out };
 }
@@ -104,6 +104,7 @@ export default async function handler(req, res) {
   catch (e) { return res.status(503).json({ error: 'Storage unavailable, nothing saved. Try again.' }); }
   for (const f of FIELDS) if (b[f] !== undefined && String(b[f]).trim() !== '') row[f] = String(b[f]).slice(0, f === 'message' ? 6000 : 300);
   row.channel = channel;
+  if (b.welcome === false) row.welcome = false;
   row.updatedAt = new Date().toISOString();
   await writeBlob(path, row);
 

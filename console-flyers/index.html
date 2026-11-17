@@ -67,6 +67,13 @@ h1 { font: 700 clamp(1.6rem, 3.5vw, 2.2rem)/1.1 var(--font-display); margin: 0; 
 .addfam input, .addfam select, .addfam textarea { font: inherit; padding: 7px 9px; border: 1px solid #ccd; border-radius: 8px; }
 .card.s-enrolled { border-left-color: var(--done); }
 .card.s-notfit { border-left-color: var(--off); }
+.howto { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0 4px; font-size: .85rem; color: var(--muted); }
+.howto b { color: var(--accent); }
+.srcs { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.src { font: inherit; font-size: .85rem; border: 1px solid var(--line); background: var(--surface); color: inherit; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.src[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.pill.ch-Website { background: #e4effa; color: #1d5a91; } .pill.ch-Instagram { background: #f8e6f0; color: #9b2c6a; } .pill.ch-WhatsApp { background: #e1f3e6; color: #22713a; } .pill.ch-Email { background: #fbf0dc; color: #8a5a10; } .pill.ch-Other { background: var(--off-soft); color: var(--off); }
+.wl-queued { color: var(--accent-2); } .wl-sent { color: var(--done); } .wl-skip { color: var(--off); }
 .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
 .who { font: 700 1.15rem/1.2 var(--font-display); }
 .handle { color: var(--muted); font-size: .9rem; margin-left: 6px; }
@@ -205,7 +212,9 @@ a { color: var(--accent-2); }
     <p class="sub">Tick each one when it's done. Xan sees your ticks too.</p>
     <div id="todo"></div>
   </section>
+  <div class="howto"><span>How a family moves:</span> <b>New</b> → <b>Emailed</b> (welcome sent or Lili replied) → <b>Visit booked</b> → <b>On Brightwheel</b> (they registered) → <b>Invoice sent</b> → <b>Paid &amp; enrolled</b>. Change a card's status as it moves.</div>
   <div class="counts" id="counts" role="group" aria-label="Filter by status"></div>
+  <div class="srcs" id="srcs" role="group" aria-label="Filter by where they came from"></div>
   <details class="addfam" id="addfam">
     <summary>+ Add a family (WhatsApp, email, phone call, in person)</summary>
     <form id="addForm">
@@ -1205,7 +1214,9 @@ const STATUSES = [
   { key: "enrolled", label: "Paid & enrolled" },
   { key: "notfit", label: "Not a fit" },
 ];
-let rows = [], filter = "all", query = "";
+let rows = [], filter = "all", query = "", src = "all";
+const SOURCES = [["Website", "Website form"], ["Instagram", "Instagram"], ["WhatsApp", "WhatsApp"], ["Email", "Email"], ["Other", "Other"]];
+const WELCOME = { queued: ["wl-queued", "Welcome email queued"], sent: ["wl-sent", "Welcome email sent"], already: ["wl-sent", "Already welcomed"], skipped: ["wl-skip", "No welcome (Lili wrote directly)"], unsub: ["wl-skip", "Unsubscribed, no emails"], none: ["wl-skip", "No email yet"] };
 const el = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
@@ -1262,12 +1273,15 @@ function renderCounts() {
   const items = [{ key: "all", label: "All inquiries", n: rows.length }, ...STATUSES.map(s => ({ ...s, n: tally[s.key] }))];
   el("counts").innerHTML = items.map(i => `<button class="count" data-f="${i.key}" aria-pressed="${filter === i.key}"><b>${i.n}</b><span>${esc(i.label)}</span></button>`).join("");
   el("counts").querySelectorAll("button").forEach(b => b.onclick = () => { filter = b.dataset.f; render(); });
+  const ct = {}; rows.forEach(r => { const c = r.channel || "Instagram"; ct[c] = (ct[c] || 0) + 1; });
+  el("srcs").innerHTML = [["all", "All sources", rows.length], ...SOURCES.filter(([k]) => ct[k]).map(([k, l]) => [k, l, ct[k]])].map(([k, l, n]) => `<button class="src" data-s="${k}" aria-pressed="${src === k}">${esc(l)} · ${n}</button>`).join("");
+  el("srcs").querySelectorAll("button").forEach(b => b.onclick = () => { src = b.dataset.s; render(); });
 }
 
 function render() {
   renderCounts();
   const q = query.trim().toLowerCase();
-  const shown = rows.filter(r => (filter === "all" || (r.status || "new") === filter) &&
+  const shown = rows.filter(r => (filter === "all" || (r.status || "new") === filter) && (src === "all" || (r.channel || "Instagram") === src) &&
     (!q || [r.name, r.handle, r.email, r.phone, r.channel, r.program, r.message, r.notes].join(" ").toLowerCase().includes(q)));
   const list = el("list");
   if (!rows.length) { list.innerHTML = `<div class="empty">No inquiries yet. New Instagram, WhatsApp and email inquiries are added here when the inbox is checked, and website registrations are emailed to info@.</div>`; return; }
@@ -1280,12 +1294,13 @@ function render() {
     const link = r.threadUrl ? `<a href="${esc(r.threadUrl)}" target="_blank" rel="noopener">Open conversation</a>` : (h ? `<a href="https://www.instagram.com/${esc(h)}/" target="_blank" rel="noopener">View profile</a>` : "");
     return `<article class="card s-${st}" data-id="${esc(r.id)}">
       <div class="top">
-        <div><span class="who">${esc(r.name || h || "Unknown")}</span>${h ? `<span class="handle">@${esc(h)}</span>` : ""}<span class="pill">${esc(r.channel || "Instagram")}</span>${r.program ? `<span class="pill">${esc(r.program)}</span>` : ""}</div>
+        <div><span class="who">${esc(r.name || h || "Unknown")}</span>${h ? `<span class="handle">@${esc(h)}</span>` : ""}<span class="pill ch-${esc(r.channel || "Instagram")}">${esc(r.channel === "Website" ? "Website form" : (r.channel || "Instagram"))}</span>${r.program ? `<span class="pill">${esc(r.program)}</span>` : ""}</div>
         <div class="when">Messaged ${fmt(r.receivedAt)}</div>
       </div>
       <div class="facts">
         <div class="fact"><small>Email</small>${email}</div>
         ${r.phone ? `<div class="fact"><small>Phone</small><span class="val"><a href="https://wa.me/${esc(String(r.phone).replace(/[^0-9]/g, ""))}" target="_blank" rel="noopener">${esc(r.phone)}</a></span></div>` : ""}
+        <div class="fact"><small>Welcome email</small><span class="val ${(WELCOME[r.welcome] || WELCOME.none)[0]}">${(WELCOME[r.welcome] || WELCOME.none)[1]}</span></div>
         <div class="fact"><small>Child's age</small><span class="val">${r.childAge ? esc(r.childAge) : '<span class="missing">Unknown</span>'}</span></div>
         <div class="fact"><small>Time in Nosara</small><span class="val">${r.stay ? esc(r.stay) : '<span class="missing">Unknown</span>'}</span></div>
       </div>
