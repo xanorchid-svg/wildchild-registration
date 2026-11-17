@@ -144,6 +144,24 @@ a { color: var(--accent-2); }
 .todo .t b { display: block; }
 .todo .t span { color: var(--muted); font-size: .95em; }
 .todo label.done .t b { text-decoration: line-through; color: var(--muted); }
+.lh { margin-top: 0; }
+.vlock { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; max-width: 520px; }
+.vlock label { display: block; font-weight: 600; margin-bottom: 8px; }
+.vrow { display: flex; gap: 10px; flex-wrap: wrap; }
+.vrow input { flex: 1; min-width: 200px; }
+.vlock input, .vedit input { font: inherit; color: var(--text, inherit); background: var(--bg, #fff); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.vtop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.vcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+.vcard h3 { margin: 0 0 10px; font-size: 1.1rem; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.vcard h3 a { font-size: .85rem; font-weight: 500; }
+.vf { display: grid; grid-template-columns: 90px minmax(0,1fr) auto; gap: 8px 12px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+.vf:first-of-type { border-top: 0; }
+.vf .k { color: var(--muted); font-size: .9em; }
+.vf .v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.vf .acts { display: flex; gap: 6px; }
+.vedit { display: grid; gap: 8px; margin-top: 10px; }
+.vedit input { width: 100%; }
+.vedit .vrow { justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -175,7 +193,7 @@ a { color: var(--accent-2); }
     <a href="#messages" data-p="messages">Messages to send</a>
     <a href="#templates" data-p="templates">Emails to parents</a>
     <a href="#flyers" data-p="flyers">Flyers</a>
-    <a href="#teachers" data-p="teachers">New teachers</a>
+    <a href="#logins" data-p="logins">Logins</a>
   </nav>
   <div class="page" id="inquiries">
   <section class="todo" aria-labelledby="todoh">
@@ -1130,11 +1148,18 @@ Founder
 Wild Child Playgarden &amp; Wildschooling
 www.wildchildnosara.com · @wildchild.nosara</div><button class="btn" data-mcopy="mt-pe6">Copy message</button></div></article>
   </section>
-  <section class="teachers page" id="teachers">
-    <h2>New teachers</h2>
-    <p class="sub">Photos and bios for posts, newsletters and replies to families. These are also on the website’s Team page. Open a photo to save it at full size.</p>
-      <article class="tcard"><a href="teacher-ben-cecchini.jpg" target="_blank" rel="noopener"><img src="web-teacher-ben-cecchini.jpg" alt="Ben Cecchini" loading="lazy"></a><div><h3>Ben Cecchini</h3><p class="trole">Life coach, breathwork facilitator &amp; musician · Music, movement &amp; mindfulness</p><p>Ben Cecchini is a certified life coach, motivational speaker, breathwork facilitator, athlete, musician, and entrepreneur who has spent years traveling the world inspiring young people to be their best.</p><p>As Founder and Executive Director of Give N’ Grow, Ben has delivered mental health and social-emotional learning programs to over 60,000 youth across the U.S. in partnership with NBA teams, players, sports psychologists, and schools. He’s impacted thousands of teens through school keynotes, team mental-performance trainings, and his work as a group therapy facilitator with Charlie Health.</p><p>Before shifting into holistic wellness, Ben worked in the Atlanta Hawks front office and as a footwear developer at Under Armour, helping create custom shoes for NBA players including Steph Curry. His work has taken him around the world—from mentoring young athletes in Ghana to his current home in Costa Rica, where he teaches a unique blend of music, movement, and mindfulness.</p><p class="tlinks"><a href="teacher-ben-cecchini.jpg" target="_blank" rel="noopener">Open photo full size</a></p></div></article>
-      <article class="tcard"><a href="teacher-florencia-figueroa.jpg" target="_blank" rel="noopener"><img src="web-teacher-florencia-figueroa.jpg" alt="Florencia Figueroa" loading="lazy"></a><div><h3>Florencia Figueroa</h3><p class="trole">Artist, sculptor &amp; art teacher</p><p>Florencia is an Argentine artist and art teacher who has made her home in Costa Rica. She holds a degree in Fine Arts with an emphasis in Sculpture from the Universidad de Costa Rica, where she graduated with distinction, and first trained as a drawing teacher at the Escuela Nacional de Bellas Artes Manuel Belgrano in Buenos Aires.</p><p>She has taught in the Sculpture Department of the Universidad de Costa Rica and as an art teacher at Saint Mary School in Escazú and Tree of Life International School in Santa Ana. Here in Nosara, she teaches art at Casa de las Estrellas and Playhouse.</p><p>Florencia directed the commissioning of fourteen sculptures for the Museo del Jade de Costa Rica, assisted with restoration at the university’s School of Visual Arts, and for twelve years co-ran Onírica Art Shop in La Fortuna. Alongside her studio practice she has trained in transpersonal art therapy, art therapy, and creativity coaching, bringing a gentle, process-centered approach to working with clay, wood, wax and metal—from the first idea and sketch to the finished piece.</p><p class="tnote">Bio drafted from her resume. Please check it with Florencia before it goes public.</p><h4>Florencia at work</h4><p class="tnote">From past schools, with other schools’ students in them. Use them to get to know her work, not for public posts.</p><div class="twork"><a href="florencia-work-1.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-1.jpg" alt="Florencia teaching art, photo 1" loading="lazy"></a><a href="florencia-work-2.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-2.jpg" alt="Florencia teaching art, photo 2" loading="lazy"></a><a href="florencia-work-3.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-3.jpg" alt="Florencia teaching art, photo 3" loading="lazy"></a><a href="florencia-work-4.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-4.jpg" alt="Florencia teaching art, photo 4" loading="lazy"></a><a href="florencia-work-5.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-5.jpg" alt="Florencia teaching art, photo 5" loading="lazy"></a><a href="florencia-work-6.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-6.jpg" alt="Florencia teaching art, photo 6" loading="lazy"></a><a href="florencia-work-7.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-7.jpg" alt="Florencia teaching art, photo 7" loading="lazy"></a><a href="florencia-work-8.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-8.jpg" alt="Florencia teaching art, photo 8" loading="lazy"></a><a href="florencia-work-9.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-9.jpg" alt="Florencia teaching art, photo 9" loading="lazy"></a><a href="florencia-work-10.jpg" target="_blank" rel="noopener"><img src="web-florencia-work-10.jpg" alt="Florencia teaching art, photo 10" loading="lazy"></a></div><p class="tlinks"><a href="teacher-florencia-figueroa.jpg" target="_blank" rel="noopener">Open photo full size</a></p></div></article>
+  <section class="page" id="logins">
+    <h2 class="lh">Logins</h2>
+    <p class="sub">Wild Child's accounts in one place. Enter the console password again to open them. They lock again after 10 minutes or when you leave this page.</p>
+    <form id="vlock" class="vlock" autocomplete="off">
+      <label for="vpw">Console password</label>
+      <div class="vrow"><input id="vpw" type="password" autocomplete="current-password" required><button class="btn" type="submit">Open logins</button></div>
+      <p class="err" id="verr" role="alert"></p>
+    </form>
+    <div id="vault" hidden>
+      <div class="vtop"><button class="btn ghost" id="vadd" type="button">Add a login</button><button class="linkbtn" id="vlockbtn" type="button">Lock</button></div>
+      <div id="vlist"></div>
+    </div>
   </section>
   <section class="flyers page" id="flyers">
     <h2>Flyers to send families</h2>
@@ -1308,6 +1333,33 @@ document.querySelectorAll('.mimg img, .fcard img, .tcard img').forEach(img => {
   };
   if (img.complete && img.naturalWidth === 0) swap(); else img.addEventListener('error', swap);
 });
+
+(function(){
+  let pass="", items=[], timer=null;
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  async function call(body){const r=await fetch("/api/logins",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...body,password:pass})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Something went wrong. Try again.");return j;}
+  function lock(){pass="";items=[];clearTimeout(timer);$("vault").hidden=true;$("vlock").hidden=false;$("vlist").innerHTML="";$("vpw").value="";}
+  function arm(){clearTimeout(timer);timer=setTimeout(lock,10*60*1000);}
+  function field(k,v,secret,i){if(!v)return "";return `<div class="vf"><span class="k">${k}</span><span class="v" data-secret="${secret?1:0}">${secret?"••••••••":esc(v)}</span><span class="acts">${secret?`<button class="linkbtn" data-vshow="${i}">Show</button>`:""}<button class="btn small" data-vcopy="${i}:${k}">Copy</button></span></div>`;}
+  function render(){ $("vlist").innerHTML=items.map((x,i)=>`<article class="vcard" data-i="${i}"><h3><span>${esc(x.service)}</span>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">Open site</a>`:""}</h3>${field("Username",x.username,false,i)}${field("Password",x.password,true,i)}${x.note?`<div class="vf"><span class="k">Note</span><span class="v" style="font-family:inherit">${esc(x.note)}</span><span></span></div>`:""}${x.password?"":`<p class="sub" style="margin:6px 0 0">No password saved yet.</p>`}<div class="vtop" style="margin:10px 0 0"><button class="linkbtn" data-vedit="${i}">Edit</button></div></article>`).join("")||`<p class="sub">No logins yet. Add the first one.</p>`;}
+  function editForm(i){const x=items[i]||{service:"",url:"",username:"",password:"",note:""};const card=i==null?null:document.querySelector(`.vcard[data-i="${i}"]`);
+    const html=`<form class="vedit" data-vsave="${i==null?"new":i}"><input name="service" placeholder="Account (e.g. Instagram)" value="${esc(x.service)}" required><input name="url" placeholder="Website link" value="${esc(x.url)}"><input name="username" placeholder="Username or email" value="${esc(x.username)}" autocomplete="off"><input name="password" type="text" placeholder="Password" value="${esc(x.password)}" autocomplete="off"><input name="note" placeholder="Note (optional)" value="${esc(x.note)}"><div class="vrow">${i==null?"":`<button class="linkbtn" type="button" data-vdel="${i}">Remove</button>`}<button class="linkbtn" type="button" data-vcancel>Cancel</button><button class="btn" type="submit">Save</button></div></form>`;
+    if(card){card.insertAdjacentHTML("beforeend",html);}else{$("vlist").insertAdjacentHTML("afterbegin",`<article class="vcard">${html}</article>`);} }
+  async function save(next){const j=await call({action:"save",entries:next});items=j.entries;render();arm();}
+  $("vlock").addEventListener("submit",async e=>{e.preventDefault();$("verr").textContent="";pass=$("vpw").value;try{const j=await call({action:"list"});items=j.entries;$("vlock").hidden=true;$("vault").hidden=false;render();arm();}catch(err){pass="";$("verr").textContent=err.message;}});
+  $("vlockbtn").addEventListener("click",lock);
+  $("vadd").addEventListener("click",()=>editForm(null));
+  $("vlist").addEventListener("click",async e=>{const t=e.target;arm();
+    if(t.dataset.vshow){const v=t.closest(".vf").querySelector(".v");const hid=v.textContent.startsWith("•");v.textContent=hid?items[t.dataset.vshow].password:"••••••••";t.textContent=hid?"Hide":"Show";}
+    else if(t.dataset.vcopy){const [i,k]=t.dataset.vcopy.split(":");const x=items[i];const val=k=="Password"?x.password:x.username;try{await navigator.clipboard.writeText(val);t.textContent="Copied";setTimeout(()=>t.textContent="Copy",1500);}catch{t.textContent="Copy failed";}}
+    else if(t.dataset.vedit){editForm(+t.dataset.vedit);t.hidden=true;}
+    else if("vcancel" in t.dataset){render();}
+    else if(t.dataset.vdel){if(!confirm("Remove this login?"))return;const next=items.filter((_,i)=>i!=t.dataset.vdel);try{await save(next);}catch(err){alert(err.message);}}
+  });
+  $("vlist").addEventListener("submit",async e=>{e.preventDefault();const f=e.target;const d=Object.fromEntries(new FormData(f));const k=f.dataset.vsave;const next=items.slice();if(k=="new")next.push(d);else next[+k]=d;try{await save(next);}catch(err){alert(err.message);}});
+  addEventListener("hashchange",()=>{if(location.hash!="#logins")lock();});
+})();
 </script>
 
 </body>
