@@ -13,9 +13,12 @@ const FIELDS = [
   ['roles', 'Role(s)'],
   ['availability', 'Availability'],
   ['languages', 'Languages'],
-  ['location', 'Where they are based'],
+  ['location', 'Where they are now'],
+  ['accommodation', 'Needs accommodation'],
   ['experience', 'Experience and gifts'],
   ['why', 'Why Wild Child'],
+  ['link', 'Instagram, website or CV'],
+  ['references', 'References'],
   ['heard', 'How they heard about us'],
 ];
 
