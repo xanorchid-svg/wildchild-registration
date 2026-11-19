@@ -12,3 +12,5 @@ login.js, logins.js, logout.js, todo.js, scripts/fetch-flyers.mjs, flodesk-sync.
   emails Lili for Instagram/Other (marker `notified/<id>.json`).
 - `api/inquiries.js` merges `_data.js` (legacy) with `intake/` blobs; `api/update.js` accepts both.
 - `api/checked.js`: inbox check heartbeat (`meta/last-checked.json`).
+
+- Nov 19: `api/registrations.js` + `scripts/patch-index-5.mjs` add the **Registered** tab (families signed up per class/event, counts by age group, filters, add form). Data in Blob `registrations/all.json`.
