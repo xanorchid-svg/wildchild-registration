@@ -14,3 +14,5 @@ login.js, logins.js, logout.js, todo.js, scripts/fetch-flyers.mjs, flodesk-sync.
 - `api/checked.js`: inbox check heartbeat (`meta/last-checked.json`).
 
 - Nov 19: `api/registrations.js` + `scripts/patch-index-5.mjs` add the **Registered** tab (families signed up per class/event, counts by age group, filters, add form). Data in Blob `registrations/all.json`.
+
+- Nov 20: `scripts/patch-index-6.mjs` (Logins page: discount codes under their own heading, "Add a code") and `api/logins.js` (Brightwheel added to the default logins; entries can be kind "code"; codes listed in CODES are added when missing). Keep real codes and passwords out of this public repo: they live only in the deployment and in Blob `vault/logins.json`.
